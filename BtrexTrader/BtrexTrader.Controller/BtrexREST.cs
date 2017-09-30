@@ -8,37 +8,40 @@ using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Configuration;
 
-namespace BtrexTrader.Controller
+namespace BtrexTrader
 {
-    class BtrexREST
+    public static class BtrexREST
     {
-        private readonly string API_KEY = ConfigurationManager.AppSettings["API_KEY"];
-        private readonly string SECRET_KEY = ConfigurationManager.AppSettings["SECRET_KEY"];
+        private readonly static string API_KEY = ConfigurationManager.AppSettings["API_KEY"];
+        private readonly static string SECRET_KEY = ConfigurationManager.AppSettings["SECRET_KEY"];
 
-        private readonly string API_KEY2 = ConfigurationManager.AppSettings["API_KEY2"];
-        private readonly string SECRET_KEY2 = ConfigurationManager.AppSettings["SECRET_KEY2"];
+        private readonly static string API_KEY2 = ConfigurationManager.AppSettings["API_KEY2"];
+        private readonly static string SECRET_KEY2 = ConfigurationManager.AppSettings["SECRET_KEY2"];
 
-        private readonly string API_KEY3 = ConfigurationManager.AppSettings["API_KEY3"];
-        private readonly string SECRET_KEY3 = ConfigurationManager.AppSettings["SECRET_KEY3"];
+        private readonly static string API_KEY3 = ConfigurationManager.AppSettings["API_KEY3"];
+        private readonly static string SECRET_KEY3 = ConfigurationManager.AppSettings["SECRET_KEY3"];
 
-        private static HttpClient client = new HttpClient();
-
-        public decimal USDrate;
-
-        public BtrexREST()
+        private static HttpClient client = new HttpClient()
         {
-            client.BaseAddress = new Uri("https://bittrex.com/api/v1.1/");
-            client.DefaultRequestHeaders.Accept.Clear();
-            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        }
+            BaseAddress = new Uri("https://bittrex.com/api/v1.1/"),
+        };
 
-        public async Task setUSD()
+        public static decimal USDrate;
+
+        //public BtrexREST()
+        //{
+        //    client.BaseAddress = new Uri("https://bittrex.com/api/v1.1/");
+        //    client.DefaultRequestHeaders.Accept.Clear();
+        //    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        //}
+
+        public static async Task setUSD()
         {
             decimal rate = await GetCBsellPrice();
             USDrate = rate;
         }
 
-        public async Task<TickerResponse> GetTicker(string delta)
+        public static async Task<TickerResponse> GetTicker(string delta)
         {
             TickerResponse ticker = null;
             HttpResponseMessage response = await client.GetAsync("public/getticker?market=" + delta);
@@ -47,7 +50,7 @@ namespace BtrexTrader.Controller
             return ticker;
         }
 
-        public async Task<GetMarketsResponse> GetMarkets()
+        public static async Task<GetMarketsResponse> GetMarkets()
         {
             GetMarketsResponse marketsResponse = null;
             HttpResponseMessage response = await client.GetAsync("public/getmarkets");
@@ -56,7 +59,7 @@ namespace BtrexTrader.Controller
             return marketsResponse;
         }
 
-        public async Task<MarketSummary> GetMarketSummary(string delta = null)
+        public static async Task<MarketSummary> GetMarketSummary(string delta = null)
         {
             string uri;
             if (delta == null)
@@ -73,7 +76,7 @@ namespace BtrexTrader.Controller
             return summary;
         }
 
-        public async Task<MarketHistoryResponse> GetMarketHistory(string delta)
+        public static async Task<MarketHistoryResponse> GetMarketHistory(string delta)
         {
             MarketHistoryResponse marketHistory = null;
             HttpResponseMessage response = await client.GetAsync("");
@@ -83,7 +86,7 @@ namespace BtrexTrader.Controller
             return marketHistory;
         }
 
-        public async Task<LimitOrderResponse> PlaceLimitOrder(string delta, string buyORsell, decimal qty, decimal rate)
+        public static async Task<LimitOrderResponse> PlaceLimitOrder(string delta, string buyORsell, decimal qty, decimal rate)
         {
             TimeSpan t = DateTime.UtcNow - new DateTime(1970, 1, 1);
             double timeUnix = t.TotalSeconds;
@@ -108,7 +111,7 @@ namespace BtrexTrader.Controller
             return limitOrder;
         }
 
-        public async Task<LimitOrderResponse> PlaceLimitOrder2(string delta, string buyORsell, decimal qty, decimal rate)
+        public static async Task<LimitOrderResponse> PlaceLimitOrder2(string delta, string buyORsell, decimal qty, decimal rate)
         {
             TimeSpan t = DateTime.UtcNow - new DateTime(1970, 1, 1);
             double timeUnix = t.TotalSeconds;
@@ -133,7 +136,7 @@ namespace BtrexTrader.Controller
             return limitOrder;
         }
 
-        public async Task<LimitOrderResponse> PlaceLimitOrder3(string delta, string buyORsell, decimal qty, decimal rate)
+        public static async Task<LimitOrderResponse> PlaceLimitOrder3(string delta, string buyORsell, decimal qty, decimal rate)
         {
             TimeSpan t = DateTime.UtcNow - new DateTime(1970, 1, 1);
             double timeUnix = t.TotalSeconds;
@@ -158,7 +161,7 @@ namespace BtrexTrader.Controller
             return limitOrder;
         }
 
-        public async Task<LimitOrderResponse> CancelLimitOrder(string orderID)
+        public static async Task<LimitOrderResponse> CancelLimitOrder(string orderID)
         {
             TimeSpan t = DateTime.UtcNow - new DateTime(1970, 1, 1);
             double timeUnix = t.TotalSeconds;
@@ -183,7 +186,7 @@ namespace BtrexTrader.Controller
             return limitOrder;
         }
 
-        public async Task<GetBalanceResponse> GetBalance(string curr)
+        public static async Task<GetBalanceResponse> GetBalance(string curr)
         {
             //Get nonce:
             TimeSpan t = DateTime.UtcNow - new DateTime(1970, 1, 1);
@@ -212,7 +215,7 @@ namespace BtrexTrader.Controller
             return balanceResponse;
         }
 
-        public async Task<GetBalancesResponse> GetBalances()
+        public static async Task<GetBalancesResponse> GetBalances()
         {
             //Get nonce:
             TimeSpan t = DateTime.UtcNow - new DateTime(1970, 1, 1);
@@ -240,7 +243,7 @@ namespace BtrexTrader.Controller
             return balancesResponse;
         }
 
-        public async Task<OpenOrdersResponse> GetOpenOrders(string delta = null)
+        public static async Task<OpenOrdersResponse> GetOpenOrders(string delta = null)
         {
             TimeSpan t = DateTime.UtcNow - new DateTime(1970, 1, 1);
             double timeUnix = t.TotalSeconds;
@@ -272,7 +275,7 @@ namespace BtrexTrader.Controller
             return ordersResponse;
         }
 
-        public async Task<GetOrderResponse> GetOrder(string orderID)
+        public static async Task<GetOrderResponse> GetOrder(string orderID)
         {
             TimeSpan t = DateTime.UtcNow - new DateTime(1970, 1, 1);
             double timeUnix = t.TotalSeconds;
@@ -299,7 +302,7 @@ namespace BtrexTrader.Controller
         }
 
 
-        public async Task<GetOrderResponse> GetOrder2(string orderID)
+        public static async Task<GetOrderResponse> GetOrder2(string orderID)
         {
             TimeSpan t = DateTime.UtcNow - new DateTime(1970, 1, 1);
             double timeUnix = t.TotalSeconds;
@@ -326,7 +329,7 @@ namespace BtrexTrader.Controller
         }
 
 
-        public async Task<GetOrderResponse> GetOrder3(string orderID)
+        public static async Task<GetOrderResponse> GetOrder3(string orderID)
         {
             TimeSpan t = DateTime.UtcNow - new DateTime(1970, 1, 1);
             double timeUnix = t.TotalSeconds;
@@ -353,7 +356,7 @@ namespace BtrexTrader.Controller
         }
 
 
-        private string GetSignature(Uri uri)
+        private static string GetSignature(Uri uri)
         {
             Encoding encoding = Encoding.UTF8;
             using (HMACSHA512 hmac = new HMACSHA512(encoding.GetBytes(SECRET_KEY)))
@@ -364,7 +367,7 @@ namespace BtrexTrader.Controller
             }
         }
 
-        private string GetSignature2(Uri uri)
+        private static string GetSignature2(Uri uri)
         {
             Encoding encoding = Encoding.UTF8;
             using (HMACSHA512 hmac = new HMACSHA512(encoding.GetBytes(SECRET_KEY2)))
@@ -375,7 +378,7 @@ namespace BtrexTrader.Controller
             }
         }
 
-        private string GetSignature3(Uri uri)
+        private static string GetSignature3(Uri uri)
         {
             Encoding encoding = Encoding.UTF8;
             using (HMACSHA512 hmac = new HMACSHA512(encoding.GetBytes(SECRET_KEY3)))
@@ -387,7 +390,7 @@ namespace BtrexTrader.Controller
         }
 
 
-        public async Task<decimal> GetCBsellPrice()
+        public static async Task<decimal> GetCBsellPrice()
         {
             HttpRequestMessage mesg = new HttpRequestMessage()
             {
