@@ -12,47 +12,56 @@ namespace BtrexTrader
 {
     class Program
     {
-        
+        private static HubConnection hubConnection = new HubConnection("https://socket.bittrex.com/");
+        private static IHubProxy btrexHubProxy;
         private static BtrexTradeController BtrexRobot = new BtrexTradeController();
 
 
         static void Main(string[] args)
         {
-            //SHOW SIGNALR-WEBSOCKET DEBUG:
+            //SHOW DEBUG:
             //hubConnection.TraceLevel = TraceLevels.All;
             //hubConnection.TraceWriter = Console.Out;
 
 
-            //while (true)
-            //{
+
+            while (true)
+            {
                 try
                 {
                     RunAsync().Wait();
                 }
                 catch (Exception e)
-                {                                     
-                    Console.Write("\r\n\r\n!!!!TOP LVL ERR>> " + e.InnerException.Message);
-                    //Thread.Sleep(5000);
+                {
+                    if (e.Message == "!!!!!!!!!!!!!INSUFFICIENT FUNDS")
+                    {
+                        for (int i = 0; i < 10; i++)
+                            Console.Beep(900, 300);
+                        Environment.Exit(0);
+                    }
+                        
+                    Console.Write("\r!!!!TOP LVL ERR>>");
+                    for (int i = 0; i < 3; i++)
+                        Console.Beep(900, 200);
+                    Thread.Sleep(5000);
                 }
-            //}
+            }
         }
 
         static async Task RunAsync()
         {
-            //CREATE hubProxy, REGISTER CALLBACKS, CONNECT TO HUB:
-            BtrexWS.btrexHubProxy = BtrexWS.hubConnection.CreateHubProxy("coreHub");
-            BtrexWS.btrexHubProxy.On<MarketDataUpdate>("updateExchangeState", update => BtrexRobot.UpdateEnqueue(update));
+            btrexHubProxy = hubConnection.CreateHubProxy("coreHub");
+            btrexHubProxy.On<MarketDataUpdate>("updateExchangeState", update => BtrexRobot.UpdateEnqueue(update));
             //btrexHubProxy.On<SummariesUpdate>("updateSummaryState", update => Console.WriteLine("FULL SUMMARY: "));
-            await BtrexWS.hubConnection.Start();
+
+            
+            
+
+            await hubConnection.Start();
 
 
-            //SUBSCRIBE TO MARKET DELTAS TO TRACK ORDERBOOKS & TRADE EVENTS
+
             await subscribeOB("BTC-ETH");
-
-
-
-
-
 
             if (BtrexRobot.watchOnly)
             {
@@ -68,10 +77,28 @@ namespace BtrexTrader
                 await SubTriplet("QTUM");
                 await SubTriplet("OMG");
                 await SubTriplet("PAY");
-                await SubTriplet("PTOY");
+                await SubTriplet("ptoy");
             }
 
-            
+
+
+
+
+
+            //await SubTriplet("FCT");
+            //await SubTriplet("XRP");
+            //await SubTriplet("BCC");
+            //await SubTriplet("LTC");
+            //await SubTriplet("XMR");
+            //await SubTriplet("ADX");
+            //await SubTriplet("GNT");
+            //await SubTriplet("PAY");
+            //await SubTriplet("ZEC");
+            //await SubTriplet("STRAT");
+            //await SubTriplet("ETC");
+            //await SubTriplet("LGD");
+
+
             Console.ReadLine();
             Console.ReadLine();
         }
@@ -80,8 +107,8 @@ namespace BtrexTrader
 
         private async static Task subscribeOB(string delta)
         {
-            await BtrexWS.btrexHubProxy.Invoke("SubscribeToExchangeDeltas", delta);
-            MarketQueryResponse marketQuery = BtrexWS.btrexHubProxy.Invoke<MarketQueryResponse>("QueryExchangeState", delta).Result;
+            await btrexHubProxy.Invoke("SubscribeToExchangeDeltas", delta);
+            MarketQueryResponse marketQuery = btrexHubProxy.Invoke<MarketQueryResponse>("QueryExchangeState", delta).Result;
             marketQuery.MarketName = delta;
             BtrexRobot.OpenBook(marketQuery);
         }
@@ -94,12 +121,6 @@ namespace BtrexTrader
             BtrexRobot.AddDoublet(BTCdelta, ETHdelta);
         }
 
-    }
-
-    public static class BtrexWS
-    {
-        public readonly static HubConnection hubConnection = new HubConnection("https://socket.bittrex.com/");
-        public static IHubProxy btrexHubProxy;
     }
 
 

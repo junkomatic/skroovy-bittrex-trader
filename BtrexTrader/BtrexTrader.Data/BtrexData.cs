@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using BtrexTrader;
 
 namespace BtrexTrader.Data
 {
@@ -58,20 +57,11 @@ namespace BtrexTrader.Data
                                 break;
                             else if (mdUpdate.Nounce > (book.Nounce + 1))
                             {
-                                //IF NOUNCE IS DE-SYNCED, WIPE BOOK AND RE-SNAP
-                                //Console.WriteLine("ERR>>  NOUNCE OUT OF ORDER! " + mdUpdate.MarketName + " BOOK-DSYNC.");
-                                foreach (OrderBook bk in Books)
-                                {
-                                    if (bk.MarketDelta == mdUpdate.MarketName)
-                                    {
-                                        Books.Remove(bk);
-                                        break;
-                                    }
-                                }
-
-                                //Request MarketQuery from websocket, and OpenBook() with new snapshot
-                                MarketQueryResponse marketQuery = BtrexWS.btrexHubProxy.Invoke<MarketQueryResponse>("QueryExchangeState", mdUpdate.MarketName).Result;
-                                OpenBook(marketQuery);
+                                //TODO: WIPE BOOK AND RE-SUB
+                                Console.WriteLine("ERR>>   MISSED NOUNCE!!!!! OUCH, " + mdUpdate.MarketName + " BOOK-DSYNC."
+                                    + "\r\n!!!!!WIPE AND RESUB: " + mdUpdate.MarketName);
+                                //Books.Remove(book);
+                                //resub with hubproxy
                                 break;
                             }                              
                             else
@@ -86,6 +76,7 @@ namespace BtrexTrader.Data
         {
             OrderBook book = new OrderBook(snapshot);
             Books.Add(book);
+            //Console.WriteLine("OpenBook:  " + snapshot.MarketName);
         }
 
         public void AddTripletDeltas(string BTCdelta, string ETHdelta)
