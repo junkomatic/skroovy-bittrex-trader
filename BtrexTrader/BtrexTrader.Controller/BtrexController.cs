@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using BtrexTrader.Data;
 using System.Threading;
 using System.Diagnostics;
+using BtrexTrader.TripletStrat;
 
 namespace BtrexTrader.Controller
 {
@@ -15,34 +16,55 @@ namespace BtrexTrader.Controller
         private static Stopwatch time = new Stopwatch();
         public bool watchOnly = true;
 
-        bool SingleTradeReady = true;
+        private bool SingleTradeReady = true;
         private int rots = 0;
 
         public BtrexTradeController()
         {
             btrexData = new BtrexData();
 
-            var TriCalcThread = new Thread(() => TriCalcTrade());
-            TriCalcThread.IsBackground = true;
-            TriCalcThread.Name = "Triplet-CalcAndTrade-Thread";
-            TriCalcThread.Start();
+            var WorkThread = new Thread(() => ScanMarkets());
+            WorkThread.IsBackground = true;
+            WorkThread.Name = "Market-Scanning/Work-Thread";
+            WorkThread.Start();
 
             
         }
 
-        private async void TriCalcTrade()
+        private async void ScanMarkets()
         {
             //Before work-loop, set USD value for conversions
             await BtrexREST.setUSD();
 
-            var pause = TimeSpan.FromMilliseconds(100);
-
             while (true)
             {
+                //Parallel.ForEach<Market>(btrexData.Markets, m => ScanMarket(m));
                 Parallel.ForEach<BookTriplet>(btrexData.DeltaTrips, triplet => CalcTrips(triplet));
-                Thread.Sleep(pause);
+                Thread.Sleep(100);
             }
         }
+
+        //TODO: 
+        //  MAKE BTREXDATA STATIC, 
+        //  GET RID OF THESE THREE FUNCS, 
+        //  CREATE MARKETSCANNER FOLDER AND CLASS
+        //  SEE STICKY NOTE 
+
+        public void UpdateEnqueue(MarketDataUpdate update)
+        {
+            btrexData.UpdateQueue.Enqueue(update);
+        }
+
+        public void OpenBook(MarketQueryResponse snap)
+        {
+            btrexData.OpenBook(snap);
+        }
+
+        public void AddDoublet(string BTCdelta, string ETHdelta)
+        {
+            btrexData.AddTripletDeltas(BTCdelta, ETHdelta);
+        }
+
 
         private async void CalcTrips(BookTriplet triplet)
         {
@@ -251,14 +273,14 @@ namespace BtrexTrader.Controller
                 TriCalcReturn RightResult = triplet.CalcRight(wager);
                 decimal LeftReturnUSD = LeftResult.BTCresult * BtrexREST.USDrate;
                 decimal RightReturnUSD = RightResult.BTCresult * BtrexREST.USDrate;
-                if (LeftReturnUSD > 0.02M)
+                //if (LeftReturnUSD > wager)
                 {
                     if (triplet.tradingState == true)
                         return;
                     string ALT = triplet.BTCdelta.MarketDelta.Substring(4);
                     Console.WriteLine("{0} :: [{1}]  ===  ${2:0.00###} -L-", DateTime.Now, ALT, LeftReturnUSD);
                 }
-                if (RightReturnUSD > 0.02M)
+                //if (RightReturnUSD > wager)
                 {
                     if (triplet.tradingState == true)
                         return;
@@ -268,21 +290,6 @@ namespace BtrexTrader.Controller
             }
         }
 
-
-        public void UpdateEnqueue(MarketDataUpdate update)
-        {
-            btrexData.UpdateQueue.Enqueue(update);
-        }
-
-        public void OpenBook(MarketQueryResponse snap)
-        {
-            btrexData.OpenBook(snap);
-        }
-
-        public void AddDoublet(string BTCdelta, string ETHdelta)
-        {
-            btrexData.AddTripletDeltas(BTCdelta, ETHdelta);
-        }
 
 
 

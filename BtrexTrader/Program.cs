@@ -18,13 +18,13 @@ namespace BtrexTrader
 
         static void Main(string[] args)
         {
-            //SHOW SIGNALR-WEBSOCKET DEBUG:
+            //UNCOMMENT TO SHOW SIGNALR-WEBSOCKET DEBUG:
             //hubConnection.TraceLevel = TraceLevels.All;
             //hubConnection.TraceWriter = Console.Out;
 
 
             //while (true)
-            //{
+            {
                 try
                 {
                     RunAsync().Wait();
@@ -34,7 +34,7 @@ namespace BtrexTrader
                     Console.Write("\r\n\r\n!!!!TOP LVL ERR>> " + e.InnerException.Message);
                     //Thread.Sleep(5000);
                 }
-            //}
+            }
         }
 
         static async Task RunAsync()
@@ -50,10 +50,7 @@ namespace BtrexTrader
             await subscribeOB("BTC-ETH");
 
 
-
-
-
-
+            //TRIPLETS STUFF
             if (BtrexRobot.watchOnly)
             {
                 List<string> topMarkets = await BtrexRobot.GetTopMarkets();
@@ -72,6 +69,7 @@ namespace BtrexTrader
             }
 
             
+
             Console.ReadLine();
             Console.ReadLine();
         }

@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BtrexTrader.Data;
 
-namespace BtrexTrader.Data
+namespace BtrexTrader.TripletStrat
 {
     public class BookTriplet
     {
@@ -32,9 +33,9 @@ namespace BtrexTrader.Data
         public void Ready()
         {
             tradingState = false;
-            IDtrade1 = "";
-            IDtrade2 = "";
-            IDtrade3 = "";
+            IDtrade1 = string.Empty;
+            IDtrade2 = string.Empty;
+            IDtrade3 = string.Empty;
         }
 
         public TriCalcReturn CalcLeft(decimal initial)
