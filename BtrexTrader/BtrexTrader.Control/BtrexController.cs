@@ -39,7 +39,7 @@ namespace BtrexTrader.Control
             while (true)
             {
                 //Parallel.ForEach<Market>(btrexData.Markets, m => ScanMarket(m));
-                Parallel.ForEach<BookTriplet>(btrexData.DeltaTrips, triplet => CalcTrips(triplet));
+                Parallel.ForEach<TripletData>(btrexData.DeltaTrips, triplet => CalcTrips(triplet));
                 Thread.Sleep(100);
             }
         }
@@ -66,7 +66,7 @@ namespace BtrexTrader.Control
         }
 
 
-        private async void CalcTrips(BookTriplet triplet)
+        private async void CalcTrips(TripletData triplet)
         {
 
 

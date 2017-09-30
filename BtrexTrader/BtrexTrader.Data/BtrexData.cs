@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using BtrexTrader;
 using BtrexTrader.TripletStrat;
 
 namespace BtrexTrader.Data
@@ -13,7 +12,7 @@ namespace BtrexTrader.Data
     class BtrexData
     {
         public List<OrderBook> Books { get; private set; }
-        public List<BookTriplet> DeltaTrips { get; private set; }       
+        public List<TripletData> DeltaTrips { get; private set; }       
         public ConcurrentQueue<MarketDataUpdate> UpdateQueue { get; private set; }
 
 
@@ -21,7 +20,7 @@ namespace BtrexTrader.Data
         {
             Books = new List<OrderBook>();
             UpdateQueue = new ConcurrentQueue<MarketDataUpdate>();
-            DeltaTrips = new List<BookTriplet>();
+            DeltaTrips = new List<TripletData>();
 
             var DequeueThread = new Thread(() => ProcessQueue());
             DequeueThread.IsBackground = true;
@@ -107,7 +106,7 @@ namespace BtrexTrader.Data
                 }
                 if (BTCbk != null && ETHbk != null)
                 {
-                    DeltaTrips.Add(new BookTriplet(BTCbk, ETHbk, B2Ebk));
+                    DeltaTrips.Add(new TripletData(BTCbk, ETHbk, B2Ebk));
                     Console.WriteLine("###TRIPLET ADDED: [{0}]", BTCdelta.Substring(4));
                     break;
                 }

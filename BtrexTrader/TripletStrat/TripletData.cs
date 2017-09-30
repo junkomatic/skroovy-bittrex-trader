@@ -7,7 +7,7 @@ using BtrexTrader.Data;
 
 namespace BtrexTrader.TripletStrat
 {
-    public class BookTriplet
+    public class TripletData
     {
 
         public bool tradingState { get; set; }
@@ -21,7 +21,7 @@ namespace BtrexTrader.TripletStrat
         public string Coin { get; set; }
 
 
-        public BookTriplet(OrderBook BTC, OrderBook ETH, OrderBook B2E)
+        public TripletData(OrderBook BTC, OrderBook ETH, OrderBook B2E)
         {
             tradingState = false;
             BTCdelta = BTC;
