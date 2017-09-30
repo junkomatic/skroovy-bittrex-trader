@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNet.SignalR.Client;
 using Newtonsoft.Json;
 using System.Threading;
-using BtrexTrader.Controller;
+using BtrexTrader.Control;
 
 namespace BtrexTrader
 {

@@ -8,7 +8,7 @@ using System.Threading;
 using System.Diagnostics;
 using BtrexTrader.TripletStrat;
 
-namespace BtrexTrader.Controller
+namespace BtrexTrader.Control
 {
     class BtrexTradeController
     {

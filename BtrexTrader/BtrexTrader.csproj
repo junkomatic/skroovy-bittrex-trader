@@ -33,7 +33,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>502347558_SNa_icon.ico</ApplicationIcon>
+    <ApplicationIcon>BTCicon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.AspNet.SignalR.Client, Version=2.2.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
@@ -59,9 +59,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BtrexTrader.Data\BtrexData.cs" />
-    <Compile Include="BtrexTrader.Controller\BtrexController.cs" />
-    <Compile Include="BtrexTrader.Controller\BtrexREST.cs" />
-    <Compile Include="BtrexTrader.Data\DataClasses.cs" />
+    <Compile Include="BtrexTrader.Control\BtrexController.cs" />
+    <Compile Include="BtrexTrader.Control\BtrexREST.cs" />
+    <Compile Include="BtrexTrader.Data\POCOclasses.cs" />
     <Compile Include="BtrexTrader.Data\OrderBook.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -73,7 +73,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="502347558_SNa_icon.ico" />
+    <Content Include="BTCicon.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
