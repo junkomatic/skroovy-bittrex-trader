@@ -12,9 +12,8 @@ namespace BtrexTrader.Controller
     class BtrexTradeController
     {
         public BtrexData btrexData;
-        public static BtrexREST btrexRESTClient;
         private static Stopwatch time = new Stopwatch();
-        public bool watchOnly = false;
+        public bool watchOnly = true;
 
         bool SingleTradeReady = true;
         private int rots = 0;
@@ -22,7 +21,6 @@ namespace BtrexTrader.Controller
         public BtrexTradeController()
         {
             btrexData = new BtrexData();
-            btrexRESTClient = new BtrexREST();
 
             var TriCalcThread = new Thread(() => TriCalcTrade());
             TriCalcThread.IsBackground = true;
@@ -35,7 +33,7 @@ namespace BtrexTrader.Controller
         private async void TriCalcTrade()
         {
             //Before work-loop, set USD value for conversions
-            await btrexRESTClient.setUSD();
+            await BtrexREST.setUSD();
 
             var pause = TimeSpan.FromMilliseconds(100);
 
@@ -65,9 +63,9 @@ namespace BtrexTrader.Controller
                 SingleTradeReady = false;
                 triplet.tradingState = true;
 
-                LimitOrderResponse orderResp2 = await btrexRESTClient.PlaceLimitOrder2(triplet.ETHdelta.MarketDelta, "sell", LeftResult.Trades2.Sum(x => x.Value), (LeftResult.Trades2.OrderByDescending(x => x.Key).Last().Key));
-                LimitOrderResponse orderResp1 = await btrexRESTClient.PlaceLimitOrder(triplet.BTCdelta.MarketDelta, "buy", LeftResult.Trades1.Sum(x => x.Value), (LeftResult.Trades1.OrderBy(x => x.Key).Last().Key));              
-                LimitOrderResponse orderResp3 = await btrexRESTClient.PlaceLimitOrder3(triplet.B2Edelta.MarketDelta, "sell", LeftResult.Trades3.Sum(x => x.Value), (LeftResult.Trades3.OrderByDescending(x => x.Key).Last().Key));
+                LimitOrderResponse orderResp2 = await BtrexREST.PlaceLimitOrder2(triplet.ETHdelta.MarketDelta, "sell", LeftResult.Trades2.Sum(x => x.Value), (LeftResult.Trades2.OrderByDescending(x => x.Key).Last().Key));
+                LimitOrderResponse orderResp1 = await BtrexREST.PlaceLimitOrder(triplet.BTCdelta.MarketDelta, "buy", LeftResult.Trades1.Sum(x => x.Value), (LeftResult.Trades1.OrderBy(x => x.Key).Last().Key));              
+                LimitOrderResponse orderResp3 = await BtrexREST.PlaceLimitOrder3(triplet.B2Edelta.MarketDelta, "sell", LeftResult.Trades3.Sum(x => x.Value), (LeftResult.Trades3.OrderByDescending(x => x.Key).Last().Key));
 
                 //watchOnly = true;
                 if (!orderResp2.success)
@@ -113,24 +111,24 @@ namespace BtrexTrader.Controller
                 //Thread.Sleep(400);
 
 
-                GetOrderResponse ord1 = await btrexRESTClient.GetOrder(triplet.IDtrade1);
+                GetOrderResponse ord1 = await BtrexREST.GetOrder(triplet.IDtrade1);
                 while (!ord1.success)
                 {
-                    ord1 = await btrexRESTClient.GetOrder(triplet.IDtrade1);
+                    ord1 = await BtrexREST.GetOrder(triplet.IDtrade1);
                 }
                 //Console.WriteLine(ord1.result.OrderUuid + "..." + ord1.result.IsOpen);
 
-                GetOrderResponse ord2 = await btrexRESTClient.GetOrder2(triplet.IDtrade2);
+                GetOrderResponse ord2 = await BtrexREST.GetOrder2(triplet.IDtrade2);
                 while (!ord2.success)
                 {
-                    ord2 = await btrexRESTClient.GetOrder(triplet.IDtrade2);
+                    ord2 = await BtrexREST.GetOrder(triplet.IDtrade2);
                 }
                 //Console.WriteLine(ord2.result.OrderUuid + "..." + ord2.result.IsOpen);
 
-                ord3 = await btrexRESTClient.GetOrder3(triplet.IDtrade3);
+                ord3 = await BtrexREST.GetOrder3(triplet.IDtrade3);
                 while (!ord3.success)
                 {
-                    ord3 = await btrexRESTClient.GetOrder(triplet.IDtrade3);
+                    ord3 = await BtrexREST.GetOrder(triplet.IDtrade3);
                 }
                 //Console.WriteLine(ord3.result.OrderUuid + "..." + ord3.result.IsOpen);
 
@@ -138,7 +136,7 @@ namespace BtrexTrader.Controller
                 {
                     Thread.Sleep(1000);
 
-                    OpenOrdersResponse orders = await btrexRESTClient.GetOpenOrders();
+                    OpenOrdersResponse orders = await BtrexREST.GetOpenOrders();
                     if (!orders.success)
                         Console.WriteLine("    !!!!ERR OPEN-ORDERS>> " + orders.message);
 
@@ -184,7 +182,7 @@ namespace BtrexTrader.Controller
                             }
 
                             Thread.Sleep(500);
-                            orders = await btrexRESTClient.GetOpenOrders();
+                            orders = await BtrexREST.GetOpenOrders();
                             if (!orders.success)
                                 Console.WriteLine("\r\n    !!!!ERR OPEN-ORDERS>> " + orders.message);
                         }
@@ -207,7 +205,7 @@ namespace BtrexTrader.Controller
                 //while (!balsChecked)
                 //{
                 //    balsChecked = true;
-                //    GetBalancesResponse bals = await btrexRESTClient.GetBalances();                    
+                //    GetBalancesResponse bals = await BtrexREST.GetBalances();                    
                 //    foreach (BalancesResult bal in bals.result)
                 //    {
                 //        if (bal.Available < bal.Balance)
@@ -219,13 +217,14 @@ namespace BtrexTrader.Controller
                 //    }
                 //}
 
-                //GetOrderResponse ord1 = await btrexRESTClient.GetOrder(triplet.IDtrade1);
+                //GetOrderResponse ord1 = await BtrexREST.GetOrder(triplet.IDtrade1);
                 //if (!ord1.success)
                 //    Console.WriteLine("    !!!!ERR GET-ORDER>> " + ord1.message);
-                //GetOrderResponse ord2 = await btrexRESTClient.GetOrder(triplet.IDtrade2);
+                //GetOrderResponse ord2 = await BtrexREST.GetOrder(triplet.IDtrade2);
                 //if (!ord2.success)
                 //    Console.WriteLine("    !!!!ERR GET-ORDER>> " + ord2.message);
-                ord3 = await btrexRESTClient.GetOrder(triplet.IDtrade3);
+            
+                ord3 = await BtrexREST.GetOrder(triplet.IDtrade3);
                 if (!ord3.success)
                     Console.WriteLine("    !!!!ERR GET-ORDER>> " + ord3.message);
 
@@ -234,7 +233,7 @@ namespace BtrexTrader.Controller
                 //Console.WriteLine("Trade3:\r\n\tQTY: {0}\r\n\tPPU: {1}\r\n\tID: {2}", ord3.result.Quantity, ord3.result.PricePerUnit, triplet.IDtrade3);
 
                 decimal profit = (ord3.result.Quantity * Convert.ToDecimal(ord3.result.PricePerUnit) - ord3.result.CommissionPaid) - 0.012M;
-                Console.WriteLine("PROFIT: {0:0.0#######}BTC(${1:0.00##})", profit, profit * btrexRESTClient.USDrate);
+                Console.WriteLine("PROFIT: {0:0.0#######}BTC(${1:0.00##})", profit, profit * BtrexREST.USDrate);
 
 
                 triplet.Ready();
@@ -250,8 +249,8 @@ namespace BtrexTrader.Controller
             if (watchOnly)
             {
                 TriCalcReturn RightResult = triplet.CalcRight(wager);
-                decimal LeftReturnUSD = LeftResult.BTCresult * btrexRESTClient.USDrate;
-                decimal RightReturnUSD = RightResult.BTCresult * btrexRESTClient.USDrate;
+                decimal LeftReturnUSD = LeftResult.BTCresult * BtrexREST.USDrate;
+                decimal RightReturnUSD = RightResult.BTCresult * BtrexREST.USDrate;
                 if (LeftReturnUSD > 0.02M)
                 {
                     if (triplet.tradingState == true)
@@ -290,7 +289,7 @@ namespace BtrexTrader.Controller
 
         public async Task<List<string>> GetTopMarkets()
         {
-            MarketSummary markets = await btrexRESTClient.GetMarketSummary();
+            MarketSummary markets = await BtrexREST.GetMarketSummary();
             Dictionary<string, decimal> topMarketsBTC = new Dictionary<string, decimal>();
             List<string> topMarketsETH = new List<string>();
             foreach (SummaryResult market in markets.result)
@@ -321,7 +320,7 @@ namespace BtrexTrader.Controller
 
         private static async Task<bool> MatchBottomAskUntilFilled(string orderID, string qtyORamt)
         {
-            GetOrderResponse order = await btrexRESTClient.GetOrder(orderID);
+            GetOrderResponse order = await BtrexREST.GetOrder(orderID);
             if (!order.success)
             {
                 Console.WriteLine("    !!!!ERR GET-ORDER: " + order.message);
@@ -330,7 +329,7 @@ namespace BtrexTrader.Controller
 
             while (order.result.IsOpen)
             {
-                TickerResponse tick = await btrexRESTClient.GetTicker(order.result.Exchange);
+                TickerResponse tick = await BtrexREST.GetTicker(order.result.Exchange);
                 if (!tick.success)
                 {
                     Console.WriteLine("    !!!!ERR TICKER2>> " + tick.message);
@@ -358,7 +357,7 @@ namespace BtrexTrader.Controller
                     }
 
                     //CANCEL EXISTING ORDER:
-                    LimitOrderResponse cancel = await btrexRESTClient.CancelLimitOrder(order.result.OrderUuid);
+                    LimitOrderResponse cancel = await BtrexREST.CancelLimitOrder(order.result.OrderUuid);
                     if (!cancel.success)
                     {
                         Console.WriteLine("    !!!!ERR CANCEL-MOVE>> " + cancel.message);
@@ -369,19 +368,19 @@ namespace BtrexTrader.Controller
 
                     //Kill time after cancel by checking bal to make sure its available:
                     string coin = order.result.Exchange.Split('-')[1];
-                    GetBalanceResponse bal = await btrexRESTClient.GetBalance(coin);
+                    GetBalanceResponse bal = await BtrexREST.GetBalance(coin);
                     if (!bal.success)
                         Console.WriteLine("    !!!!ERR GET-BALANCE>> " + bal.message);
                     while (bal.result.Available < newQty)
                     {
                         Thread.Sleep(150);
-                        bal = await btrexRESTClient.GetBalance(coin);
+                        bal = await BtrexREST.GetBalance(coin);
                         if (!bal.success)
                             Console.WriteLine("    !!!!ERR GET-BALANCE>> " + bal.message);
                     }
 
                     //Get recent tick again
-                    tick = await btrexRESTClient.GetTicker(order.result.Exchange);
+                    tick = await BtrexREST.GetTicker(order.result.Exchange);
                     if (!tick.success)
                     {
                         Console.WriteLine("    !!!!ERR TICKER3>> " + tick.message);
@@ -389,7 +388,7 @@ namespace BtrexTrader.Controller
                     }
 
                     //REPLACE ORDER AT NEW RATE/QTY:
-                    LimitOrderResponse newOrd = await btrexRESTClient.PlaceLimitOrder(order.result.Exchange, "sell", newQty, tick.result.Ask);
+                    LimitOrderResponse newOrd = await BtrexREST.PlaceLimitOrder(order.result.Exchange, "sell", newQty, tick.result.Ask);
                     if (!newOrd.success)
                     {
                         Console.WriteLine("    !!!!ERR SELL-REPLACE-MOVE>> " + newOrd.message);
@@ -404,7 +403,7 @@ namespace BtrexTrader.Controller
                 }
 
                 Thread.Sleep(1000);
-                order = await btrexRESTClient.GetOrder(orderID);
+                order = await BtrexREST.GetOrder(orderID);
                 if (!order.success)
                 {
                     Console.WriteLine("    !!!!ERR GET-ORDER2: " + order.message);
@@ -416,15 +415,17 @@ namespace BtrexTrader.Controller
 
         private static async Task<bool> MatchTopBidUntilFilled(string orderID, string qtyORamt)
         {
-            GetOrderResponse order = await btrexRESTClient.GetOrder(orderID);
+            GetOrderResponse order = await BtrexREST.GetOrder(orderID);
             if (!order.success)
             {
                 Console.WriteLine("    !!!!ERR GET-ORDER: " + order.message);
                 return false;
             }
+
+
             while (order.result.IsOpen)
             {
-                TickerResponse tick = await btrexRESTClient.GetTicker(order.result.Exchange);
+                TickerResponse tick = await BtrexREST.GetTicker(order.result.Exchange);
                 if (!tick.success)
                 {
                     Console.WriteLine("    !!!!ERR TICKER2>> " + tick.message);
@@ -436,7 +437,7 @@ namespace BtrexTrader.Controller
                     //CALC NEW QTY AT NEW RATE:
                     decimal newQty = 0;
                     if (qtyORamt == "amt")
-                        newQty = ((order.result.Limit * 1.0025M) * order.result.QuantityRemaining) / tick.result.Bid;
+                        newQty = ((order.result.Limit * 1.0025M) * order.result.QuantityRemaining) / (tick.result.Bid * 0.9975M);
                     else if (qtyORamt == "qty")
                         newQty = order.result.QuantityRemaining;
 
@@ -448,7 +449,7 @@ namespace BtrexTrader.Controller
                     }
 
                     //CANCEL EXISTING ORDER:
-                    LimitOrderResponse cancel = await btrexRESTClient.CancelLimitOrder(order.result.OrderUuid);
+                    LimitOrderResponse cancel = await BtrexREST.CancelLimitOrder(order.result.OrderUuid);
                     if (!cancel.success)
                     {
                         Console.WriteLine("    !!!!ERR CANCEL-MOVE>> " + cancel.message);
@@ -458,20 +459,20 @@ namespace BtrexTrader.Controller
                     //    Console.WriteLine("CANCELED");
 
                     //Kill time after cancel by checking bal to make sure its available:
-                    GetBalanceResponse bal = await btrexRESTClient.GetBalance("btc");
+                    GetBalanceResponse bal = await BtrexREST.GetBalance("btc");
                     if (!bal.success)
                         Console.WriteLine("    !!!!ERR GET-BALANCE>> " + bal.message);
                     while (bal.result.Available < (newQty * (tick.result.Bid * 1.0025M)))
                     {
                         Console.WriteLine("###BAL");
                         Thread.Sleep(150);
-                        bal = await btrexRESTClient.GetBalance("btc");
+                        bal = await BtrexREST.GetBalance("btc");
                         if (!bal.success)
                             Console.WriteLine("    !!!!ERR GET-BALANCE>> " + bal.message);
                     }
 
                     //Get recent tick again
-                    tick = await btrexRESTClient.GetTicker(order.result.Exchange);
+                    tick = await BtrexREST.GetTicker(order.result.Exchange);
                     if (!tick.success)
                     {
                         Console.WriteLine("    !!!!ERR TICKER3>> " + tick.message);
@@ -479,7 +480,7 @@ namespace BtrexTrader.Controller
                     }
 
                     //REPLACE ORDER AT NEW RATE/QTY:
-                    LimitOrderResponse newOrd = await btrexRESTClient.PlaceLimitOrder(order.result.Exchange, "buy", newQty, tick.result.Bid);
+                    LimitOrderResponse newOrd = await BtrexREST.PlaceLimitOrder(order.result.Exchange, "buy", newQty, tick.result.Bid);
                     if (!newOrd.success)
                     {
                         Console.WriteLine("    !!!!ERR REPLACE-MOVE>> " + newOrd.message);
@@ -493,7 +494,8 @@ namespace BtrexTrader.Controller
                 }
 
                 Thread.Sleep(1000);
-                order = await btrexRESTClient.GetOrder(orderID);
+
+                order = await BtrexREST.GetOrder(orderID);
                 if (!order.success)
                 {
                     Console.WriteLine("    !!!!ERR GET-ORDER2: " + order.message);
@@ -502,5 +504,7 @@ namespace BtrexTrader.Controller
             }
             return true;
         }
+
+
     }
 }
