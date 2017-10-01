@@ -261,4 +261,4 @@ __pycache__/
 *.pyc
 
 # app.config containing API Keys
-**/BtrexTrader/App.config
+/BtrexTrader/App.config
