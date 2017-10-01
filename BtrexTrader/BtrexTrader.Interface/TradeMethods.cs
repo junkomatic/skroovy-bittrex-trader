@@ -4,13 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BtrexTrader.TripletStrat
+namespace BtrexTrader.BtrexTrader.Interface
 {
-    class TripletTrader
+    class TradeMethods
     {
 
 
 
-        //fffff
+
     }
 }

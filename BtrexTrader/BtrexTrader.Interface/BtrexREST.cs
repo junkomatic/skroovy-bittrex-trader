@@ -8,7 +8,7 @@ using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Configuration;
 
-namespace BtrexTrader
+namespace BtrexTrader.Interface
 {
     public static class BtrexREST
     {

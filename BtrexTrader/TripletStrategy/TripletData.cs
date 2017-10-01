@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using BtrexTrader.Data;
 
-namespace BtrexTrader.TripletStrat
+namespace BtrexTrader.TripletStrategy
 {
     public class TripletData
     {

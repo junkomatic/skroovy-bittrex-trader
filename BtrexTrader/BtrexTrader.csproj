@@ -60,13 +60,14 @@
   <ItemGroup>
     <Compile Include="BtrexTrader.Data\BtrexData.cs" />
     <Compile Include="BtrexTrader.Control\BtrexController.cs" />
-    <Compile Include="BtrexTrader.Control\BtrexREST.cs" />
+    <Compile Include="BtrexTrader.Interface\BtrexREST.cs" />
     <Compile Include="BtrexTrader.Data\POCOclasses.cs" />
     <Compile Include="BtrexTrader.Data\OrderBook.cs" />
+    <Compile Include="BtrexTrader.Interface\TradeMethods.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TripletStrat\TripletData.cs" />
-    <Compile Include="TripletStrat\TripletTrader.cs" />
+    <Compile Include="TripletStrategy\TripletData.cs" />
+    <Compile Include="TripletStrategy\TripletTrader.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
