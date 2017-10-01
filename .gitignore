@@ -260,3 +260,5 @@ paket-files/
 __pycache__/
 *.pyc
 
+# app.config containing API Keys
+/App.config
