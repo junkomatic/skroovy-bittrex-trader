@@ -11,6 +11,6 @@ namespace BtrexTrader.TripletStrat
 
 
 
-
+        //fffff
     }
 }
