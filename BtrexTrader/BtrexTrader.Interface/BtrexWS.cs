@@ -20,6 +20,15 @@ namespace BtrexTrader.Interface
             marketQuery.MarketName = delta;
             BtrexData.OpenBook(marketQuery);
         }
+
+        public static async Task Connect()
+        {
+            //CREATE PROXY, REGISTER CALLBACKS, CONNECT TO HUB:
+            BtrexWS.btrexHubProxy = BtrexWS.hubConnection.CreateHubProxy("coreHub");
+            BtrexWS.btrexHubProxy.On<MarketDataUpdate>("updateExchangeState", update => BtrexData.UpdateQueue.Enqueue(update));
+            //btrexHubProxy.On<SummariesUpdate>("updateSummaryState", update => Console.WriteLine("FULL SUMMARY: "));
+            await hubConnection.Start();
+        }
     }
 
 }
