@@ -51,21 +51,21 @@ namespace BtrexTrader
 
 
             //TRIPLETS STUFF
-            if (BtrexRobot.TripletTrader.watchOnly)
-            {
-                List<string> topMarkets = await BtrexRobot.GetTopMarkets();
-                foreach (string mk in topMarkets)
-                {
-                    await SubTriplet(mk);
-                }
-            }
-            else
+ //           if (BtrexRobot.TripletTrader.watchOnly)
+//            {
+//                List<string> topMarkets = await BtrexRobot.GetTopMarkets();
+//                foreach (string mk in topMarkets)
+//                {
+//                    await SubTriplet(mk);
+//                }
+//            }
+//            else
             {
                 await SubTriplet("NEO");
-                await SubTriplet("QTUM");
-                await SubTriplet("OMG");
-                await SubTriplet("PAY");
-                await SubTriplet("PTOY");
+//                await SubTriplet("QTUM");
+//                await SubTriplet("OMG");
+//                await SubTriplet("PAY");
+//                await SubTriplet("PTOY");
             }
 
             
