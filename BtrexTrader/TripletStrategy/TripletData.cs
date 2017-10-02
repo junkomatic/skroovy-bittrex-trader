@@ -69,7 +69,7 @@ namespace BtrexTrader.TripletStrategy
             {
                 if (ALTamt <= bid.Value)
                 {
-                    ETHamt += (ALTamt * bid.Key) * (1 - tax);                  
+                    ETHamt += (ALTamt * bid.Key) * (1 - tax);
                     trades.Trades2.Add(bid.Key, ALTamt);
                     ALTamt = 0;
                     break;

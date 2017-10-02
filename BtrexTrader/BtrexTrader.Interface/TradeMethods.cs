@@ -9,6 +9,37 @@ namespace BtrexTrader.Interface
 {
     public class TradeMethods
     {
+        public async Task<List<string>> GetTopMarkets()
+        {
+            MarketSummary markets = await BtrexREST.GetMarketSummary();
+            Dictionary<string, decimal> topMarketsBTC = new Dictionary<string, decimal>();
+            List<string> topMarketsETH = new List<string>();
+            foreach (SummaryResult market in markets.result)
+            {
+                string mkbase = market.MarketName.Split('-')[0];
+                if (mkbase == "BTC")
+                {
+                    topMarketsBTC.Add(market.MarketName, market.BaseVolume);
+                }
+                else if (mkbase == "ETH")
+                {
+                    topMarketsETH.Add(market.MarketName.Split('-')[1]);
+                }
+            }
+
+            List<string> mks = new List<string>();
+            foreach (KeyValuePair<string, decimal> mk in topMarketsBTC.OrderByDescending(x => x.Value).Take(20))
+            {
+                string coin = mk.Key.Split('-')[1];
+                if (topMarketsETH.Contains(coin))
+                    mks.Add(coin);
+            }
+
+            Console.WriteLine("Markets: {0}", mks.Count);
+            return mks;
+        }
+
+
         public async Task<bool> MatchBottomAskUntilFilled(string orderID, string qtyORamt)
         {
             GetOrderResponse order = await BtrexREST.GetOrder(orderID);

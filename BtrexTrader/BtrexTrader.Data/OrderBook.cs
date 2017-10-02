@@ -51,7 +51,7 @@ namespace BtrexTrader.Data
                     }
                 }
             }
-            
+
             if (update.Sells.Count > 0)
             {
                 foreach (mdSell ask in update.Sells)
@@ -90,7 +90,7 @@ namespace BtrexTrader.Data
                 while (!added)
                 {
                     added = Bids.TryAdd(bid.Rate, bid.Quantity);
-                }              
+                }
             }
         }
 

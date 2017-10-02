@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using BtrexTrader.Interface;
+using BtrexTrader.Data;
 
 namespace BtrexTrader.TripletStrategy
 {
@@ -18,7 +19,36 @@ namespace BtrexTrader.TripletStrategy
         private bool SingleTradeReady = true;
         private int rots = 0;
 
+        public static List<TripletData> DeltaTrips = new List<TripletData>();
 
+        public async Task Initialize()
+        {
+            //SUBSCRIBE TO MARKET DELTAS TO TRACK ORDERBOOKS & TRADE EVENTS
+            await BtrexWS.subscribeOB("BTC-ETH");
+
+            //DO TRIPLETS STUFF
+            if (watchOnly)
+            {
+                //FOR "watchOnly", TAKE TOP 20 MARKETS, 
+                //SUBTRACT MARKETS THAT DONT HAVE ETH DELTAS,
+                //and CalcTrips() will report only.
+                Console.WriteLine("*WATCH ONLY*");
+                List<string> topMarkets = await BtrexREST.TradeMethods.GetTopMarkets();
+                foreach (string mk in topMarkets)
+                {
+                    await SubTriplet(mk);
+                }
+            }
+            else
+            {
+                //OTHERWISE, SELECT SPECIFIC MARKETS TO LIVE TRADE ON:
+                await SubTriplet("NEO");
+                await SubTriplet("QTUM");
+                await SubTriplet("OMG");
+                await SubTriplet("ADX");
+                await SubTriplet("DGB");
+            }
+        }
 
         public async void CalcTrips(TripletData triplet)
         {
@@ -205,7 +235,7 @@ namespace BtrexTrader.TripletStrategy
                 //Console.WriteLine("Trade3:\r\n\tQTY: {0}\r\n\tPPU: {1}\r\n\tID: {2}", ord3.result.Quantity, ord3.result.PricePerUnit, triplet.IDtrade3);
 
                 decimal profit = (ord3.result.Quantity * Convert.ToDecimal(ord3.result.PricePerUnit) - ord3.result.CommissionPaid) - 0.012M;
-                Console.WriteLine("PROFIT: {0:0.0#######}BTC(${1:0.00##})", profit, profit * BtrexREST.USDrate);
+                Console.WriteLine("PROFIT: {0:0.0#######}BTC(${1:0.00##})", profit, profit * BtrexData.USDrate);
 
 
                 triplet.Ready();
@@ -217,23 +247,62 @@ namespace BtrexTrader.TripletStrategy
             //    //REPORTING ONLY
             if (watchOnly)
             {
-                TriCalcReturn RightResult = triplet.CalcRight(wager);
-                decimal LeftReturnUSD = LeftResult.BTCresult * BtrexREST.USDrate;
-                decimal RightReturnUSD = RightResult.BTCresult * BtrexREST.USDrate;
-                if (LeftReturnUSD > 0.005M)
+                //TriCalcReturn RightResult = triplet.CalcRight(wager);
+                decimal LeftReturnUSD = LeftResult.BTCresult * BtrexData.USDrate;
+                //decimal RightReturnUSD = RightResult.BTCresult * BtrexREST.USDrate;
+                if (LeftReturnUSD > 0.00M)
                 {
-                    if (triplet.tradingState == true)
-                        return;
+                    //if (triplet.tradingState == true)
+                    //    return;
                     string ALT = triplet.BTCdelta.MarketDelta.Substring(4);
                     Console.WriteLine("{0} :: [{1}]  ===  ${2:0.00###} -L-", DateTime.Now, ALT, LeftReturnUSD);
                 }
-                if (RightReturnUSD > 0.005M)
+                //if (RightReturnUSD > 0.00M)
+                //{
+                //    if (triplet.tradingState == true)
+                //        return;
+                //    string ALT = triplet.BTCdelta.MarketDelta.Substring(4);
+                //    Console.WriteLine("{0} :: [{1}]  ===  ${2:0.00###} -R-", DateTime.Now, ALT, RightReturnUSD);
+                //}
+            }
+        }
+
+
+        private async static Task SubTriplet(string COIN)
+        {
+            string BTCdelta = "BTC-" + COIN;
+            string ETHdelta = "ETH-" + COIN;
+            await Task.WhenAll(BtrexWS.subscribeOB(BTCdelta), BtrexWS.subscribeOB(ETHdelta));
+            AddTripletDeltas(BTCdelta, ETHdelta);
+        }
+
+
+        public static void AddTripletDeltas(string BTCdelta, string ETHdelta)
+        {
+            OrderBook BTCbk = null;
+            OrderBook ETHbk = null;
+            OrderBook B2Ebk = (OrderBook)BtrexData.Books[0].Clone();
+
+            foreach (OrderBook book in BtrexData.Books)
+            {
+                if (BTCbk == null && book.MarketDelta == BTCdelta)
                 {
-                    if (triplet.tradingState == true)
-                        return;
-                    string ALT = triplet.BTCdelta.MarketDelta.Substring(4);
-                    Console.WriteLine("{0} :: [{1}]  ===  ${2:0.00###} -R-", DateTime.Now, ALT, RightReturnUSD);
+                    BTCbk = (OrderBook)book.Clone();
                 }
+                else if (ETHbk == null && book.MarketDelta == ETHdelta)
+                {
+                    ETHbk = (OrderBook)book.Clone();
+                }
+                if (BTCbk != null && ETHbk != null)
+                {
+                    DeltaTrips.Add(new TripletData(BTCbk, ETHbk, B2Ebk));
+                    Console.WriteLine("###TRIPLET ADDED: [{0}]", BTCdelta.Substring(4));
+                    break;
+                }
+            }
+            if (BTCbk == null || ETHbk == null)
+            {
+                Console.WriteLine("    !!!!ERR>> DOUBLET-CLONES NOT SET!");
             }
         }
 

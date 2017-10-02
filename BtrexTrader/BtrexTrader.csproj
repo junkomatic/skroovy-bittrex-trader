@@ -63,6 +63,7 @@
     <Compile Include="BtrexTrader.Interface\BtrexREST.cs" />
     <Compile Include="BtrexTrader.Data\POCOclasses.cs" />
     <Compile Include="BtrexTrader.Data\OrderBook.cs" />
+    <Compile Include="BtrexTrader.Interface\BtrexWS.cs" />
     <Compile Include="BtrexTrader.Interface\TradeMethods.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

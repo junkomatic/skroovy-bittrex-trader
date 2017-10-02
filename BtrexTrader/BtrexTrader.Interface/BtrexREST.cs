@@ -28,7 +28,7 @@ namespace BtrexTrader.Interface
             BaseAddress = new Uri("https://bittrex.com/api/v1.1/"),
         };
 
-        public static decimal USDrate;
+
 
         //public BtrexREST()
         //{
@@ -37,10 +37,10 @@ namespace BtrexTrader.Interface
         //    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         //}
 
-        public static async Task setUSD()
+        public static async Task<decimal> getUSD()
         {
             decimal rate = await GetCBsellPrice();
-            USDrate = rate;
+            return rate;
         }
 
         public static async Task<TickerResponse> GetTicker(string delta)
