@@ -7,20 +7,20 @@ using Microsoft.AspNet.SignalR.Client;
 using Newtonsoft.Json;
 using System.Threading;
 using BtrexTrader.Control;
-using BtrexTrader.Interface;
-using BtrexTrader.Data;
 
 namespace BtrexTrader
 {
     class Program
     {
-        private static BtrexTradeController BtrexController = new BtrexTradeController();
+        
+        private static BtrexTradeController BtrexRobot = new BtrexTradeController();
+
 
         static void Main(string[] args)
         {
             //UNCOMMENT TO SHOW SIGNALR-WEBSOCKET DEBUG:
-            //BtrexWS.hubConnection.TraceLevel = TraceLevels.All;
-            //BtrexWS.hubConnection.TraceWriter = Console.Out;
+            //hubConnection.TraceLevel = TraceLevels.All;
+            //hubConnection.TraceWriter = Console.Out;
 
 
             //while (true)
@@ -30,7 +30,7 @@ namespace BtrexTrader
                     RunAsync().Wait();
                 }
                 catch (Exception e)
-                {
+                {                                     
                     Console.Write("\r\n\r\n!!!!TOP LVL ERR>> " + e.InnerException.Message);
                     //Thread.Sleep(5000);
                 }
@@ -39,22 +39,66 @@ namespace BtrexTrader
 
         static async Task RunAsync()
         {
-            //START DATA-UPDATE THREAD
-            BtrexData.StartData();
-
-            //CREATE PROXY, REGISTER CALLBACKS, CONNECT TO HUB:
+            //CREATE hubProxy, REGISTER CALLBACKS, CONNECT TO HUB:
             BtrexWS.btrexHubProxy = BtrexWS.hubConnection.CreateHubProxy("coreHub");
-            BtrexWS.btrexHubProxy.On<MarketDataUpdate>("updateExchangeState", update => BtrexData.UpdateQueue.Enqueue(update));
+            BtrexWS.btrexHubProxy.On<MarketDataUpdate>("updateExchangeState", update => BtrexRobot.UpdateEnqueue(update));
             //btrexHubProxy.On<SummariesUpdate>("updateSummaryState", update => Console.WriteLine("FULL SUMMARY: "));
             await BtrexWS.hubConnection.Start();
 
-            BtrexController.StartWork();
+
+            //SUBSCRIBE TO MARKET DELTAS TO TRACK ORDERBOOKS & TRADE EVENTS
+            await subscribeOB("BTC-ETH");
 
 
-            Console.ReadLine();
+            //TRIPLETS STUFF
+ //           if (BtrexRobot.TripletTrader.watchOnly)
+//            {
+//                List<string> topMarkets = await BtrexRobot.GetTopMarkets();
+//                foreach (string mk in topMarkets)
+//                {
+//                    await SubTriplet(mk);
+//                }
+//            }
+//            else
+            {
+                await SubTriplet("NEO");
+//                await SubTriplet("QTUM");
+//                await SubTriplet("OMG");
+//                await SubTriplet("PAY");
+//                await SubTriplet("PTOY");
+            }
+
+            
+
             Console.ReadLine();
             Console.ReadLine();
         }
+
+        
+
+        private async static Task subscribeOB(string delta)
+        {
+            await BtrexWS.btrexHubProxy.Invoke("SubscribeToExchangeDeltas", delta);
+            MarketQueryResponse marketQuery = BtrexWS.btrexHubProxy.Invoke<MarketQueryResponse>("QueryExchangeState", delta).Result;
+            marketQuery.MarketName = delta;
+            BtrexRobot.OpenBook(marketQuery);
+        }
+
+        private async static Task SubTriplet(string COIN)
+        {
+            string BTCdelta = "BTC-" + COIN;
+            string ETHdelta = "ETH-" + COIN;
+            await Task.WhenAll(subscribeOB(BTCdelta), subscribeOB(ETHdelta));
+            BtrexRobot.AddDoublet(BTCdelta, ETHdelta);
+        }
+
     }
+
+    public static class BtrexWS
+    {
+        public readonly static HubConnection hubConnection = new HubConnection("https://socket.bittrex.com/");
+        public static IHubProxy btrexHubProxy;
+    }
+
 
 }
