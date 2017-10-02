@@ -6,7 +6,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using BtrexTrader.Interface;
-using BtrexTrader.TripletStrategy;
 
 namespace BtrexTrader.Data
 {
