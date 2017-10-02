@@ -51,7 +51,7 @@ namespace BtrexTrader
 
 
             //TRIPLETS STUFF
-            if (BtrexRobot.watchOnly)
+            if (BtrexRobot.TripletTrader.watchOnly)
             {
                 List<string> topMarkets = await BtrexRobot.GetTopMarkets();
                 foreach (string mk in topMarkets)

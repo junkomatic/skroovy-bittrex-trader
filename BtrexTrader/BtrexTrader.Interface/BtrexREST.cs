@@ -21,6 +21,8 @@ namespace BtrexTrader.Interface
         private readonly static string API_KEY3 = ConfigurationManager.AppSettings["API_KEY3"];
         private readonly static string SECRET_KEY3 = ConfigurationManager.AppSettings["SECRET_KEY3"];
 
+        public static TradeMethods TradeMethods = new TradeMethods();
+
         private static HttpClient client = new HttpClient()
         {
             BaseAddress = new Uri("https://bittrex.com/api/v1.1/"),
