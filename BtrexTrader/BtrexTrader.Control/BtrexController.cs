@@ -9,7 +9,6 @@ using System.Diagnostics;
 using BtrexTrader.Interface;
 using BtrexTrader.TripletStrategy;
 
-
 namespace BtrexTrader.Control
 {
     class BtrexTradeController
