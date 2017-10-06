@@ -31,6 +31,11 @@ namespace BtrexTrader.Data
         }
 
 
+        public static void UpdateHistData()
+        {
+
+        }
+
 
         public static void ProcessQueue()
         {
