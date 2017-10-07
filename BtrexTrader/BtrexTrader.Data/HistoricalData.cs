@@ -206,21 +206,45 @@ namespace BtrexTrader.Data
                         tableNames.Add(r["name"].ToString());
                     }
 
-                    DataTable dt = new DataTable();
+                    Directory.CreateDirectory("BtrexCSV");
+                    
                     foreach (string tName in tableNames)
                     {
-                        var sqlAdapter = new SQLiteDataAdapter("SELECT * from " + tName, conn);
-                        sqlAdapter.Fill(dt);
+                        DataTable dt = new DataTable();
+                        using (var sqlAdapter = new SQLiteDataAdapter("SELECT * from " + tName, conn))
+                            sqlAdapter.Fill(dt);
 
-                        if (!File.Exists("BtrexCSV/" + tName + ".csv"))
+                        string path = @"BtrexCSV\" + tName + ".csv";
+                        using (StreamWriter writer = new StreamWriter(path))
                         {
-
+                            if (!File.Exists(path))
+                                GenerateNewCSV(dt, writer);
+                            else
+                                UpdateExistingCSV(dt, writer);
                         }
-                        
                     }
-
                 }
             }
         }
+
+
+        private void GenerateNewCSV(DataTable table, TextWriter writer)
+        {
+            IEnumerable<string> colHeadings = table.Columns.OfType<DataColumn>().Select(col => col.ColumnName);
+            writer.WriteLine(string.Join(",", colHeadings));
+
+            IEnumerable<string> items = null;
+            foreach (DataRow row in table.Rows)
+                writer.WriteLine(string.Join(",", items));
+
+            writer.Flush();
+        }
+
+
+        private void UpdateExistingCSV(DataTable table, TextWriter writer)
+        {
+
+        }
+
     }
 }
