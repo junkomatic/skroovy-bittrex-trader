@@ -78,14 +78,42 @@ namespace BtrexTrader.Interface
             return summary;
         }
 
-        public static async Task<MarketHistoryResponse> GetMarketHistory(string delta)
-        {
-            MarketHistoryResponse marketHistory = null;
-            HttpResponseMessage response = await client.GetAsync("");
-            if (response.IsSuccessStatusCode)
-                marketHistory = await response.Content.ReadAsAsync<MarketHistoryResponse>();
+        //public static async Task<MarketHistoryResponse> GetMarketHistory(string delta)
+        //{
+        //    MarketHistoryResponse marketHistory = null;
+        //    HttpResponseMessage response = await client.GetAsync("");
+        //    if (response.IsSuccessStatusCode)
+        //        marketHistory = await response.Content.ReadAsAsync<MarketHistoryResponse>();
 
-            return marketHistory;
+        //    return marketHistory;
+        //}
+
+        public static async Task<HistDataResponse> GetMarketHistoryV2(string delta)
+        {
+            HttpRequestMessage mesg = new HttpRequestMessage()
+            {
+                RequestUri = new Uri("https://bittrex.com/Api/v2.0/pub/market/GetTicks?marketName="+ delta +"&tickInterval=fiveMin", UriKind.Absolute),
+                Method = HttpMethod.Get
+            };
+
+            HistDataResponse history = null;
+            HttpResponseMessage response = await client.SendAsync(mesg);
+            if (response.IsSuccessStatusCode)
+                history = await response.Content.ReadAsAsync<HistDataResponse>();
+            else if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
+            {
+                do
+                {
+                    response = await client.SendAsync(mesg);
+                }
+                while (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable);
+            }
+            else
+                Console.WriteLine("FAIL:  " + response.ReasonPhrase);
+
+            history.MarketDelta = delta.Replace('-', '_');
+
+            return history;
         }
 
         public static async Task<LimitOrderResponse> PlaceLimitOrder(string delta, string buyORsell, decimal qty, decimal rate)

@@ -185,6 +185,7 @@
   <ItemGroup>
     <Compile Include="BtrexTrader.Data\BtrexData.cs" />
     <Compile Include="BtrexTrader.Control\BtrexController.cs" />
+    <Compile Include="BtrexTrader.Data\HistoricalData.cs" />
     <Compile Include="BtrexTrader.Interface\BtrexREST.cs" />
     <Compile Include="BtrexTrader.Data\POCOclasses.cs" />
     <Compile Include="BtrexTrader.Data\OrderBook.cs" />

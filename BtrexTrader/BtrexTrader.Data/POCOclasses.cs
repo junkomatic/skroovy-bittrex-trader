@@ -291,6 +291,22 @@ namespace BtrexTrader
         public string currency { get; set; }
     }
 
-
+    public class HistDataResponse
+    {
+        public bool success { get; set; }
+        public string message { get; set; }
+        public List<HistDataLine> result { get; set; }
+        public string MarketDelta { get; set; }
+    }
+    public class HistDataLine
+    {
+        public decimal O { get; set; }
+        public decimal H { get; set; }
+        public decimal L { get; set; }
+        public decimal C { get; set; }
+        public decimal V { get; set; }
+        public DateTime T { get; set; }
+        public decimal BV { get; set; }
+    }
 
 }

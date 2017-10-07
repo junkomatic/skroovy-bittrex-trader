@@ -30,6 +30,7 @@ namespace BtrexTrader
                 catch (Exception e)
                 {
                     Console.Write("\r\n\r\n!!!!TOP LVL ERR>> " + e.InnerException.Message);
+                    Console.ReadLine();
                     //Thread.Sleep(5000);
                 }
             }
@@ -37,11 +38,13 @@ namespace BtrexTrader
 
         static async Task RunAsync()
         {
-            BtrexData.StartData();
-            await BtrexWS.Connect();
-            BtrexController.StartWork();
+            await BtrexData.UpdateHistData();
 
+            //BtrexData.StartData();
+            //await BtrexWS.Connect();
+            //BtrexController.StartWork();
 
+            Console.WriteLine("\r\n\r\n-PRESS ENTER 3 TIMES TO EXIT-");
             Console.ReadLine();
             Console.ReadLine();
             Console.ReadLine();
