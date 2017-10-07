@@ -33,7 +33,8 @@ namespace BtrexTrader.Data
 
         public static async Task UpdateHistData()
         {
-            await new HistoricalData().UpdateHistData();
+            //await new HistoricalData().UpdateHistData();
+            new HistoricalData().UpdateOrCreateCSVs();
         }
 
 

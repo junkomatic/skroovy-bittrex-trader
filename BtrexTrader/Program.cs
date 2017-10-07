@@ -39,6 +39,8 @@ namespace BtrexTrader
         static async Task RunAsync()
         {
             await BtrexData.UpdateHistData();
+            
+
 
             //BtrexData.StartData();
             //await BtrexWS.Connect();

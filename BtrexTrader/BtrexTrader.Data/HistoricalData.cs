@@ -2,20 +2,22 @@
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Linq;
-using System.Text;
+using System.Data;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Data.SQLite;
 using BtrexTrader.Interface;
+
 
 namespace BtrexTrader.Data
 {
     public class HistoricalData
     {
         private static ConcurrentQueue<HistDataResponse> DataQueue = new ConcurrentQueue<HistDataResponse>();
-        private int totalCount = 0;
-        private int downloaded = 0;
-        private int saved = 0;
+        private int downloaded = 0,
+                    saved = 0,
+                    totalCount = 0;
         private bool savedComplete = false;
         private const string dbName = "MarketHistory.data";
 
@@ -29,7 +31,7 @@ namespace BtrexTrader.Data
             SQLthread.IsBackground = true;
             SQLthread.Name = "Saving-Market-Histories";
             SQLthread.Start();
-            
+
 
             //Call list of available markets from Btrex:
             GetMarketsResponse markets = await BtrexREST.GetMarkets();
@@ -96,7 +98,7 @@ namespace BtrexTrader.Data
                             {
                                 Thread.Sleep(100);
                             }
-          
+
                             bool DQed = DataQueue.TryDequeue(out HistDataResponse history);
                             if (DQed)
                             {
@@ -123,11 +125,11 @@ namespace BtrexTrader.Data
         {
             cmd.CommandText = string.Format("CREATE TABLE IF NOT EXISTS {0} (DateTime TEXT, Open TEXT, Close REAL, Low REAL, High REAL, Volume REAL, BaseVolume REAL)", data.MarketDelta);
             cmd.ExecuteNonQuery();
-                    
+
             foreach (HistDataLine line in data.result)
             {
                 EnterSQLiteRow(line, cmd, data.MarketDelta);
-            }           
+            }
 
             saved++;
             Console.Write("\rSAVED: {0}/{1}", saved, totalCount);
@@ -145,11 +147,11 @@ namespace BtrexTrader.Data
             }
 
             cmd.CommandText = string.Format("SELECT * FROM {0} ORDER BY datetime(DateTime) DESC Limit 1", data.MarketDelta);
-            DateTime dt = Convert.ToDateTime(cmd.ExecuteScalar());            
+            DateTime dt = Convert.ToDateTime(cmd.ExecuteScalar());
 
             foreach (HistDataLine line in data.result)
             {
-                if (line.T >= dt)                
+                if (line.T >= dt)
                     continue;
                 else
                 {
@@ -175,7 +177,7 @@ namespace BtrexTrader.Data
 
         private bool checkNewDB()
         {
-            if (!System.IO.File.Exists(dbName))
+            if (!File.Exists(dbName))
             {
                 Console.WriteLine("LOCAL DATA FILE NOT FOUND - CREATING NEW '{0}' FILE...", dbName);
                 SQLiteConnection.CreateFile(dbName);
@@ -187,7 +189,38 @@ namespace BtrexTrader.Data
                 return false;
             }
         }
-        
 
+
+        public void UpdateOrCreateCSVs()
+        {
+            using (SQLiteConnection conn = new SQLiteConnection("Data Source=" + dbName + ";Version=3;"))
+            {
+                conn.Open();
+                using (var cmd = new SQLiteCommand(conn))
+                {
+                    List<string> tableNames = new List<string>();
+                    cmd.CommandText = "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY 1";
+                    SQLiteDataReader r = cmd.ExecuteReader();
+                    while (r.Read())
+                    {
+                        tableNames.Add(r["name"].ToString());
+                    }
+
+                    DataTable dt = new DataTable();
+                    foreach (string tName in tableNames)
+                    {
+                        var sqlAdapter = new SQLiteDataAdapter("SELECT * from " + tName, conn);
+                        sqlAdapter.Fill(dt);
+
+                        if (!File.Exists("BtrexCSV/" + tName + ".csv"))
+                        {
+
+                        }
+                        
+                    }
+
+                }
+            }
+        }
     }
 }
