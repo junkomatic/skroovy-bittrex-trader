@@ -63,6 +63,9 @@ namespace BtrexTrader.Data
             SQLthread.Abort();
             Console.WriteLine();
 
+            Console.WriteLine("Updating CSVs - Just a moment...");
+            UpdateOrCreateCSVs();
+
         }
 
 
@@ -105,9 +108,7 @@ namespace BtrexTrader.Data
                                 if (newDB)
                                     CreateNewDataTable(history, cmd);
                                 else
-                                {
                                     UpdateDataTable(history, cmd);
-                                }
                             }
 
                         }
@@ -123,7 +124,7 @@ namespace BtrexTrader.Data
 
         private void CreateNewDataTable(HistDataResponse data, SQLiteCommand cmd)
         {
-            cmd.CommandText = string.Format("CREATE TABLE IF NOT EXISTS {0} (DateTime TEXT, Open TEXT, Close REAL, Low REAL, High REAL, Volume REAL, BaseVolume REAL)", data.MarketDelta);
+            cmd.CommandText = string.Format("CREATE TABLE IF NOT EXISTS {0} (DateTime TEXT, Open TEXT, Close TEXT, Low TEXT, High TEXT, Volume TEXT)", data.MarketDelta);
             cmd.ExecuteNonQuery();
 
             foreach (HistDataLine line in data.result)
@@ -132,7 +133,7 @@ namespace BtrexTrader.Data
             }
 
             saved++;
-            Console.Write("\rSAVED: {0}/{1}", saved, totalCount);
+            Console.Write("\rSAVING: {0}/{1}", saved, totalCount);
         }
 
 
@@ -151,25 +152,27 @@ namespace BtrexTrader.Data
 
             foreach (HistDataLine line in data.result)
             {
-                if (line.T >= dt)
+                if (line.T <= dt)
+                {
                     continue;
+                }
                 else
                 {
                     EnterSQLiteRow(line, cmd, data.MarketDelta);
                 }
             }
             saved++;
-            Console.Write("\rSAVED: {0}/{1}", saved, totalCount);
+            Console.Write("\rSAVING: {0}/{1}", saved, totalCount);
         }
 
 
         private void EnterSQLiteRow(HistDataLine line, SQLiteCommand cmd, string delta)
         {
             cmd.CommandText = string.Format(
-                                    "INSERT INTO {0} (DateTime, Open, High, Low, Close, Volume, BaseVolume) "
-                                    + "VALUES ('{1}', '{2}', '{3}', '{4}', '{5}', '{6}', '{7}')",
+                                    "INSERT INTO {0} (DateTime, Open, High, Low, Close, Volume) "
+                                    + "VALUES ('{1}', '{2}', '{3}', '{4}', '{5}', '{6}')",
                                     delta,
-                                    line.T, line.O, line.H, line.L, line.C, line.V, line.BV);
+                                    line.T.ToString("yyyy-MM-dd HH:mm:ss"), line.O, line.H, line.L, line.C, line.V);
 
             cmd.ExecuteNonQuery();
         }
@@ -179,15 +182,12 @@ namespace BtrexTrader.Data
         {
             if (!File.Exists(dbName))
             {
-                Console.WriteLine("LOCAL DATA FILE NOT FOUND - CREATING NEW '{0}' FILE...", dbName);
+                Console.WriteLine("LOCAL DATA FILE NOT FOUND\r\nCREATING NEW '{0}' FILE...", dbName);
                 SQLiteConnection.CreateFile(dbName);
                 return true;
             }
             else
-            {
-                Console.WriteLine("DATA FOUND");
                 return false;
-            }
         }
 
 
@@ -206,7 +206,7 @@ namespace BtrexTrader.Data
                         tableNames.Add(r["name"].ToString());
                     }
 
-                    Directory.CreateDirectory("BtrexCSV");
+                    Directory.CreateDirectory("BtrexCSVs");
                     
                     foreach (string tName in tableNames)
                     {
@@ -214,13 +214,15 @@ namespace BtrexTrader.Data
                         using (var sqlAdapter = new SQLiteDataAdapter("SELECT * from " + tName, conn))
                             sqlAdapter.Fill(dt);
 
-                        string path = @"BtrexCSV\" + tName + ".csv";
-                        using (StreamWriter writer = new StreamWriter(path))
+                        string path = @"BtrexCSVs\" + tName + ".csv";
+
+                        if (!File.Exists(path))
                         {
-                            if (!File.Exists(path))
-                                GenerateNewCSV(dt, writer);
-                            else
-                                UpdateExistingCSV(dt, writer);
+                           GenerateNewCSV(dt, path);                            
+                        }
+                        else
+                        {
+                            UpdateExistingCSV(dt, path);                            
                         }
                     }
                 }
@@ -228,22 +230,36 @@ namespace BtrexTrader.Data
         }
 
 
-        private void GenerateNewCSV(DataTable table, TextWriter writer)
+        private void GenerateNewCSV(DataTable table, string path)
         {
             IEnumerable<string> colHeadings = table.Columns.OfType<DataColumn>().Select(col => col.ColumnName);
-            writer.WriteLine(string.Join(",", colHeadings));
+            using (StreamWriter writer = File.AppendText(path))
+            {
+                writer.WriteLine(string.Join(",", colHeadings));
 
-            IEnumerable<string> items = null;
-            foreach (DataRow row in table.Rows)
-                writer.WriteLine(string.Join(",", items));
-
-            writer.Flush();
+                foreach (DataRow row in table.Rows)
+                    writer.WriteLine(string.Join(",", row.ItemArray));
+            }
         }
 
 
-        private void UpdateExistingCSV(DataTable table, TextWriter writer)
+        private void UpdateExistingCSV(DataTable table, string path)
         {
+            DateTime lastDateTime = Convert.ToDateTime(File.ReadLines(path).Last().Split(',')[0]);
+            using (StreamWriter writer = File.AppendText(path))
+            {
+                foreach (DataRow row in table.Rows)
+                {
+                    DateTime rowTime = Convert.ToDateTime(row.ItemArray[0]);
+                    //Console.WriteLine(rowTime + " : " + lastDateTime);
+                    //Console.ReadLine();
 
+                    if (rowTime <= lastDateTime)
+                        continue;
+                    else
+                        writer.WriteLine(string.Join(",", row.ItemArray));
+                }
+            }            
         }
 
     }

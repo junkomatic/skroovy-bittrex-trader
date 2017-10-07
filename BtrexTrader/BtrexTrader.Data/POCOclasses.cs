@@ -306,7 +306,6 @@ namespace BtrexTrader
         public decimal C { get; set; }
         public decimal V { get; set; }
         public DateTime T { get; set; }
-        public decimal BV { get; set; }
     }
 
 }

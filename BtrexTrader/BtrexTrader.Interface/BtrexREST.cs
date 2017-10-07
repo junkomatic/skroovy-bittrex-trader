@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -104,6 +105,7 @@ namespace BtrexTrader.Interface
             {
                 do
                 {
+                    Thread.Sleep(50);
                     response = await client.SendAsync(mesg);
                 }
                 while (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable);
