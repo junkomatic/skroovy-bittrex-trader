@@ -29,15 +29,6 @@ namespace BtrexTrader.Interface
             BaseAddress = new Uri("https://bittrex.com/api/v1.1/"),
         };
 
-
-
-        //public BtrexREST()
-        //{
-        //    client.BaseAddress = new Uri("https://bittrex.com/api/v1.1/");
-        //    client.DefaultRequestHeaders.Accept.Clear();
-        //    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        //}
-
         public static async Task<decimal> getUSD()
         {
             decimal rate = await GetCBsellPrice();
@@ -107,8 +98,7 @@ namespace BtrexTrader.Interface
                 {
                     Thread.Sleep(50);
                     response = await client.SendAsync(mesg);
-                }
-                while (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable);
+                } while (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable);
             }
             else
                 Console.WriteLine("FAIL:  " + response.ReasonPhrase);

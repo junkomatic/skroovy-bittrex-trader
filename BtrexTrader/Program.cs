@@ -16,11 +16,7 @@ namespace BtrexTrader
 
         static void Main(string[] args)
         {
-            //UNCOMMENT TO SHOW SIGNALR-WEBSOCKET DEBUG:
-            //BtrexWS.hubConnection.TraceLevel = TraceLevels.All;
-            //BtrexWS.hubConnection.TraceWriter = Console.Out;
-
-
+            
             //while (true)
             {
                 try

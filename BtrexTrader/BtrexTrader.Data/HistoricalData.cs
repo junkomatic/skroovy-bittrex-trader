@@ -15,7 +15,7 @@ namespace BtrexTrader.Data
     public class HistoricalData
     {
         private static ConcurrentQueue<HistDataResponse> DataQueue = new ConcurrentQueue<HistDataResponse>();
-        private int downloaded = 0,
+        private int //downloaded = 0,
                     saved = 0,
                     totalCount = 0;
         private bool savedComplete = false;
@@ -47,25 +47,31 @@ namespace BtrexTrader.Data
             foreach (GetMarketsResult market in markets.result)
             {
                 if (market.MarketName.Split('-')[0] == "BTC")
-                {
                     BTCmarketDeltas.Add(market.MarketName);
-                }
             }
 
             totalCount = BTCmarketDeltas.Count;
 
+            //Download all histories, enqueue responses:
             var downloadHists = BTCmarketDeltas.Select(EnqueueData).ToArray();
             await Task.WhenAll(downloadHists);
 
+            //Wait for Save-Data thread to complete:
             while (!savedComplete)
                 Thread.Sleep(100);
 
             SQLthread.Abort();
             Console.WriteLine();
 
+            //Update CSV files:
             Console.WriteLine("Updating CSVs - Just a moment...");
             UpdateOrCreateCSVs();
 
+            //Garbage Collection to clean up SQLiteConnection
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+
+            Console.WriteLine("DONE");
         }
 
 
@@ -77,10 +83,9 @@ namespace BtrexTrader.Data
                 Console.WriteLine("    !!!!ERR GET-HISTORY>>> " + histData.message);
                 return;
             }
-            downloaded++;
+            //downloaded++;
 
             DataQueue.Enqueue(histData);
-            //Console.Write("\rMarkets Downloaded: {0}/{1}/{2}", downloaded, saved, totalCount);
         }
 
 
@@ -98,9 +103,7 @@ namespace BtrexTrader.Data
                         do
                         {
                             while (DataQueue.IsEmpty)
-                            {
                                 Thread.Sleep(100);
-                            }
 
                             bool DQed = DataQueue.TryDequeue(out HistDataResponse history);
                             if (DQed)
@@ -111,8 +114,8 @@ namespace BtrexTrader.Data
                                     UpdateDataTable(history, cmd);
                             }
 
-                        }
-                        while (saved < totalCount);
+                        } while (saved < totalCount);
+
                         tx.Commit();
                     }
                 }
@@ -128,12 +131,10 @@ namespace BtrexTrader.Data
             cmd.ExecuteNonQuery();
 
             foreach (HistDataLine line in data.result)
-            {
                 EnterSQLiteRow(line, cmd, data.MarketDelta);
-            }
 
             saved++;
-            Console.Write("\rSAVING: {0}/{1}", saved, totalCount);
+            Console.Write("\rDOWNLOADING MARKETS: {0}/{1}", saved, totalCount);
         }
 
 
@@ -153,16 +154,12 @@ namespace BtrexTrader.Data
             foreach (HistDataLine line in data.result)
             {
                 if (line.T <= dt)
-                {
                     continue;
-                }
                 else
-                {
                     EnterSQLiteRow(line, cmd, data.MarketDelta);
-                }
             }
             saved++;
-            Console.Write("\rSAVING: {0}/{1}", saved, totalCount);
+            Console.Write("\rDOWNLOADING MARKETS: {0}/{1}", saved, totalCount);
         }
 
 
@@ -225,6 +222,7 @@ namespace BtrexTrader.Data
                             UpdateExistingCSV(dt, path);                            
                         }
                     }
+                    conn.Close();
                 }
             }
         }
@@ -251,8 +249,6 @@ namespace BtrexTrader.Data
                 foreach (DataRow row in table.Rows)
                 {
                     DateTime rowTime = Convert.ToDateTime(row.ItemArray[0]);
-                    //Console.WriteLine(rowTime + " : " + lastDateTime);
-                    //Console.ReadLine();
 
                     if (rowTime <= lastDateTime)
                         continue;
@@ -263,4 +259,6 @@ namespace BtrexTrader.Data
         }
 
     }
+
+
 }

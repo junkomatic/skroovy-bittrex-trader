@@ -23,9 +23,13 @@ namespace BtrexTrader.Interface
 
         public static async Task Connect()
         {
+            //UNCOMMENT TO SHOW SIGNALR-WEBSOCKET DEBUG:
+            //hubConnection.TraceLevel = TraceLevels.All;
+            //hubConnection.TraceWriter = Console.Out;
+
             //CREATE PROXY, REGISTER CALLBACKS, CONNECT TO HUB:
-            BtrexWS.btrexHubProxy = BtrexWS.hubConnection.CreateHubProxy("coreHub");
-            BtrexWS.btrexHubProxy.On<MarketDataUpdate>("updateExchangeState", update => BtrexData.UpdateQueue.Enqueue(update));
+            btrexHubProxy = BtrexWS.hubConnection.CreateHubProxy("coreHub");
+            btrexHubProxy.On<MarketDataUpdate>("updateExchangeState", update => BtrexData.UpdateQueue.Enqueue(update));
             //btrexHubProxy.On<SummariesUpdate>("updateSummaryState", update => Console.WriteLine("FULL SUMMARY: "));
             await hubConnection.Start();
         }
