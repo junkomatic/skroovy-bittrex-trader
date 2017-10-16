@@ -36,6 +36,7 @@ namespace BtrexTrader
             }
         }
 
+
         static async Task RunAsync()
         {
             await BtrexData.UpdateHistData();
