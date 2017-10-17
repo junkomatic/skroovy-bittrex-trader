@@ -16,10 +16,17 @@ namespace BtrexTrader.Data
         public static ConcurrentQueue<MarketDataUpdate> UpdateQueue { get; private set; }
         public static decimal USDrate { get; private set; }
 
-        public static async Task StartData()
+
+        public static async Task NewData()
         {
             Markets = new List<Market>();
             UpdateQueue = new ConcurrentQueue<MarketDataUpdate>();
+        }
+
+        public static async Task StartDataUpdates()
+        {
+            //Markets = new List<Market>();
+            //UpdateQueue = new ConcurrentQueue<MarketDataUpdate>();
 
             //set USD value for conversions
             USDrate = await BtrexREST.getUSD();
@@ -48,6 +55,7 @@ namespace BtrexTrader.Data
                 while (!tryDQ)
                 {
                     MarketDataUpdate mdUpdate = new MarketDataUpdate();
+
                     tryDQ = UpdateQueue.TryDequeue(out mdUpdate);
 
                     if (tryDQ)
@@ -90,7 +98,6 @@ namespace BtrexTrader.Data
         public static async Task OpenMarket(MarketQueryResponse snapshot)
         {
             Market market = new Market(snapshot);
-            //Console.WriteLine("***");
             await market.TradeHistory.Resolve5mCandles();
             Markets.Add(market);
         }

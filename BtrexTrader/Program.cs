@@ -30,31 +30,30 @@ namespace BtrexTrader
                     //Thread.Sleep(5000);
                 }
             }
-        }
-
-
-        static async Task RunAsync()
-        {
-            await HistoricalData.UpdateHistData();
-
-            await BtrexData.StartData();
-            await BtrexWS.Connect();
-
-            //init markets here, before starting work thread
-
-
-
-
-            //BtrexController.StartWork();
-
-
-            await BtrexWS.subscribeMarket("BTC-XLM");
-
 
             Console.WriteLine("\r\n\r\n-PRESS ENTER 3 TIMES TO EXIT-");
             Console.ReadLine();
             Console.ReadLine();
             Console.ReadLine();
+        }
+
+
+        static async Task RunAsync()
+        {
+            //UPDATE LOCALLY STORED 5m CANDLES, AND .CSV RECORDS:
+            await HistoricalData.UpdateHistData();
+
+            //INITIALIZE DATA, THEN CONNECT WEBSOCKET
+            await BtrexData.NewData();
+            await BtrexWS.Connect();
+
+            //SUBSCRIBE TO DESIRED MARKETS, THEN START-DATA-UPDATES:
+            await BtrexWS.subscribeMarket("BTC-XLM");
+
+            await BtrexData.StartDataUpdates();
+            
+            //START CALC-STRATEGY WORK:
+            //BtrexController.StartWork();
         }
     }
 
