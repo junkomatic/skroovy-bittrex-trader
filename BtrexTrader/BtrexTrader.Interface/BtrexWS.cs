@@ -20,6 +20,7 @@ namespace BtrexTrader.Interface
 
             marketQuery.MarketName = delta;
             BtrexData.OpenMarket(marketQuery);
+            await BtrexData.RectifyCandles(delta);
         }
 
         public static async Task Connect()

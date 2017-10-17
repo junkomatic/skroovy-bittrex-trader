@@ -49,7 +49,6 @@ namespace BtrexTrader
 
 
             await BtrexWS.subscribeMarket("BTC-XLM");
-            await BtrexData.RectifyCandles("BTC-XLM");
 
 
             Console.WriteLine("\r\n\r\n-PRESS ENTER 3 TIMES TO EXIT-");
