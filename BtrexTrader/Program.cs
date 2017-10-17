@@ -30,11 +30,7 @@ namespace BtrexTrader
                     //Thread.Sleep(5000);
                 }
             }
-
-            Console.WriteLine("\r\n\r\n-PRESS ENTER 3 TIMES TO EXIT-");
-            Console.ReadLine();
-            Console.ReadLine();
-            Console.ReadLine();
+            
         }
 
 
@@ -51,9 +47,15 @@ namespace BtrexTrader
             await BtrexWS.subscribeMarket("BTC-XLM");
 
             await BtrexData.StartDataUpdates();
-            
+
             //START CALC-STRATEGY WORK:
             //BtrexController.StartWork();
+
+
+            Console.WriteLine("\r\n\r\n-PRESS ENTER 3 TIMES TO EXIT-\r\n\r\n");
+            Console.ReadLine();
+            Console.ReadLine();
+            Console.ReadLine();
         }
     }
 

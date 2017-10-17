@@ -27,6 +27,7 @@ namespace BtrexTrader.Interface
         private static HttpClient client = new HttpClient()
         {
             BaseAddress = new Uri("https://bittrex.com/api/v1.1/"),
+            Timeout = TimeSpan.FromMinutes(3)
         };
 
         public static async Task<decimal> getUSD()
@@ -96,7 +97,7 @@ namespace BtrexTrader.Interface
             {
                 do
                 {
-                    Thread.Sleep(50);
+                    Thread.Sleep(100);
                     response = await client.SendAsync(mesg);
                 } while (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable);
             }
@@ -125,7 +126,7 @@ namespace BtrexTrader.Interface
             {
                 do
                 {
-                    Thread.Sleep(50);
+                    Thread.Sleep(100);
                     response = await client.SendAsync(mesg);
                 } while (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable);
             }
