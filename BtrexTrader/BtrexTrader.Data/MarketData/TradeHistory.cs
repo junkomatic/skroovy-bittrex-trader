@@ -19,19 +19,16 @@ namespace BtrexTrader.Data.MarketData
         {
             //Pull candles from SQLite data and rectify with snap data,
             //if cant rectify imediately, enter rectefication process/state
-
             MarketDelta = snap.MarketName;
             RecentFills = new List<mdFill>();
-
-
+            
             if (snap.Fills.Count() > 0)
             {
                 foreach (Fill fill in snap.Fills)
                     RecentFills.Add(new mdFill(fill.TimeStamp, fill.Price, fill.Quantity, fill.OrderType));
             }
 
-            //(compare last-time from .data, and first-time from snap)
-
+            //Compare last-time from .data, and first-time from snap:
             DateTime snapTime = Convert.ToDateTime(RecentFills.Last().TimeStamp);
             DateTime candleTime;
 
@@ -45,18 +42,9 @@ namespace BtrexTrader.Data.MarketData
                 }
                 conn.Close();
             }
-
-
+            
             if (candleTime >= snapTime)
-                CandlesRectified = true;
-            else
-            {
-                Console.WriteLine("*FALSE*\r\n{0} < {1} :: [{2}]", candleTime, snapTime, MarketDelta);
-                //
-            }
-                
-
-
+                CandlesRectified = true;                
         }
 
 

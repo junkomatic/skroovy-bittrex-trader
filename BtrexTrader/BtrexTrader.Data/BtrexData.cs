@@ -96,23 +96,32 @@ namespace BtrexTrader.Data
         {
             HistDataResponse response = await BtrexREST.Get1minCandles(delta);
             DateTime last1mCandleTime = response.result.Last().T;
-            DateTime lastFillTime = new DateTime();
+            DateTime firstFillTime = new DateTime();
             foreach (Market market in Markets)
             {
                 if (delta != market.MarketDelta)
                     continue;
+                else if (market.TradeHistory.CandlesRectified)
+                    return;
 
-                lastFillTime = Convert.ToDateTime(market.TradeHistory.RecentFills.Last().TimeStamp);
+                firstFillTime = Convert.ToDateTime(market.TradeHistory.RecentFills.Last().TimeStamp);
 
-                if (last1mCandleTime >= lastFillTime)
+                if (last1mCandleTime >= firstFillTime)
                 {
-                    market.TradeHistory.CandlesRectified = true;
-                        Console.WriteLine("*TRUE*\r\n{0} > {1} :: [{2}]", last1mCandleTime, lastFillTime, market.MarketDelta);
+                    //Build latest candle to rectify:
 
+
+
+
+
+
+                    market.TradeHistory.CandlesRectified = true;
+                        Console.WriteLine("*TRUE*\r\n{0} > {1} :: [{2}]", last1mCandleTime, firstFillTime, market.MarketDelta);
                 }
                 else
                 {
-                    Console.WriteLine("*FALSE*\r\n{0} < {1} :: [{2}]", last1mCandleTime, lastFillTime, market.MarketDelta);
+                    Console.WriteLine("    !!!!ERR CANT_RECTIFY_CANDLES\r\nLast1mCandle: {0} < LastFill: {1} :: [{2}]", last1mCandleTime, firstFillTime, market.MarketDelta);
+                    //CANT RECTIFY WITH 1m CANDLES, TRY AGAIN LATER
                 }
 
 
