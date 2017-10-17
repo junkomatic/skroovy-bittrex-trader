@@ -19,8 +19,7 @@ namespace BtrexTrader.Interface
             MarketQueryResponse marketQuery = BtrexWS.btrexHubProxy.Invoke<MarketQueryResponse>("QueryExchangeState", delta).Result;
 
             marketQuery.MarketName = delta;
-            BtrexData.OpenMarket(marketQuery);
-            await BtrexData.RectifyCandles(delta);
+            await BtrexData.OpenMarket(marketQuery);
         }
 
         public static async Task Connect()

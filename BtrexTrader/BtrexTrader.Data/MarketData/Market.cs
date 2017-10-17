@@ -76,6 +76,7 @@ namespace BtrexTrader.Data.MarketData
                     TradeHistory.RecentFills.Add(fill);
             }
 
+            Console.WriteLine("UP-SET :: [{0}]", MarketDelta);
 
             Nounce++;
 

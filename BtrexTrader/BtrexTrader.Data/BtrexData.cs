@@ -74,7 +74,8 @@ namespace BtrexTrader.Data
 
                                 //Request MarketQuery from websocket, and OpenBook() with new snapshot
                                 MarketQueryResponse marketQuery = BtrexWS.btrexHubProxy.Invoke<MarketQueryResponse>("QueryExchangeState", mdUpdate.MarketName).Result;
-                                OpenMarket(marketQuery);
+                                marketQuery.MarketName = mdUpdate.MarketName;
+                                OpenMarket(marketQuery).Wait();
                                 Console.WriteLine("    [BOOK RE-SYNCED]");
                                 break;
                             }
@@ -86,53 +87,14 @@ namespace BtrexTrader.Data
             }
         }
 
-        public static void OpenMarket(MarketQueryResponse snapshot)
+        public static async Task OpenMarket(MarketQueryResponse snapshot)
         {
             Market market = new Market(snapshot);
+            //Console.WriteLine("***");
+            await market.TradeHistory.Resolve5mCandles();
             Markets.Add(market);
         }
-
-        public static async Task RectifyCandles(string delta)
-        {
-            HistDataResponse response = await BtrexREST.Get1minCandles(delta);
-            DateTime last1mCandleTime = response.result.Last().T;
-            DateTime firstFillTime = new DateTime();
-            foreach (Market market in Markets)
-            {
-                if (delta != market.MarketDelta)
-                    continue;
-                else if (market.TradeHistory.CandlesRectified)
-                    return;
-
-                firstFillTime = Convert.ToDateTime(market.TradeHistory.RecentFills.Last().TimeStamp);
-
-                if (last1mCandleTime >= firstFillTime)
-                {
-                    //Build latest candle to rectify:
-
-
-
-
-
-
-                    market.TradeHistory.CandlesRectified = true;
-                        Console.WriteLine("*TRUE*\r\n{0} > {1} :: [{2}]", last1mCandleTime, firstFillTime, market.MarketDelta);
-                }
-                else
-                {
-                    Console.WriteLine("    !!!!ERR CANT_RECTIFY_CANDLES\r\nLast1mCandle: {0} < LastFill: {1} :: [{2}]", last1mCandleTime, firstFillTime, market.MarketDelta);
-                    //CANT RECTIFY WITH 1m CANDLES, TRY AGAIN LATER
-                }
-
-
-                break;
-            }
-
-            
-
-        }
-
-       
+        
     }
 
 

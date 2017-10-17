@@ -64,7 +64,7 @@ namespace BtrexTrader.Data
             Console.WriteLine();
 
             //Update CSV files:
-            Console.WriteLine("Updating CSVs - Just a moment...");
+            Console.Write("Updating CSVs - Just a moment...");
             UpdateOrCreateCSVs();
 
             //Garbage Collection to clean up SQLiteConnection
@@ -127,7 +127,7 @@ namespace BtrexTrader.Data
 
         private static void CreateNewDataTable(HistDataResponse data, SQLiteCommand cmd)
         {
-            cmd.CommandText = string.Format("CREATE TABLE IF NOT EXISTS {0} (DateTime TEXT, Open TEXT, Close TEXT, Low TEXT, High TEXT, Volume TEXT)", data.MarketDelta);
+            cmd.CommandText = string.Format("CREATE TABLE IF NOT EXISTS {0} (DateTime TEXT, Open TEXT, Close TEXT, Low TEXT, High TEXT, Volume TEXT, BaseVolume TEXT)", data.MarketDelta);
             cmd.ExecuteNonQuery();
 
             foreach (HistDataLine line in data.result)
@@ -168,10 +168,10 @@ namespace BtrexTrader.Data
         private static void EnterSQLiteRow(HistDataLine line, SQLiteCommand cmd, string delta)
         {
             cmd.CommandText = string.Format(
-                                    "INSERT INTO {0} (DateTime, Open, High, Low, Close, Volume) "
-                                    + "VALUES ('{1}', '{2}', '{3}', '{4}', '{5}', '{6}')",
+                                    "INSERT INTO {0} (DateTime, Open, High, Low, Close, Volume, BaseVolume) "
+                                    + "VALUES ('{1}', '{2}', '{3}', '{4}', '{5}', '{6}', {7})",
                                     delta,
-                                    line.T.ToString("yyyy-MM-dd HH:mm:ss"), line.O, line.H, line.L, line.C, line.V);
+                                    line.T.ToString("yyyy-MM-dd HH:mm:ss"), line.O, line.H, line.L, line.C, line.V, line.BV);
 
             cmd.ExecuteNonQuery();
         }

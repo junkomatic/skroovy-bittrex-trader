@@ -12,7 +12,8 @@ namespace BtrexTrader.Data.MarketData
     {
         public string MarketDelta { get; private set; }
         public List<mdFill> RecentFills { get; private set; }
-        public bool CandlesRectified = false;
+        public DateTime LastStoredCandle { get; private set; }
+        private bool CandlesResolved = false;
 
 
         public TradeHistory(MarketQueryResponse snap)
@@ -24,12 +25,13 @@ namespace BtrexTrader.Data.MarketData
             
             if (snap.Fills.Count() > 0)
             {
+                snap.Fills.Reverse();
                 foreach (Fill fill in snap.Fills)
                     RecentFills.Add(new mdFill(fill.TimeStamp, fill.Price, fill.Quantity, fill.OrderType));
             }
 
             //Compare last-time from .data, and first-time from snap:
-            DateTime snapTime = Convert.ToDateTime(RecentFills.Last().TimeStamp);
+            DateTime snapTime = Convert.ToDateTime(RecentFills.First().TimeStamp);
             DateTime candleTime;
 
             using (SQLiteConnection conn = new SQLiteConnection("Data Source=" + HistoricalData.dbName + ";Version=3;"))
@@ -42,11 +44,57 @@ namespace BtrexTrader.Data.MarketData
                 }
                 conn.Close();
             }
-            
+
+            LastStoredCandle = candleTime;
+
+            //STILL NOT RESOLVED!! BUILD CANDLE IF NOT RECENT!!!
+
             if (candleTime >= snapTime)
-                CandlesRectified = true;                
+                CandlesResolved = true;                
         }
 
+
+        public async Task Resolve5mCandles()
+        {
+            if (CandlesResolved)
+            {
+                Console.WriteLine("[{2}] CANDLES RESOLVED - {0}, {1}", LastStoredCandle, Convert.ToDateTime(RecentFills.First().TimeStamp), MarketDelta);
+                return;
+            }
+                
+
+            Console.WriteLine("RESOLVING [{0}] CANDLES...", MarketDelta);
+
+            HistDataResponse response = await BtrexREST.Get1minCandles(MarketDelta);
+            if (!response.success)
+            {
+                Console.WriteLine("    !!!!ERR GET-1m-CANDLES: [{0}]", MarketDelta);
+                return;
+            }
+
+            DateTime last1mCandleTime = response.result.Last().T;
+            DateTime firstFillTime = Convert.ToDateTime(RecentFills.First().TimeStamp);
+
+            if (last1mCandleTime >= firstFillTime)
+            {           
+                Console.WriteLine("*TRUE*\r\n{0} > {1} :: [{2}]", last1mCandleTime, firstFillTime, MarketDelta);
+
+                //Build latest 5m candle:
+
+
+
+
+
+
+                CandlesResolved = true;
+            }
+            else
+            {
+                Console.WriteLine("    !!!!ERR CANT_RECTIFY_CANDLES\r\nLast1mCandle: {0} < LastFill: {1} :: [{2}]", last1mCandleTime, firstFillTime, MarketDelta);
+                //CANT RECTIFY WITH 1m CANDLES, WAIT AND RETRY
+            }
+        }
+        
 
         public object Clone()
         {
