@@ -108,6 +108,37 @@ namespace BtrexTrader.Interface
             return history;
         }
 
+
+        public static async Task<HistDataResponse> Get1minCandles(string delta)
+        {
+            HttpRequestMessage mesg = new HttpRequestMessage()
+            {
+                RequestUri = new Uri("https://bittrex.com/Api/v2.0/pub/market/GetTicks?marketName=" + delta + "&tickInterval=oneMin", UriKind.Absolute),
+                Method = HttpMethod.Get
+            };
+
+            HistDataResponse history = null;
+            HttpResponseMessage response = await client.SendAsync(mesg);
+            if (response.IsSuccessStatusCode)
+                history = await response.Content.ReadAsAsync<HistDataResponse>();
+            else if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
+            {
+                do
+                {
+                    Thread.Sleep(50);
+                    response = await client.SendAsync(mesg);
+                } while (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable);
+            }
+            else
+                Console.WriteLine("FAIL:  " + response.ReasonPhrase);
+
+            history.MarketDelta = delta.Replace('-', '_');
+
+            return history;
+        }
+
+
+
         public static async Task<LimitOrderResponse> PlaceLimitOrder(string delta, string buyORsell, decimal qty, decimal rate)
         {
             TimeSpan t = DateTime.UtcNow - new DateTime(1970, 1, 1);

@@ -25,7 +25,7 @@ namespace BtrexTrader.TripletStrategy
         public async Task Initialize()
         {
             //SUBSCRIBE TO MARKET DELTAS TO TRACK ORDERBOOKS & TRADE EVENTS
-            await BtrexWS.subscribeOB("BTC-ETH");
+            await BtrexWS.subscribeMarket("BTC-ETH");
 
             //DO TRIPLETS STUFF
             if (watchOnly)
@@ -273,7 +273,7 @@ namespace BtrexTrader.TripletStrategy
         {
             string BTCdelta = "BTC-" + COIN;
             string ETHdelta = "ETH-" + COIN;
-            await Task.WhenAll(BtrexWS.subscribeOB(BTCdelta), BtrexWS.subscribeOB(ETHdelta));
+            await Task.WhenAll(BtrexWS.subscribeMarket(BTCdelta), BtrexWS.subscribeMarket(ETHdelta));
             AddTripletDeltas(BTCdelta, ETHdelta);
         }
 

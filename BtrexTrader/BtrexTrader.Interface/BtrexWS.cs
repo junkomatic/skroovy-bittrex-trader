@@ -13,7 +13,7 @@ namespace BtrexTrader.Interface
         public readonly static HubConnection hubConnection = new HubConnection("https://socket.bittrex.com/");
         public static IHubProxy btrexHubProxy;
 
-        public static async Task subscribeOB(string delta)
+        public static async Task subscribeMarket(string delta)
         {
             await BtrexWS.btrexHubProxy.Invoke("SubscribeToExchangeDeltas", delta);
             MarketQueryResponse marketQuery = BtrexWS.btrexHubProxy.Invoke<MarketQueryResponse>("QueryExchangeState", delta).Result;

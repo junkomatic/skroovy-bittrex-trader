@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Data.SQLite;
+using BtrexTrader.Interface;
 
 namespace BtrexTrader.Data.MarketData
 {
@@ -11,7 +12,7 @@ namespace BtrexTrader.Data.MarketData
     {
         public string MarketDelta { get; private set; }
         public List<mdFill> RecentFills { get; private set; }
-        public static bool CandlesRectified = false;
+        public bool CandlesRectified = false;
 
 
         public TradeHistory(MarketQueryResponse snap)
@@ -19,7 +20,7 @@ namespace BtrexTrader.Data.MarketData
             //Pull candles from SQLite data and rectify with snap data,
             //if cant rectify imediately, enter rectefication process/state
 
-            MarketDelta = snap.MarketName.Replace('-', '_');
+            MarketDelta = snap.MarketName;
             RecentFills = new List<mdFill>();
 
 
@@ -39,7 +40,7 @@ namespace BtrexTrader.Data.MarketData
                 conn.Open();
                 using (var cmd = new SQLiteCommand(conn))
                 {
-                    cmd.CommandText = string.Format("SELECT * FROM {0} ORDER BY datetime(DateTime) DESC Limit 1", MarketDelta);
+                    cmd.CommandText = string.Format("SELECT * FROM {0} ORDER BY datetime(DateTime) DESC Limit 1", MarketDelta.Replace('-', '_'));
                     candleTime = Convert.ToDateTime(cmd.ExecuteScalar());
                 }
                 conn.Close();
@@ -50,18 +51,13 @@ namespace BtrexTrader.Data.MarketData
                 CandlesRectified = true;
             else
             {
-                Console.WriteLine("*FALSE*\r\n{0} < {1}", candleTime, snapTime);
-
-
-
-
+                Console.WriteLine("*FALSE*\r\n{0} < {1} :: [{2}]", candleTime, snapTime, MarketDelta);
+                //
             }
                 
 
 
         }
-
-
 
 
         public object Clone()

@@ -92,7 +92,36 @@ namespace BtrexTrader.Data
             Markets.Add(market);
         }
 
+        public static async Task RectifyCandles(string delta)
+        {
+            HistDataResponse response = await BtrexREST.Get1minCandles(delta);
+            DateTime last1mCandleTime = response.result.Last().T;
+            DateTime lastFillTime = new DateTime();
+            foreach (Market market in Markets)
+            {
+                if (delta != market.MarketDelta)
+                    continue;
 
+                lastFillTime = Convert.ToDateTime(market.TradeHistory.RecentFills.Last().TimeStamp);
+
+                if (last1mCandleTime >= lastFillTime)
+                {
+                    market.TradeHistory.CandlesRectified = true;
+                        Console.WriteLine("*TRUE*\r\n{0} > {1} :: [{2}]", last1mCandleTime, lastFillTime, market.MarketDelta);
+
+                }
+                else
+                {
+                    Console.WriteLine("*FALSE*\r\n{0} < {1} :: [{2}]", last1mCandleTime, lastFillTime, market.MarketDelta);
+                }
+
+
+                break;
+            }
+
+            
+
+        }
 
        
     }

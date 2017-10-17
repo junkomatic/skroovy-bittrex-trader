@@ -19,30 +19,37 @@ namespace BtrexTrader
             //UNCOMMENT 'WHILE' TO RESTART ON FAILURE
             //while (true)
             {
-                //try
+                try
                 {
                     RunAsync().Wait();
                 }
-                //catch (Exception e)
-                //{
-                //    Console.Write("\r\n\r\n!!!!TOP LVL ERR>> " + e.InnerException.Message);
-                //    Console.ReadLine();
-                //    //Thread.Sleep(5000);
-                //}
+                catch (Exception e)
+                {
+                    Console.Write("\r\n\r\n!!!!TOP LVL ERR>> " + e.InnerException.Message);
+                    Console.ReadLine();
+                    //Thread.Sleep(5000);
+                }
             }
         }
 
 
         static async Task RunAsync()
         {
-            //await HistoricalData.UpdateHistData();
+            await HistoricalData.UpdateHistData();
 
             await BtrexData.StartData();
             await BtrexWS.Connect();
+
+            //init markets here, before starting work thread
+
+
+
+
             //BtrexController.StartWork();
 
 
-             await BtrexWS.subscribeOB("BTC-XLM");
+            await BtrexWS.subscribeMarket("BTC-XLM");
+            await BtrexData.RectifyCandles("BTC-XLM");
 
 
             Console.WriteLine("\r\n\r\n-PRESS ENTER 3 TIMES TO EXIT-");
