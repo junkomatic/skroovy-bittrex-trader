@@ -20,11 +20,6 @@ namespace BtrexTrader.Interface
 
             marketQuery.MarketName = delta;
             BtrexData.OpenMarket(marketQuery);
-
-            //Console.WriteLine("#####SNAPSHOT#####");
-            //foreach (Fill fill in marketQuery.Fills)
-            //    Console.WriteLine("********Type: {0}...Price: {1}...QTY: {2}...Time: {3}...Total: {4}...OT: {5}...ID: {6}", fill.FillType, fill.Price, fill.Quantity, fill.TimeStamp, fill.Total, fill.OrderType, fill.Id);
-
         }
 
         public static async Task Connect()
