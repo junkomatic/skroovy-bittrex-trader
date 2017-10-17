@@ -47,7 +47,15 @@ namespace BtrexTrader.Data.MarketData
 
             LastStoredCandle = candleTime;
 
-            //STILL NOT RESOLVED!! BUILD CANDLE IF NOT RECENT!!!
+            //TODO: STILL NOT RESOLVED!! 
+            //Build Candle from RecentFills, if not current:
+
+
+
+
+
+
+
 
             if (candleTime >= snapTime)
                 CandlesResolved = true;                
@@ -79,7 +87,7 @@ namespace BtrexTrader.Data.MarketData
             {           
                 Console.WriteLine("*TRUE*\r\n{0} > {1} :: [{2}]", last1mCandleTime, firstFillTime, MarketDelta);
 
-                //Build latest 5m candle:
+                //TODO: Build latest 5m candle with 1m data and RecentFills:
 
 
 
@@ -91,7 +99,14 @@ namespace BtrexTrader.Data.MarketData
             else
             {
                 Console.WriteLine("    !!!!ERR CANT_RECTIFY_CANDLES\r\nLast1mCandle: {0} < LastFill: {1} :: [{2}]", last1mCandleTime, firstFillTime, MarketDelta);
-                //CANT RECTIFY WITH 1m CANDLES, WAIT AND RETRY
+
+                //CANT RECTIFY WITH 1m CANDLES, 
+                //TODO: WAIT AND RETRY
+
+
+
+
+
             }
         }
         
