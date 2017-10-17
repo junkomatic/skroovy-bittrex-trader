@@ -12,17 +12,17 @@ using BtrexTrader.Interface;
 
 namespace BtrexTrader.Data
 {
-    public class HistoricalData
+    public static class HistoricalData
     {
         private static ConcurrentQueue<HistDataResponse> DataQueue = new ConcurrentQueue<HistDataResponse>();
-        private int //downloaded = 0,
+        private static int //downloaded = 0,
                     saved = 0,
                     totalCount = 0;
-        private bool savedComplete = false;
-        private const string dbName = "MarketHistory.data";
+        private static bool savedComplete = false;
+        public const string dbName = "MarketHistory.data";
 
 
-        public async Task UpdateHistData()
+        public static async Task UpdateHistData()
         {
             Console.WriteLine();
 
@@ -75,7 +75,7 @@ namespace BtrexTrader.Data
         }
 
 
-        private async Task EnqueueData(string delta)
+        private static async Task EnqueueData(string delta)
         {
             HistDataResponse histData = await BtrexREST.GetMarketHistoryV2(delta);
             if (histData.success != true)
@@ -89,7 +89,7 @@ namespace BtrexTrader.Data
         }
 
 
-        private void ProcessDataQueue()
+        private static void ProcessDataQueue()
         {
             bool newDB = checkNewDB();
 
@@ -125,7 +125,7 @@ namespace BtrexTrader.Data
         }
 
 
-        private void CreateNewDataTable(HistDataResponse data, SQLiteCommand cmd)
+        private static void CreateNewDataTable(HistDataResponse data, SQLiteCommand cmd)
         {
             cmd.CommandText = string.Format("CREATE TABLE IF NOT EXISTS {0} (DateTime TEXT, Open TEXT, Close TEXT, Low TEXT, High TEXT, Volume TEXT)", data.MarketDelta);
             cmd.ExecuteNonQuery();
@@ -138,10 +138,12 @@ namespace BtrexTrader.Data
         }
 
 
-        private void UpdateDataTable(HistDataResponse data, SQLiteCommand cmd)
+        private static void UpdateDataTable(HistDataResponse data, SQLiteCommand cmd)
         {
             //look for market. if !exist then CreateNewDataTable()
-            cmd.CommandText = string.Format("SELECT CASE WHEN tbl_name = '{0}' THEN 1 ELSE 0 END FROM sqlite_master WHERE tbl_name = '{0}' AND type = 'table'", data.MarketDelta);
+            cmd.CommandText = string.Format("SELECT CASE WHEN tbl_name = '{0}' THEN 1 ELSE 0 END FROM sqlite_master "
+                                            + "WHERE tbl_name = '{0}' AND type = 'table'", data.MarketDelta);
+
             if (!Convert.ToBoolean(cmd.ExecuteScalar()))
             {
                 CreateNewDataTable(data, cmd);
@@ -149,11 +151,11 @@ namespace BtrexTrader.Data
             }
 
             cmd.CommandText = string.Format("SELECT * FROM {0} ORDER BY datetime(DateTime) DESC Limit 1", data.MarketDelta);
-            DateTime dt = Convert.ToDateTime(cmd.ExecuteScalar());
+            DateTime dateTime = Convert.ToDateTime(cmd.ExecuteScalar());
 
             foreach (HistDataLine line in data.result)
             {
-                if (line.T <= dt)
+                if (line.T <= dateTime)
                     continue;
                 else
                     EnterSQLiteRow(line, cmd, data.MarketDelta);
@@ -163,7 +165,7 @@ namespace BtrexTrader.Data
         }
 
 
-        private void EnterSQLiteRow(HistDataLine line, SQLiteCommand cmd, string delta)
+        private static void EnterSQLiteRow(HistDataLine line, SQLiteCommand cmd, string delta)
         {
             cmd.CommandText = string.Format(
                                     "INSERT INTO {0} (DateTime, Open, High, Low, Close, Volume) "
@@ -175,7 +177,7 @@ namespace BtrexTrader.Data
         }
 
 
-        private bool checkNewDB()
+        private static bool checkNewDB()
         {
             if (!File.Exists(dbName))
             {
@@ -188,7 +190,7 @@ namespace BtrexTrader.Data
         }
 
 
-        public void UpdateOrCreateCSVs()
+        public static void UpdateOrCreateCSVs()
         {
             using (SQLiteConnection conn = new SQLiteConnection("Data Source=" + dbName + ";Version=3;"))
             {
@@ -228,7 +230,7 @@ namespace BtrexTrader.Data
         }
 
 
-        private void GenerateNewCSV(DataTable table, string path)
+        private static void GenerateNewCSV(DataTable table, string path)
         {
             IEnumerable<string> colHeadings = table.Columns.OfType<DataColumn>().Select(col => col.ColumnName);
             using (StreamWriter writer = File.AppendText(path))
@@ -241,7 +243,7 @@ namespace BtrexTrader.Data
         }
 
 
-        private void UpdateExistingCSV(DataTable table, string path)
+        private static void UpdateExistingCSV(DataTable table, string path)
         {
             DateTime lastDateTime = Convert.ToDateTime(File.ReadLines(path).Last().Split(',')[0]);
             using (StreamWriter writer = File.AppendText(path))

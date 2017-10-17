@@ -36,9 +36,5 @@ namespace BtrexTrader.Control
             }
         }
 
-        //TODO: 
-        //  CREATE MARKETSCANNER FOLDER AND CLASS
-        //  SEE STICKY NOTE 
-
     }
 }

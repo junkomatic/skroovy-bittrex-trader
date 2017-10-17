@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using BtrexTrader.Interface;
 using BtrexTrader.Data;
+using BtrexTrader.Data.MarketData;
 
 namespace BtrexTrader.TripletStrategy
 {
@@ -281,17 +282,17 @@ namespace BtrexTrader.TripletStrategy
         {
             OrderBook BTCbk = null;
             OrderBook ETHbk = null;
-            OrderBook B2Ebk = (OrderBook)BtrexData.Books[0].Clone();
+            OrderBook B2Ebk = (OrderBook)BtrexData.Markets[0].OrderBook.Clone();
 
-            foreach (OrderBook book in BtrexData.Books)
+            foreach (Market market in BtrexData.Markets)
             {
-                if (BTCbk == null && book.MarketDelta == BTCdelta)
+                if (BTCbk == null && market.OrderBook.MarketDelta == BTCdelta)
                 {
-                    BTCbk = (OrderBook)book.Clone();
+                    BTCbk = (OrderBook)market.OrderBook.Clone();
                 }
-                else if (ETHbk == null && book.MarketDelta == ETHdelta)
+                else if (ETHbk == null && market.OrderBook.MarketDelta == ETHdelta)
                 {
-                    ETHbk = (OrderBook)book.Clone();
+                    ETHbk = (OrderBook)market.OrderBook.Clone();
                 }
                 if (BTCbk != null && ETHbk != null)
                 {

@@ -33,6 +33,14 @@ namespace BtrexTrader
         public decimal Rate { get; set; }
         public decimal Quantity { get; set; }
         public string TimeStamp { get; set; }
+
+        public mdFill(string time, decimal rate, decimal qty, string type)
+        {
+            OrderType = type;
+            Rate = rate;
+            Quantity = qty;
+            TimeStamp = time;
+        }
     }
 
 
