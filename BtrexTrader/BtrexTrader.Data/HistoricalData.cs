@@ -77,7 +77,7 @@ namespace BtrexTrader.Data
 
         private static async Task EnqueueData(string delta)
         {
-            HistDataResponse histData = await BtrexREST.GetMarketHistoryV2(delta);
+            HistDataResponse histData = await BtrexREST.GetMarketHistoryV2(delta, "fiveMin");
             if (histData.success != true)
             {
                 Console.WriteLine("    !!!!ERR GET-HISTORY>>> " + histData.message);
@@ -134,7 +134,7 @@ namespace BtrexTrader.Data
                 EnterSQLiteRow(line, cmd, data.MarketDelta);
 
             saved++;
-            Console.Write("\rDOWNLOADING MARKETS: {0}/{1}", saved, totalCount);
+            Console.Write("\rUPDATING MARKET CANDLES: {0}/{1}", saved, totalCount);
         }
 
 
@@ -161,7 +161,7 @@ namespace BtrexTrader.Data
                     EnterSQLiteRow(line, cmd, data.MarketDelta);
             }
             saved++;
-            Console.Write("\rDOWNLOADING MARKETS: {0}/{1}", saved, totalCount);
+            Console.Write("\rUPDATING MARKET CANDLES: {0}/{1}", saved, totalCount);
         }
 
 

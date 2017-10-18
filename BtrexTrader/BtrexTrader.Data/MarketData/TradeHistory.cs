@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Data.SQLite;
+using Trady.Core;
 using BtrexTrader.Interface;
 
 namespace BtrexTrader.Data.MarketData
@@ -14,7 +15,7 @@ namespace BtrexTrader.Data.MarketData
         public List<mdFill> RecentFills { get; private set; }
         public DateTime LastStoredCandle { get; private set; }
         private bool CandlesResolved = false;
-
+        public List<Candle> Candles5m { get; private set; }
 
         public TradeHistory(MarketQueryResponse snap)
         {
@@ -31,7 +32,7 @@ namespace BtrexTrader.Data.MarketData
             }
 
             //Compare last-time from .data, and first-time from snap:
-            DateTime snapTime = Convert.ToDateTime(RecentFills.First().TimeStamp);
+            DateTime snapTime = RecentFills.First().TimeStamp;
             DateTime candleTime;
 
             using (SQLiteConnection conn = new SQLiteConnection("Data Source=" + HistoricalData.dbName + ";Version=3;"))
@@ -47,27 +48,45 @@ namespace BtrexTrader.Data.MarketData
 
             LastStoredCandle = candleTime;
             Console.WriteLine("***Last5mCandle: {0}", LastStoredCandle);
-
-            //TODO: STILL NOT RESOLVED!! 
-            //Build Candle from RecentFills, if not current:
-            
-
             
 
             if (candleTime >= snapTime)
             {
                 Console.Beep();
                 Console.Beep();
-                Console.Beep();
+                //TODO: STILL NOT RESOLVED!! 
+                //Build Candle from RecentFills, if not current:
+
+
+
+                DateTime NextCandleTime = LastStoredCandle.AddMinutes(5);
+                List<mdFill> candleFills = new List<mdFill>();
+
+                foreach (mdFill fill in RecentFills)
+                {
+                    if (fill.TimeStamp < LastStoredCandle)
+                        continue;
+                    else if (fill.TimeStamp >= NextCandleTime)
+                        break;
+                    else
+                        candleFills.Add(fill);
+                }
+
+                Decimal O = candleFills.First().Rate,
+                        H = candleFills.Max(x => x.Rate), 
+                        L = candleFills.Min(x => x.Rate), 
+                        C = candleFills.Last().Rate, 
+                        V = candleFills.Sum(x => x.Quantity);
+                Candle nextCandle = new Candle(NextCandleTime, O, H, L, C, V);
+
+                Console.WriteLine("@@@@@ NEW CANDLE = T:{0} O:{1} H:{2} L:{3} C:{4} V:{5}", 
+                    nextCandle.DateTime, nextCandle.Open, nextCandle.High, nextCandle.Low, nextCandle.Close, nextCandle.Volume);
+
+
+
 
 
                 CandlesResolved = true;
-                Console.WriteLine("\r\n************RecentFills**************");
-                foreach (mdFill fill in RecentFills)
-                {
-                    Console.WriteLine("{0} {1} == R:{2}...V:{3}...BV:{4}", fill.TimeStamp, fill.OrderType, fill.Rate, fill.Quantity, (fill.Quantity * fill.Rate));
-                }
-                Console.WriteLine("*************************************");
             }
                               
         }
@@ -77,14 +96,14 @@ namespace BtrexTrader.Data.MarketData
         {
             if (CandlesResolved)
             {
-                Console.WriteLine("[{2}] CANDLES RESOLVED - {0}, {1}", LastStoredCandle, Convert.ToDateTime(RecentFills.First().TimeStamp), MarketDelta);
+                Console.WriteLine("[{2}] CANDLES RESOLVED - {0}, {1}", LastStoredCandle, RecentFills.First().TimeStamp, MarketDelta);
                 return;
             }
                 
 
             Console.WriteLine("RESOLVING [{0}] CANDLES...", MarketDelta);
 
-            HistDataResponse response = await BtrexREST.Get1minCandles(MarketDelta);
+            HistDataResponse response = await BtrexREST.GetMarketHistoryV2(MarketDelta, "oneMin");
             if (!response.success)
             {
                 Console.WriteLine("    !!!!ERR GET-1m-CANDLES: [{0}]", MarketDelta);
@@ -92,7 +111,7 @@ namespace BtrexTrader.Data.MarketData
             }
 
             DateTime last1mCandleTime = response.result.Last().T;
-            DateTime firstFillTime = Convert.ToDateTime(RecentFills.First().TimeStamp);
+            DateTime firstFillTime = RecentFills.First().TimeStamp;
 
             if (last1mCandleTime >= firstFillTime)
             {
@@ -118,7 +137,7 @@ namespace BtrexTrader.Data.MarketData
                 Console.WriteLine("************RecentFills**************");
                 foreach (mdFill fill in RecentFills)
                 {
-                    if (Convert.ToDateTime(fill.TimeStamp) < LastStoredPlus5)
+                    if (fill.TimeStamp < LastStoredPlus5)
                         Console.WriteLine("{0} {1} == R:{2}...V:{3}...BV:{4}", fill.TimeStamp, fill.OrderType, fill.Rate, fill.Quantity, (fill.Quantity * fill.Rate));
 
 

@@ -81,11 +81,11 @@ namespace BtrexTrader.Interface
         //    return marketHistory;
         //}
 
-        public static async Task<HistDataResponse> GetMarketHistoryV2(string delta)
+        public static async Task<HistDataResponse> GetMarketHistoryV2(string delta, string period)
         {
             HttpRequestMessage mesg = new HttpRequestMessage()
             {
-                RequestUri = new Uri("https://bittrex.com/Api/v2.0/pub/market/GetTicks?marketName="+ delta +"&tickInterval=fiveMin", UriKind.Absolute),
+                RequestUri = new Uri("https://bittrex.com/Api/v2.0/pub/market/GetTicks?marketName="+ delta +"&tickInterval=" + period + "", UriKind.Absolute),
                 Method = HttpMethod.Get
             };
 
@@ -97,8 +97,14 @@ namespace BtrexTrader.Interface
             {
                 do
                 {
-                    Thread.Sleep(150);
-                    response = await client.SendAsync(mesg);
+                    Thread.Sleep(50);
+                    HttpRequestMessage mesgClone = new HttpRequestMessage()
+                    {
+                        RequestUri = new Uri("https://bittrex.com/Api/v2.0/pub/market/GetTicks?marketName=" + delta + "&tickInterval=" + period + "", UriKind.Absolute),
+                        Method = HttpMethod.Get
+                    };
+
+                    response = await client.SendAsync(mesgClone);
                 } while (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable);
             }
             else
@@ -108,37 +114,7 @@ namespace BtrexTrader.Interface
 
             return history;
         }
-
-
-        public static async Task<HistDataResponse> Get1minCandles(string delta)
-        {
-            HttpRequestMessage mesg = new HttpRequestMessage()
-            {
-                RequestUri = new Uri("https://bittrex.com/Api/v2.0/pub/market/GetTicks?marketName=" + delta + "&tickInterval=oneMin", UriKind.Absolute),
-                Method = HttpMethod.Get
-            };
-
-            HistDataResponse history = null;
-            HttpResponseMessage response = await client.SendAsync(mesg);
-            if (response.IsSuccessStatusCode)
-                history = await response.Content.ReadAsAsync<HistDataResponse>();
-            else if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
-            {
-                do
-                {
-                    Thread.Sleep(150);
-                    response = await client.SendAsync(mesg);
-                } while (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable);
-            }
-            else
-                Console.WriteLine("FAIL:  " + response.ReasonPhrase);
-
-            history.MarketDelta = delta.Replace('-', '_');
-
-            return history;
-        }
-
-
+        
 
         public static async Task<LimitOrderResponse> PlaceLimitOrder(string delta, string buyORsell, decimal qty, decimal rate)
         {
