@@ -124,7 +124,8 @@ namespace BtrexTrader.Data.MarketData
                     if (line.T >= LastStoredCandle)
                     {
                         Console.WriteLine("{0} [O:{1}...H:{2}...L:{3}...C:{4}...V:{5}...BV:{6}]", line.T, line.O, line.H, line.L, line.C, line.V, line.BV);
-
+                        //THIS ACTUALLY COMPLETES THE PREV CANDLE... CANDLES DATA UPDATES TWICE PER PERIOD
+                        //TODO: FIX THIS
 
 
 
