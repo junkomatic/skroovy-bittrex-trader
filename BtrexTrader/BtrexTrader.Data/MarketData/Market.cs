@@ -73,10 +73,11 @@ namespace BtrexTrader.Data.MarketData
             {
                 update.Fills.Reverse();
                 foreach (mdFill fill in update.Fills)
+                {
                     TradeHistory.RecentFills.Add(fill);
-            }
-
-            Console.WriteLine("UP-SET :: [{0}]", MarketDelta);
+                    Console.WriteLine("{0} {1} == R:{2}...V:{3}...BV:{4}", fill.TimeStamp, fill.OrderType, fill.Rate, fill.Quantity, (fill.Quantity * fill.Rate));
+                }
+            }            
 
             Nounce++;
 

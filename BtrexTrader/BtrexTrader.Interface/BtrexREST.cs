@@ -97,7 +97,7 @@ namespace BtrexTrader.Interface
             {
                 do
                 {
-                    Thread.Sleep(100);
+                    Thread.Sleep(150);
                     response = await client.SendAsync(mesg);
                 } while (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable);
             }
@@ -126,7 +126,7 @@ namespace BtrexTrader.Interface
             {
                 do
                 {
-                    Thread.Sleep(100);
+                    Thread.Sleep(150);
                     response = await client.SendAsync(mesg);
                 } while (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable);
             }

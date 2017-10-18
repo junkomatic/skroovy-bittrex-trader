@@ -46,19 +46,30 @@ namespace BtrexTrader.Data.MarketData
             }
 
             LastStoredCandle = candleTime;
+            Console.WriteLine("***Last5mCandle: {0}", LastStoredCandle);
 
             //TODO: STILL NOT RESOLVED!! 
             //Build Candle from RecentFills, if not current:
+            
 
-
-
-
-
-
-
+            
 
             if (candleTime >= snapTime)
-                CandlesResolved = true;                
+            {
+                Console.Beep();
+                Console.Beep();
+                Console.Beep();
+
+
+                CandlesResolved = true;
+                Console.WriteLine("\r\n************RecentFills**************");
+                foreach (mdFill fill in RecentFills)
+                {
+                    Console.WriteLine("{0} {1} == R:{2}...V:{3}...BV:{4}", fill.TimeStamp, fill.OrderType, fill.Rate, fill.Quantity, (fill.Quantity * fill.Rate));
+                }
+                Console.WriteLine("*************************************");
+            }
+                              
         }
 
 
@@ -84,11 +95,39 @@ namespace BtrexTrader.Data.MarketData
             DateTime firstFillTime = Convert.ToDateTime(RecentFills.First().TimeStamp);
 
             if (last1mCandleTime >= firstFillTime)
-            {           
-                Console.WriteLine("*TRUE*\r\n{0} > {1} :: [{2}]", last1mCandleTime, firstFillTime, MarketDelta);
-
+            {
                 //TODO: Build latest 5m candle with 1m data and RecentFills:
+                Console.WriteLine("*TRUE* === {0} > {1} :: [{2}]\r\n", last1mCandleTime, firstFillTime, MarketDelta);
 
+                Console.WriteLine("\r\n*************1mCandles***************");
+                foreach (HistDataLine line in response.result)
+                {
+                    if (line.T >= LastStoredCandle)
+                    {
+                        Console.WriteLine("{0} [O:{1}...H:{2}...L:{3}...C:{4}...V:{5}...BV:{6}]", line.T, line.O, line.H, line.L, line.C, line.V, line.BV);
+
+
+
+
+                    }
+
+                }
+
+
+                DateTime LastStoredPlus5 = LastStoredCandle.AddMinutes(5);
+                Console.WriteLine("************RecentFills**************");
+                foreach (mdFill fill in RecentFills)
+                {
+                    if (Convert.ToDateTime(fill.TimeStamp) < LastStoredPlus5)
+                        Console.WriteLine("{0} {1} == R:{2}...V:{3}...BV:{4}", fill.TimeStamp, fill.OrderType, fill.Rate, fill.Quantity, (fill.Quantity * fill.Rate));
+
+
+
+
+
+
+                }
+                Console.WriteLine("*************************************");
 
 
 
