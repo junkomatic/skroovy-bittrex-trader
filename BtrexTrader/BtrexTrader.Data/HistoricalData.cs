@@ -64,7 +64,7 @@ namespace BtrexTrader.Data
             Console.WriteLine();
 
             //Update CSV files:
-            Console.Write("Updating CSVs - Just a moment...");
+            Console.Write("Updating .CSVs - Just a moment...");
             UpdateOrCreateCSVs();
 
             //Garbage Collection to clean up SQLiteConnection
@@ -134,7 +134,7 @@ namespace BtrexTrader.Data
                 EnterSQLiteRow(line, cmd, data.MarketDelta);
 
             saved++;
-            Console.Write("\rUPDATING MARKET CANDLES: {0}/{1}", saved, totalCount);
+            Console.Write("\rUpdating Candle Data: {0}/{1}", saved, totalCount);
         }
 
 
@@ -161,7 +161,7 @@ namespace BtrexTrader.Data
                     EnterSQLiteRow(line, cmd, data.MarketDelta);
             }
             saved++;
-            Console.Write("\rUPDATING MARKET CANDLES: {0}/{1}", saved, totalCount);
+            Console.Write("\rUpdating Candle Data: {0}/{1}", saved, totalCount);
         }
 
 

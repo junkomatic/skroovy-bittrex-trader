@@ -111,6 +111,7 @@ namespace BtrexTrader.Interface
                 Console.WriteLine("FAIL:  " + response.ReasonPhrase);
 
             history.MarketDelta = delta.Replace('-', '_');
+            history.result.Remove(history.result.Last());
 
             return history;
         }

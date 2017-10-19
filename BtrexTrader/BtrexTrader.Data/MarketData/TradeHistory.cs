@@ -50,36 +50,34 @@ namespace BtrexTrader.Data.MarketData
             Console.WriteLine("***Last5mCandle: {0}", LastStoredCandle);
             
 
-            if (candleTime >= snapTime)
+            if (candleTime.AddMinutes(5) >= snapTime)
             {
                 Console.Beep();
-                Console.Beep();
-                //TODO: STILL NOT RESOLVED!! 
-                //Build Candle from RecentFills, if not current:
-
+                //TODO: CHECK IF CURRENT FIRST DUMMY!
 
 
                 DateTime NextCandleTime = LastStoredCandle.AddMinutes(5);
                 List<mdFill> candleFills = new List<mdFill>();
 
                 foreach (mdFill fill in RecentFills)
-                {
-                    if (fill.TimeStamp < LastStoredCandle)
+                {                   
+                    if (fill.TimeStamp < NextCandleTime)
                         continue;
-                    else if (fill.TimeStamp >= NextCandleTime)
+                    else if (fill.TimeStamp >= NextCandleTime.AddMinutes(5))
                         break;
                     else
                         candleFills.Add(fill);
+                    Console.WriteLine("{0} {1} == R:{2}...V:{3}...BV:{4}", fill.TimeStamp, fill.OrderType, fill.Rate, fill.Quantity, (fill.Quantity * fill.Rate));
                 }
 
                 Decimal O = candleFills.First().Rate,
-                        H = candleFills.Max(x => x.Rate), 
-                        L = candleFills.Min(x => x.Rate), 
-                        C = candleFills.Last().Rate, 
+                        H = candleFills.Max(x => x.Rate),
+                        L = candleFills.Min(x => x.Rate),
+                        C = candleFills.Last().Rate,
                         V = candleFills.Sum(x => x.Quantity);
                 Candle nextCandle = new Candle(NextCandleTime, O, H, L, C, V);
 
-                Console.WriteLine("@@@@@ NEW CANDLE = T:{0} O:{1} H:{2} L:{3} C:{4} V:{5}", 
+                Console.WriteLine("@@@@@ NEW CANDLE = T:{0} O:{1} H:{2} L:{3} C:{4} V:{5}",
                     nextCandle.DateTime, nextCandle.Open, nextCandle.High, nextCandle.Low, nextCandle.Close, nextCandle.Volume);
 
 
@@ -124,8 +122,7 @@ namespace BtrexTrader.Data.MarketData
                     if (line.T >= LastStoredCandle)
                     {
                         Console.WriteLine("{0} [O:{1}...H:{2}...L:{3}...C:{4}...V:{5}...BV:{6}]", line.T, line.O, line.H, line.L, line.C, line.V, line.BV);
-                        //THIS ACTUALLY COMPLETES THE PREV CANDLE... CANDLES DATA UPDATES TWICE PER PERIOD
-                        //TODO: FIX THIS
+                        
 
 
 
@@ -138,7 +135,7 @@ namespace BtrexTrader.Data.MarketData
                 Console.WriteLine("************RecentFills**************");
                 foreach (mdFill fill in RecentFills)
                 {
-                    if (fill.TimeStamp < LastStoredPlus5)
+                    //if (fill.TimeStamp < LastStoredPlus5)
                         Console.WriteLine("{0} {1} == R:{2}...V:{3}...BV:{4}", fill.TimeStamp, fill.OrderType, fill.Rate, fill.Quantity, (fill.Quantity * fill.Rate));
 
 
