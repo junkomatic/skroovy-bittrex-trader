@@ -119,15 +119,16 @@ namespace BtrexTrader.Data.MarketData
 
                 //Grab O:H:L:V (noC) from 1mCandles
                 //simulate 2 mdFills (H&L:V) and add to beginning of RecentFills
-                
+                Decimal O = Candles1m.First().O,
+                        H = Candles1m.Max(x => x.H),
+                        L = Candles1m.Min(x => x.L),
+                        V = Candles1m.Sum(x => x.V);
+
+                List<mdFill> RevisedFills = new List<mdFill>();
+                RevisedFills.Add(new mdFill(LastStoredCandle.AddMinutes(5), H, (V / 2), "BUY"));
+                RevisedFills.Add(new mdFill(LastStoredCandle.AddMinutes(5), L, (V / 2), "SELL"));
 
                 
-
-
-
-
-
-
                 Console.WriteLine("************RecentFills**************");
                 foreach (mdFill fill in RecentFills)
                 {
@@ -139,12 +140,19 @@ namespace BtrexTrader.Data.MarketData
 
 
                 //check current, if not, rectify
+                //If candle is current, Candles are Resolved
+                DateTime NextCandleTime = LastStoredCandle.AddMinutes(5);
+                if (NextCandleTime.AddMinutes(5) > DateTime.UtcNow)
+                {
+                    Console.WriteLine("@@@@@ NOT NEXT-CANDLE-TIME YET");
+                    CandlesResolved = true;
+                    return;
+                }
 
+                Candle nextCandle = BuildCandleFromRecentFills(NextCandleTime);
 
-
-
-
-
+                Console.WriteLine("@@@@@ NEW CANDLE(w/1m!) = T:{0} O:{1} H:{2} L:{3} C:{4} V:{5}",
+                    nextCandle.DateTime, nextCandle.Open, nextCandle.High, nextCandle.Low, nextCandle.Close, nextCandle.Volume);
 
                 CandlesResolved = true;
             }
