@@ -72,6 +72,8 @@ namespace BtrexTrader.Data.MarketData
                               
         }
 
+        //TODO: WHAT IF THERE IS NO TRADES IN THE PAST 5MIN???!!
+
 
         public async Task Resolve5mCandles()
         {
@@ -123,18 +125,19 @@ namespace BtrexTrader.Data.MarketData
                 List<mdFill> RevisedFills = new List<mdFill>();
                 RevisedFills.Add(new mdFill(LastStoredCandle.AddMinutes(5), H, (V / 2), "BUY"));
                 RevisedFills.Add(new mdFill(LastStoredCandle.AddMinutes(5), L, (V / 2), "SELL"));
-                RevisedFills.AddRange(RecentFills);
-
-                RecentFills = new List<mdFill>(RevisedFills);
                 
                 Console.WriteLine("************RecentFills**************");
                 foreach (mdFill fill in RecentFills)
                 {
-                    if (fill.TimeStamp < last1mCandleCurrTime)
+                    if (fill.TimeStamp >= last1mCandleCurrTime)
+                        RevisedFills.Add(fill);
+
+                    if (fill.TimeStamp >= last1mCandleCurrTime)
                         Console.WriteLine("{0} {1} == R:{2}...V:{3}...BV:{4}", fill.TimeStamp, fill.OrderType, fill.Rate, fill.Quantity, (fill.Quantity * fill.Rate));
                 }
                 Console.WriteLine("*************************************");
 
+                RecentFills = new List<mdFill>(RevisedFills);
 
                 //check current, if not, rectify
                 //If candle is current, Candles are Resolved

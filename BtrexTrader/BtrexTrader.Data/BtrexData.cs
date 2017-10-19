@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Quartz;
+using Quartz.Impl;
 using BtrexTrader.Interface;
 using BtrexTrader.Data.MarketData;
 
@@ -16,6 +18,8 @@ namespace BtrexTrader.Data
         public static ConcurrentQueue<MarketDataUpdate> UpdateQueue { get; private set; }
         public static decimal USDrate { get; private set; }
 
+        private static ISchedulerFactory schedFact = new StdSchedulerFactory();
+        private static IScheduler sched = schedFact.GetScheduler();
 
         public static void NewData()
         {
@@ -25,12 +29,14 @@ namespace BtrexTrader.Data
 
         public static async Task StartDataUpdates()
         {
-            //Markets = new List<Market>();
-            //UpdateQueue = new ConcurrentQueue<MarketDataUpdate>();
-
             //set USD value for conversions
             USDrate = await BtrexREST.getUSD();
 
+            //Start crontriggered jobs:
+            sched.Start();
+            sched.ScheduleJob(buildCandles, candleTrigger);
+
+            //Begin Dequeue Thread:
             var DequeueThread = new Thread(() => ProcessQueue());
             DequeueThread.IsBackground = true;
             DequeueThread.Name = "Update-Dequeue-Thread";
@@ -100,8 +106,87 @@ namespace BtrexTrader.Data
             Market market = new Market(snapshot);
             await market.TradeHistory.Resolve5mCandles();
             Markets.Add(market);
+
         }
+
+
+        private static void BuildAll5mCandles()
+        {
+            foreach (Market market in Markets)
+            {
+                //TODO: BUILD CANDLES
+
+
+
+
+
+
+
+
+            }
         
+        }
+
+        private static void DumpDataToSQLite()
+        {
+            foreach (Market market in Markets)
+            {
+                //TODO: DUMP DATA
+
+
+
+
+
+
+
+
+            }
+        }
+
+        
+        //CREATE CRON-JOBS
+        static IJobDetail buildCandles = JobBuilder.Create<Build5mCandles>()
+            .WithIdentity("candlesJob", "group1")
+            .Build();
+
+        static IJobDetail DataCleanup = JobBuilder.Create<CandleDataCleanUp>()
+            .WithIdentity("cleanUpJob", "group1")
+            .Build();
+
+        //CREATE CRON-TRIGGERS
+        static ITrigger candleTrigger = TriggerBuilder.Create()
+            .WithIdentity("trigger1", "group1")
+            .WithCronSchedule("6 0/5 0 ? * * *")
+            .Build();
+
+        static ITrigger cleanUpTrigger = TriggerBuilder.Create()
+            .WithIdentity("trigger1", "group1")
+            .WithCronSchedule("0 0 0/2 1/1 * ? *")
+            .Build();
+
+        //DEFINE CRON-JOBS
+        public class Build5mCandles : IJob
+        {
+            public void Execute(IJobExecutionContext context)
+            {
+                BuildAll5mCandles();
+            }
+        }
+
+        public class CandleDataCleanUp : IJob
+        {
+            public void Execute(IJobExecutionContext context)
+            {
+                DumpDataToSQLite();
+            }
+        }
+
+
+
+
+
+
+
     }
 
 
