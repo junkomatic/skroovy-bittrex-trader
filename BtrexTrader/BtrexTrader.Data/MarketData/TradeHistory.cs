@@ -75,8 +75,6 @@ namespace BtrexTrader.Data.MarketData
 
         public async Task Resolve5mCandles()
         {
-            //TODO: FIX THIS FUNC
-
             if (CandlesResolved)
             {
                 Console.WriteLine("[{2}] CANDLES RESOLVED - {0}, {1}", LastStoredCandle, RecentFills.First().TimeStamp, MarketDelta);
@@ -101,7 +99,7 @@ namespace BtrexTrader.Data.MarketData
 
             if (last1mCandleCurrTime >= firstFillTime)
             {
-                //TODO: Build latest 5m candle with 1m data and RecentFills:
+                //Build latest 5m candle with 1m data and RecentFills:
                 Console.WriteLine("*TRUE* === {0} > {1} :: [{2}]\r\n", last1mCandleCurrTime, firstFillTime, MarketDelta);
                 
                 Console.WriteLine("\r\n*************1mCandles***************");
@@ -113,10 +111,8 @@ namespace BtrexTrader.Data.MarketData
                         Candles1m.Add(line);
                         Console.WriteLine("{0} [O:{1}...H:{2}...L:{3}...C:{4}...V:{5}...BV:{6}]", line.T, line.O, line.H, line.L, line.C, line.V, line.BV);
                     }
-
                 }
-
-
+                
                 //Grab O:H:L:V (noC) from 1mCandles
                 //simulate 2 mdFills (H&L:V) and add to beginning of RecentFills
                 Decimal O = Candles1m.First().O,
@@ -134,9 +130,8 @@ namespace BtrexTrader.Data.MarketData
                 Console.WriteLine("************RecentFills**************");
                 foreach (mdFill fill in RecentFills)
                 {
-                    //if (fill.TimeStamp < last1mCandleCurrTime)
+                    if (fill.TimeStamp < last1mCandleCurrTime)
                         Console.WriteLine("{0} {1} == R:{2}...V:{3}...BV:{4}", fill.TimeStamp, fill.OrderType, fill.Rate, fill.Quantity, (fill.Quantity * fill.Rate));
-                    
                 }
                 Console.WriteLine("*************************************");
 
@@ -160,28 +155,16 @@ namespace BtrexTrader.Data.MarketData
             }
             else
             {
-                Console.WriteLine("    !!!!ERR CANT_RECTIFY_CANDLES\r\nLast1mCandle: {0} < LastFill: {1} :: [{2}]", last1mCandleCurrTime, firstFillTime, MarketDelta);
+                Console.WriteLine("    !!!!ERR CANT_RECTIFY_CANDLES\r\nLast1mCandleCurrent: {0} < LastFill: {1} :: [{2}]", last1mCandleCurrTime, firstFillTime, MarketDelta);
 
                 //CANT RECTIFY WITH 1m CANDLES, 
-                //TODO: WAIT AND RETRY
-
-
-
-
+                //TODO: WAIT (COLLECT DATA) AND RETRY
 
                 Console.Beep();
                 Console.Beep();
                 Console.Beep();
                 Console.Beep();
             }
-        }
-
-
-        private Candle BuildCandle1mAndFills(DateTime NextCandleTime, List<HistDataLine> Candles1m)
-        {
-
-
-            return null;
         }
 
 
