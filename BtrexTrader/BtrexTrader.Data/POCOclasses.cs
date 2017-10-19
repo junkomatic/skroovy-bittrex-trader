@@ -34,14 +34,6 @@ namespace BtrexTrader
         public decimal Quantity { get; set; }
         public DateTime TimeStamp { get; set; }
 
-        public mdFill(string time, decimal rate, decimal qty, string type)
-        {
-            OrderType = type;
-            Rate = rate;
-            Quantity = qty;
-            TimeStamp = Convert.ToDateTime(time);
-        }
-
         public mdFill(DateTime time, decimal rate, decimal qty, string type)
         {
             OrderType = type;

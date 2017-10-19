@@ -29,7 +29,7 @@ namespace BtrexTrader.Data.MarketData
             {
                 snap.Fills.Reverse();
                 foreach (Fill fill in snap.Fills)
-                    RecentFills.Add(new mdFill(fill.TimeStamp, fill.Price, fill.Quantity, fill.OrderType));
+                    RecentFills.Add(new mdFill(Convert.ToDateTime(fill.TimeStamp), fill.Price, fill.Quantity, fill.OrderType));
             }
 
             //Compare last-time from .data, and first-time from snap:
