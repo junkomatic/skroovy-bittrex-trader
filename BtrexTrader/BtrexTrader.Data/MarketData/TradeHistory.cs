@@ -46,7 +46,7 @@ namespace BtrexTrader.Data.MarketData
 
             //Candle Time is the START time of the 5m period. This means it is current to +5min from that time.
             DateTime NextCandleTime = LastStoredCandle.AddMinutes(5);
-            Console.WriteLine("\r\n***Last5mCandleStart: {0}.....CurrTime: {1}...SnapData Begins: {2}", LastStoredCandle, DateTime.UtcNow, RecentFills.First().TimeStamp);
+            Console.WriteLine("\r\n***Last5mCandleStart: {0}\r\n...CurrTime: {1}\r\n...SnapData Begins: {2}\r\n", LastStoredCandle, DateTime.UtcNow, RecentFills.First().TimeStamp);
 
             if (NextCandleTime > RecentFills.Last().TimeStamp)
             {
@@ -122,15 +122,18 @@ namespace BtrexTrader.Data.MarketData
                         V = Candles1m.Sum(x => x.V);
 
                 List<mdFill> RevisedFills = new List<mdFill>();
-                RevisedFills.Add(new mdFill(LastStoredCandle.AddMinutes(5), H, (V / 2), "BUY"));
-                RevisedFills.Add(new mdFill(LastStoredCandle.AddMinutes(5), L, (V / 2), "SELL"));
-                RevisedFills.AddRange(RecentFills);
+                RevisedFills.Add(new mdFill(LastStoredCandle.AddMinutes(5), O, (V / 3), "BUY"));
+                RevisedFills.Add(new mdFill(LastStoredCandle.AddMinutes(5), H, (V / 3), "BUY"));
+                RevisedFills.Add(new mdFill(LastStoredCandle.AddMinutes(5), L, (V / 3), "SELL"));
 
                 Console.WriteLine("************RecentFills**************");
                 foreach (mdFill fill in RecentFills)
                 {
                     if (fill.TimeStamp >= last1mCandleCurrTime)
+                    {
+                        RevisedFills.Add(fill);
                         Console.WriteLine("{0} {1} == R:{2}...V:{3}...BV:{4}", fill.TimeStamp, fill.OrderType, fill.Rate, fill.Quantity, (fill.Quantity * fill.Rate));
+                    }
                 }
                 Console.WriteLine("*************************************");
 
@@ -170,7 +173,7 @@ namespace BtrexTrader.Data.MarketData
         }
 
 
-        private Candle BuildCandleFromRecentFills(DateTime NextCandleTime)
+        public Candle BuildCandleFromRecentFills(DateTime NextCandleTime)
         {
             List<mdFill> candleFills = new List<mdFill>();
             foreach (mdFill fill in RecentFills)

@@ -71,7 +71,7 @@ namespace BtrexTrader.Data
             GC.Collect();
             GC.WaitForPendingFinalizers();
 
-            Console.WriteLine("DONE");
+            Console.WriteLine("\rUpdating .CSVs - [COMPLETE]        ");
         }
 
 
@@ -134,7 +134,7 @@ namespace BtrexTrader.Data
                 EnterSQLiteRow(line, cmd, data.MarketDelta);
 
             saved++;
-            Console.Write("\rUpdating Candle Data: {0}/{1}", saved, totalCount);
+            Console.Write("\rDownloading Candle Data: {0}/{1}", saved, totalCount);
         }
 
 
@@ -161,7 +161,7 @@ namespace BtrexTrader.Data
                     EnterSQLiteRow(line, cmd, data.MarketDelta);
             }
             saved++;
-            Console.Write("\rUpdating Candle Data: {0}/{1}", saved, totalCount);
+            Console.Write("\rDownloading Candle Data: {0}/{1}", saved, totalCount);
         }
 
 

@@ -9,7 +9,7 @@ using BtrexTrader.Interface;
 using BtrexTrader.Data;
 using BtrexTrader.Data.MarketData;
 
-namespace BtrexTrader.TripletStrategy
+namespace BtrexTrader.Strategy.TripletStrategy
 {
 
 

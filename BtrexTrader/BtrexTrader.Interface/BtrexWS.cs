@@ -33,7 +33,9 @@ namespace BtrexTrader.Interface
             btrexHubProxy = BtrexWS.hubConnection.CreateHubProxy("coreHub");
             btrexHubProxy.On<MarketDataUpdate>("updateExchangeState", update => BtrexData.UpdateQueue.Enqueue(update));
             //btrexHubProxy.On<SummariesUpdate>("updateSummaryState", update => Console.WriteLine("FULL SUMMARY: "));
+            Console.Write("Connecting Websocket...");
             await hubConnection.Start();
+            Console.WriteLine("\rWebsocket Connected.      ");
         }
     }
 

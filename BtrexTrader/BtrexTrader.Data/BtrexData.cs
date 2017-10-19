@@ -114,15 +114,18 @@ namespace BtrexTrader.Data
         {
             foreach (Market market in Markets)
             {
-                //TODO: BUILD CANDLES
+                DateTime NextCandleStart = market.TradeHistory.LastStoredCandle.AddMinutes(5);
 
+                //If there is no trade data after the last candle period, do nothing:
+                if (market.TradeHistory.RecentFills.Last().TimeStamp < market.TradeHistory.LastStoredCandle)
+                    return;
 
-
-
-
-
-
-
+                //If we have trade data, but there are periods where no trades took place (skip those candles):
+                while (market.TradeHistory.RecentFills.First().TimeStamp >= NextCandleStart.AddMinutes(5))
+                    NextCandleStart = NextCandleStart.AddMinutes(5);
+                
+                //Build next candle from RecentFill data
+                market.TradeHistory.BuildCandleFromRecentFills(NextCandleStart);
             }
         
         }

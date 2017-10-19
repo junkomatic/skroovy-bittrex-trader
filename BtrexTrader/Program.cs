@@ -48,7 +48,7 @@ namespace BtrexTrader
             await BtrexWS.Connect();
 
             //SUBSCRIBE TO DESIRED MARKETS, THEN START-DATA-UPDATES:
-            await BtrexWS.subscribeMarket("BTC-XLM");
+            await BtrexWS.subscribeMarket("BTC-XRP");
 
             await BtrexData.StartDataUpdates();
 

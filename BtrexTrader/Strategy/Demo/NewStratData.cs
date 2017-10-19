@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BtrexTrader.NewStrategy
+namespace BtrexTrader.Strategy.Demo
 {
     class NewStratData
     {

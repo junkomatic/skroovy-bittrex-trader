@@ -202,12 +202,12 @@
     <Compile Include="BtrexTrader.Data\POCOclasses.cs" />
     <Compile Include="BtrexTrader.Interface\BtrexWS.cs" />
     <Compile Include="BtrexTrader.Interface\TradeMethods.cs" />
-    <Compile Include="NewStrategy\NewStratData.cs" />
-    <Compile Include="NewStrategy\NewStratControl.cs" />
+    <Compile Include="Strategy\Demo\NewStratData.cs" />
+    <Compile Include="Strategy\Demo\NewStratControl.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TripletStrategy\TripletData.cs" />
-    <Compile Include="TripletStrategy\TripletTrader.cs" />
+    <Compile Include="Strategy\TripletStrategy\TripletData.cs" />
+    <Compile Include="Strategy\TripletStrategy\TripletTrader.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config">
