@@ -72,6 +72,8 @@ namespace BtrexTrader.Data.MarketData
 
         public async Task Resolve5mCandles()
         {
+            //TODO: FIX THIS FUNC
+
             if (CandlesResolved)
             {
                 Console.WriteLine("[{2}] CANDLES RESOLVED - {0}, {1}", LastStoredCandle, RecentFills.First().TimeStamp, MarketDelta);
@@ -163,7 +165,6 @@ namespace BtrexTrader.Data.MarketData
                     break;
                 else
                     candleFills.Add(fill);
-                Console.WriteLine("{0} {1} == R:{2}...V:{3}...BV:{4}", fill.TimeStamp, fill.OrderType, fill.Rate, fill.Quantity, (fill.Quantity * fill.Rate));
             }
 
             Decimal O = candleFills.First().Rate,
@@ -172,7 +173,10 @@ namespace BtrexTrader.Data.MarketData
                     C = candleFills.Last().Rate,
                     V = candleFills.Sum(x => x.Quantity);
 
-            return new Candle(NextCandleTime, O, H, L, C, V);
+            Candle candle = new Candle(NextCandleTime, O, H, L, C, V);
+            Candles5m.Add(candle);
+
+            return candle;
         }
 
         public object Clone()
