@@ -47,43 +47,23 @@ namespace BtrexTrader.Data.MarketData
             }
 
             LastStoredCandle = candleTime;
-            Console.WriteLine("***Last5mCandle: {0}", LastStoredCandle);
+            DateTime NextCandleTime = LastStoredCandle.AddMinutes(5);
+            Console.WriteLine("\r\n***Last5mCandle: {0}.....CurrTime: {1}", LastStoredCandle, DateTime.UtcNow);
             
-
-            if (candleTime.AddMinutes(5) >= snapTime)
+            if (NextCandleTime >= snapTime)
             {
-                Console.Beep();
-                //TODO: CHECK IF CURRENT FIRST DUMMY!
-
-
-                DateTime NextCandleTime = LastStoredCandle.AddMinutes(5);
-                List<mdFill> candleFills = new List<mdFill>();
-
-                foreach (mdFill fill in RecentFills)
-                {                   
-                    if (fill.TimeStamp < NextCandleTime)
-                        continue;
-                    else if (fill.TimeStamp >= NextCandleTime.AddMinutes(5))
-                        break;
-                    else
-                        candleFills.Add(fill);
-                    Console.WriteLine("{0} {1} == R:{2}...V:{3}...BV:{4}", fill.TimeStamp, fill.OrderType, fill.Rate, fill.Quantity, (fill.Quantity * fill.Rate));
+                if (NextCandleTime.AddMinutes(5) > DateTime.UtcNow)
+                {
+                    Console.WriteLine("@@@@@ NOT NEXT-CANDLE-TIME YET");
+                    CandlesResolved = true;
+                    return;
                 }
 
-                Decimal O = candleFills.First().Rate,
-                        H = candleFills.Max(x => x.Rate),
-                        L = candleFills.Min(x => x.Rate),
-                        C = candleFills.Last().Rate,
-                        V = candleFills.Sum(x => x.Quantity);
-                Candle nextCandle = new Candle(NextCandleTime, O, H, L, C, V);
+                Candle nextCandle = BuildCandleFromRecentFills(NextCandleTime);
 
                 Console.WriteLine("@@@@@ NEW CANDLE = T:{0} O:{1} H:{2} L:{3} C:{4} V:{5}",
                     nextCandle.DateTime, nextCandle.Open, nextCandle.High, nextCandle.Low, nextCandle.Close, nextCandle.Volume);
-
-
-
-
-
+                
                 CandlesResolved = true;
             }
                               
@@ -115,6 +95,8 @@ namespace BtrexTrader.Data.MarketData
             {
                 //TODO: Build latest 5m candle with 1m data and RecentFills:
                 Console.WriteLine("*TRUE* === {0} > {1} :: [{2}]\r\n", last1mCandleTime, firstFillTime, MarketDelta);
+                Console.Beep();
+
 
                 Console.WriteLine("\r\n*************1mCandles***************");
                 foreach (HistDataLine line in response.result)
@@ -159,6 +141,10 @@ namespace BtrexTrader.Data.MarketData
                 //CANT RECTIFY WITH 1m CANDLES, 
                 //TODO: WAIT AND RETRY
 
+                Console.Beep();
+                Console.Beep();
+                Console.Beep();
+                Console.Beep();
 
 
 
@@ -166,6 +152,28 @@ namespace BtrexTrader.Data.MarketData
             }
         }
         
+        private Candle BuildCandleFromRecentFills(DateTime NextCandleTime)
+        {
+            List<mdFill> candleFills = new List<mdFill>();
+            foreach (mdFill fill in RecentFills)
+            {
+                if (fill.TimeStamp < NextCandleTime)
+                    continue;
+                else if (fill.TimeStamp >= NextCandleTime.AddMinutes(5))
+                    break;
+                else
+                    candleFills.Add(fill);
+                Console.WriteLine("{0} {1} == R:{2}...V:{3}...BV:{4}", fill.TimeStamp, fill.OrderType, fill.Rate, fill.Quantity, (fill.Quantity * fill.Rate));
+            }
+
+            Decimal O = candleFills.First().Rate,
+                    H = candleFills.Max(x => x.Rate),
+                    L = candleFills.Min(x => x.Rate),
+                    C = candleFills.Last().Rate,
+                    V = candleFills.Sum(x => x.Quantity);
+
+            return new Candle(NextCandleTime, O, H, L, C, V);
+        }
 
         public object Clone()
         {
