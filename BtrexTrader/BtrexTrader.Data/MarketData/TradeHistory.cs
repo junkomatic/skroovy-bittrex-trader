@@ -195,7 +195,7 @@ namespace BtrexTrader.Data.MarketData
             Candle candle = new Candle(NextCandleTime, O, H, L, C, V);
             Candles5m.Add(candle);
             LastStoredCandle = LastStoredCandle.AddMinutes(5);
-
+            Console.WriteLine("*$$$*");
             return candle;
         }
 

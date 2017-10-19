@@ -112,12 +112,13 @@ namespace BtrexTrader.Data
 
         private static void BuildAll5mCandles()
         {
+            Console.WriteLine("!TRIGGERED!");
             foreach (Market market in Markets)
             {
                 DateTime NextCandleStart = market.TradeHistory.LastStoredCandle.AddMinutes(5);
 
-                //If there is no trade data after the last candle period, do nothing:
-                if (market.TradeHistory.RecentFills.Last().TimeStamp < market.TradeHistory.LastStoredCandle)
+                //If there is no trade data after the last candle period, or if next candle period is unfinished, do nothing:
+                if ((market.TradeHistory.RecentFills.Last().TimeStamp < NextCandleStart) || (NextCandleStart >= DateTime.UtcNow))
                     return;
 
                 //If we have trade data, but there are periods where no trades took place (skip those candles):
@@ -159,12 +160,12 @@ namespace BtrexTrader.Data
         //CREATE CRON-TRIGGERS
         static ITrigger candleTrigger = TriggerBuilder.Create()
             .WithIdentity("trigger1", "group1")
-            .WithCronSchedule("6 0/5 0 ? * * *")
+            .WithCronSchedule("6 0/5 * ? * * *")
             .Build();
 
         static ITrigger cleanUpTrigger = TriggerBuilder.Create()
             .WithIdentity("trigger1", "group1")
-            .WithCronSchedule("0 0 0/2 1/1 * ? *")
+            .WithCronSchedule("0 32 0/2 * * ? *")
             .Build();
 
         //DEFINE CRON-JOBS
