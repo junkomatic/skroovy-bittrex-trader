@@ -17,7 +17,7 @@ namespace BtrexTrader.Data
         public static decimal USDrate { get; private set; }
 
 
-        public static async Task NewData()
+        public static void NewData()
         {
             Markets = new List<Market>();
             UpdateQueue = new ConcurrentQueue<MarketDataUpdate>();
@@ -70,7 +70,7 @@ namespace BtrexTrader.Data
                             else if (mdUpdate.Nounce > (market.Nounce + 1))
                             {
                                 //IF NOUNCE IS DE-SYNCED, WIPE BOOK AND RE-SNAP
-                                Console.WriteLine("    !!!!ERR>>  NOUNCE OUT OF ORDER! " + mdUpdate.MarketName + " BOOK-DSYNC.");
+                                Console.WriteLine("    !!!!ERR>>  NOUNCE OUT OF ORDER! " + mdUpdate.MarketName + " BOOK-DSYNC.  {0}, {1}", market.Nounce, mdUpdate.Nounce);
                                 foreach (Market mk in Markets)
                                 {
                                     if (mk.MarketDelta == mdUpdate.MarketName)

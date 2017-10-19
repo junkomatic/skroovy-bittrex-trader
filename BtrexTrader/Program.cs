@@ -44,7 +44,7 @@ namespace BtrexTrader
             await HistoricalData.UpdateHistData();
 
             //INITIALIZE DATA, THEN CONNECT WEBSOCKET
-            await BtrexData.NewData();
+            BtrexData.NewData();
             await BtrexWS.Connect();
 
             //SUBSCRIBE TO DESIRED MARKETS, THEN START-DATA-UPDATES:

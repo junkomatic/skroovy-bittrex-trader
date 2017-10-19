@@ -127,7 +127,9 @@ namespace BtrexTrader.Data.MarketData
                 List<mdFill> RevisedFills = new List<mdFill>();
                 RevisedFills.Add(new mdFill(LastStoredCandle.AddMinutes(5), H, (V / 2), "BUY"));
                 RevisedFills.Add(new mdFill(LastStoredCandle.AddMinutes(5), L, (V / 2), "SELL"));
+                RevisedFills.AddRange(RecentFills);
 
+                RecentFills = new List<mdFill>(RevisedFills);
                 
                 Console.WriteLine("************RecentFills**************");
                 foreach (mdFill fill in RecentFills)
