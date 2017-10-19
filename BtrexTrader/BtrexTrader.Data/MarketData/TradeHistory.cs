@@ -33,53 +33,52 @@ namespace BtrexTrader.Data.MarketData
             }
 
             //Compare last-time from .data, and first-time from snap:
-            DateTime snapTime = RecentFills.First().TimeStamp;
-            DateTime candleTime;
-
             using (SQLiteConnection conn = new SQLiteConnection("Data Source=" + HistoricalData.dbName + ";Version=3;"))
             {
                 conn.Open();
                 using (var cmd = new SQLiteCommand(conn))
                 {
                     cmd.CommandText = string.Format("SELECT * FROM {0} ORDER BY datetime(DateTime) DESC Limit 1", MarketDelta.Replace('-', '_'));
-                    candleTime = Convert.ToDateTime(cmd.ExecuteScalar());
+                    LastStoredCandle = Convert.ToDateTime(cmd.ExecuteScalar());
                 }
                 conn.Close();
             }
 
             //Candle Time is the START time of the 5m period. This means it is current to +5min from that time.
-            LastStoredCandle = candleTime;
             DateTime NextCandleTime = LastStoredCandle.AddMinutes(5);
-            Console.WriteLine("\r\n***Last5mCandle: {0}.....CurrTime: {1}", LastStoredCandle, DateTime.UtcNow);
-            
-            if (NextCandleTime >= snapTime)
+            Console.WriteLine("\r\n***Last5mCandleStart: {0}.....CurrTime: {1}...SnapData Begins: {2}", LastStoredCandle, DateTime.UtcNow, RecentFills.First().TimeStamp);
+
+            if (NextCandleTime > RecentFills.Last().TimeStamp)
+            {
+                //NO TRADES MADE IN THIS CANDLE PERIOD.
+                CandlesResolved = true;
+                return;
+            }
+            else if (NextCandleTime >= RecentFills.First().TimeStamp)
             {
                 //If candle is current, Candles are Resolved
                 if (NextCandleTime.AddMinutes(5) > DateTime.UtcNow)
                 {
-                    Console.WriteLine("@@@@@ NOT NEXT-CANDLE-TIME YET");
                     CandlesResolved = true;
                     return;
                 }
 
                 Candle nextCandle = BuildCandleFromRecentFills(NextCandleTime);
 
-                Console.WriteLine("@@@@@ NEW CANDLE = T:{0} O:{1} H:{2} L:{3} C:{4} V:{5}",
-                    nextCandle.DateTime, nextCandle.Open, nextCandle.High, nextCandle.Low, nextCandle.Close, nextCandle.Volume);
+                //Console.WriteLine("@@@@@ NEW CANDLE = T:{0} O:{1} H:{2} L:{3} C:{4} V:{5}",
+                    //nextCandle.DateTime, nextCandle.Open, nextCandle.High, nextCandle.Low, nextCandle.Close, nextCandle.Volume);
                 
                 CandlesResolved = true;
             }
                               
         }
 
-        //TODO: WHAT IF THERE IS NO TRADES IN THE PAST 5MIN???!!
-
 
         public async Task Resolve5mCandles()
         {
             if (CandlesResolved)
             {
-                Console.WriteLine("[{2}] CANDLES RESOLVED - {0}, {1}", LastStoredCandle, RecentFills.First().TimeStamp, MarketDelta);
+                Console.WriteLine("[{1}] CANDLES RESOLVED - LastCandleStart: {0}", LastStoredCandle, MarketDelta);
                 return;
             }
 
@@ -125,13 +124,11 @@ namespace BtrexTrader.Data.MarketData
                 List<mdFill> RevisedFills = new List<mdFill>();
                 RevisedFills.Add(new mdFill(LastStoredCandle.AddMinutes(5), H, (V / 2), "BUY"));
                 RevisedFills.Add(new mdFill(LastStoredCandle.AddMinutes(5), L, (V / 2), "SELL"));
-                
+                RevisedFills.AddRange(RecentFills);
+
                 Console.WriteLine("************RecentFills**************");
                 foreach (mdFill fill in RecentFills)
                 {
-                    if (fill.TimeStamp >= last1mCandleCurrTime)
-                        RevisedFills.Add(fill);
-
                     if (fill.TimeStamp >= last1mCandleCurrTime)
                         Console.WriteLine("{0} {1} == R:{2}...V:{3}...BV:{4}", fill.TimeStamp, fill.OrderType, fill.Rate, fill.Quantity, (fill.Quantity * fill.Rate));
                 }
@@ -162,6 +159,8 @@ namespace BtrexTrader.Data.MarketData
 
                 //CANT RECTIFY WITH 1m CANDLES, 
                 //TODO: WAIT (COLLECT DATA) AND RETRY
+
+
 
                 Console.Beep();
                 Console.Beep();
