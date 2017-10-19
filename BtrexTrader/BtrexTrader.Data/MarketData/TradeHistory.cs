@@ -23,6 +23,7 @@ namespace BtrexTrader.Data.MarketData
             //if cant rectify imediately, enter rectefication process/state
             MarketDelta = snap.MarketName;
             RecentFills = new List<mdFill>();
+            Candles5m = new List<Candle>();
             
             if (snap.Fills.Count() > 0)
             {
@@ -46,12 +47,14 @@ namespace BtrexTrader.Data.MarketData
                 conn.Close();
             }
 
+            //Candle Time is the START time of the 5m period. This means it is current to +5min from that time.
             LastStoredCandle = candleTime;
             DateTime NextCandleTime = LastStoredCandle.AddMinutes(5);
             Console.WriteLine("\r\n***Last5mCandle: {0}.....CurrTime: {1}", LastStoredCandle, DateTime.UtcNow);
             
             if (NextCandleTime >= snapTime)
             {
+                //If candle is current, Candles are Resolved
                 if (NextCandleTime.AddMinutes(5) > DateTime.UtcNow)
                 {
                     Console.WriteLine("@@@@@ NOT NEXT-CANDLE-TIME YET");
@@ -79,7 +82,10 @@ namespace BtrexTrader.Data.MarketData
                 Console.WriteLine("[{2}] CANDLES RESOLVED - {0}, {1}", LastStoredCandle, RecentFills.First().TimeStamp, MarketDelta);
                 return;
             }
-                
+
+
+            Console.Beep();
+
 
             Console.WriteLine("RESOLVING [{0}] CANDLES...", MarketDelta);
 
@@ -90,14 +96,13 @@ namespace BtrexTrader.Data.MarketData
                 return;
             }
 
-            DateTime last1mCandleTime = response.result.Last().T;
+            DateTime last1mCandleCurrTime = response.result.Last().T.AddMinutes(1);
             DateTime firstFillTime = RecentFills.First().TimeStamp;
 
-            if (last1mCandleTime >= firstFillTime)
+            if (last1mCandleCurrTime >= firstFillTime)
             {
                 //TODO: Build latest 5m candle with 1m data and RecentFills:
-                Console.WriteLine("*TRUE* === {0} > {1} :: [{2}]\r\n", last1mCandleTime, firstFillTime, MarketDelta);
-                Console.Beep();
+                Console.WriteLine("*TRUE* === {0} > {1} :: [{2}]\r\n", last1mCandleCurrTime, firstFillTime, MarketDelta);
 
 
                 Console.WriteLine("\r\n*************1mCandles***************");
@@ -138,7 +143,7 @@ namespace BtrexTrader.Data.MarketData
             }
             else
             {
-                Console.WriteLine("    !!!!ERR CANT_RECTIFY_CANDLES\r\nLast1mCandle: {0} < LastFill: {1} :: [{2}]", last1mCandleTime, firstFillTime, MarketDelta);
+                Console.WriteLine("    !!!!ERR CANT_RECTIFY_CANDLES\r\nLast1mCandle: {0} < LastFill: {1} :: [{2}]", last1mCandleCurrTime, firstFillTime, MarketDelta);
 
                 //CANT RECTIFY WITH 1m CANDLES, 
                 //TODO: WAIT AND RETRY
