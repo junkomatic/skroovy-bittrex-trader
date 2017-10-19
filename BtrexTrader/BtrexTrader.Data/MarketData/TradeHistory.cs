@@ -103,37 +103,44 @@ namespace BtrexTrader.Data.MarketData
             {
                 //TODO: Build latest 5m candle with 1m data and RecentFills:
                 Console.WriteLine("*TRUE* === {0} > {1} :: [{2}]\r\n", last1mCandleCurrTime, firstFillTime, MarketDelta);
-
-
+                
                 Console.WriteLine("\r\n*************1mCandles***************");
+                List<HistDataLine> Candles1m = new List<HistDataLine>();
                 foreach (HistDataLine line in response.result)
                 {
                     if (line.T >= LastStoredCandle)
                     {
+                        Candles1m.Add(line);
                         Console.WriteLine("{0} [O:{1}...H:{2}...L:{3}...C:{4}...V:{5}...BV:{6}]", line.T, line.O, line.H, line.L, line.C, line.V, line.BV);
-                        
-
-
-
                     }
 
                 }
 
 
-                DateTime LastStoredPlus5 = LastStoredCandle.AddMinutes(5);
+                //Grab O:H:L:V (noC) from 1mCandles
+                //simulate 2 mdFills (H&L:V) and add to beginning of RecentFills
+                
+
+                
+
+
+
+
+
+
                 Console.WriteLine("************RecentFills**************");
                 foreach (mdFill fill in RecentFills)
                 {
-                    //if (fill.TimeStamp < LastStoredPlus5)
+                    //if (fill.TimeStamp < last1mCandleCurrTime)
                         Console.WriteLine("{0} {1} == R:{2}...V:{3}...BV:{4}", fill.TimeStamp, fill.OrderType, fill.Rate, fill.Quantity, (fill.Quantity * fill.Rate));
-
-
-
-
-
-
+                    
                 }
                 Console.WriteLine("*************************************");
+
+
+                //check current, if not, rectify
+
+
 
 
 
@@ -148,17 +155,25 @@ namespace BtrexTrader.Data.MarketData
                 //CANT RECTIFY WITH 1m CANDLES, 
                 //TODO: WAIT AND RETRY
 
-                Console.Beep();
-                Console.Beep();
-                Console.Beep();
-                Console.Beep();
 
 
 
 
+                Console.Beep();
+                Console.Beep();
+                Console.Beep();
+                Console.Beep();
             }
         }
-        
+
+
+        private Candle BuildCandle1mAndFills(DateTime NextCandleTime, List<HistDataLine> Candles1m)
+        {
+
+
+            return null;
+        }
+
 
         private Candle BuildCandleFromRecentFills(DateTime NextCandleTime)
         {
@@ -181,6 +196,7 @@ namespace BtrexTrader.Data.MarketData
 
             Candle candle = new Candle(NextCandleTime, O, H, L, C, V);
             Candles5m.Add(candle);
+            LastStoredCandle = LastStoredCandle.AddMinutes(5);
 
             return candle;
         }
