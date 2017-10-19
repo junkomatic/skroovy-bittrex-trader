@@ -112,7 +112,6 @@ namespace BtrexTrader.Data
 
         private static void BuildAll5mCandles()
         {
-            Console.WriteLine("!TRIGGERED!");
             foreach (Market market in Markets)
             {
                 DateTime NextCandleStart = market.TradeHistory.LastStoredCandle.AddMinutes(5);
