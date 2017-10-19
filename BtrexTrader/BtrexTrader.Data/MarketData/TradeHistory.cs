@@ -14,8 +14,8 @@ namespace BtrexTrader.Data.MarketData
         public string MarketDelta { get; private set; }
         public List<mdFill> RecentFills { get; private set; }
         public DateTime LastStoredCandle { get; private set; }
-        private bool CandlesResolved = false;
         public List<Candle> Candles5m { get; private set; }
+        private bool CandlesResolved = false;
 
         public TradeHistory(MarketQueryResponse snap)
         {
@@ -154,6 +154,7 @@ namespace BtrexTrader.Data.MarketData
             }
         }
         
+
         private Candle BuildCandleFromRecentFills(DateTime NextCandleTime)
         {
             List<mdFill> candleFills = new List<mdFill>();
@@ -178,6 +179,7 @@ namespace BtrexTrader.Data.MarketData
 
             return candle;
         }
+
 
         public object Clone()
         {
