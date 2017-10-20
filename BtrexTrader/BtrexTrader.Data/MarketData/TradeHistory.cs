@@ -13,8 +13,8 @@ namespace BtrexTrader.Data.MarketData
     {
         public string MarketDelta { get; private set; }
         public List<mdFill> RecentFills { get; private set; }
-        public DateTime LastStoredCandle { get; private set; }
         public List<HistDataLine> Candles5m { get; private set; }
+        public DateTime LastStoredCandle { get; private set; }
         private bool CandlesResolved = false;
 
         public TradeHistory(MarketQueryResponse snap)
@@ -122,9 +122,9 @@ namespace BtrexTrader.Data.MarketData
                         V = Candles1m.Sum(x => x.V);
 
                 List<mdFill> RevisedFills = new List<mdFill>();
-                RevisedFills.Add(new mdFill(LastStoredCandle.AddMinutes(5), O, (V / 3), "BUY"));
-                RevisedFills.Add(new mdFill(LastStoredCandle.AddMinutes(5), H, (V / 3), "BUY"));
-                RevisedFills.Add(new mdFill(LastStoredCandle.AddMinutes(5), L, (V / 3), "SELL"));
+                RevisedFills.Add(new mdFill(LastStoredCandle.AddMinutes(5), O, (V / 3M), "BUY"));
+                RevisedFills.Add(new mdFill(LastStoredCandle.AddMinutes(5.01), H, (V / 3M), "BUY"));
+                RevisedFills.Add(new mdFill(LastStoredCandle.AddMinutes(5.015), L, (V / 3M), "SELL"));
 
                 Console.WriteLine("************RecentFills**************");
                 foreach (mdFill fill in RecentFills)
@@ -202,6 +202,7 @@ namespace BtrexTrader.Data.MarketData
             Candles5m.Add(candle);
             LastStoredCandle = LastStoredCandle.AddMinutes(5);
 
+            //ONLY RETURNING FOR DEBUG (1m candleResolve - see above)
             return candle;
         }
 

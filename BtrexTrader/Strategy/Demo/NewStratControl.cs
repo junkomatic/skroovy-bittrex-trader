@@ -13,7 +13,7 @@ namespace BtrexTrader.Strategy.Demo
         //POSSIBLY CONVERT BtrexData.Markets to ConcurrentDict, 
         //  replace all 'foreach (Market)' with indexed lookup 
         private IReadOnlyList<string> SpecificDeltas = new List<string>() { "BTC-ETH", "BTC-NEO", "BTC-XLM", "BTC-QTUM", "BTC-OMG"};
-        List<NewStratData> mData { get; private set; }
+        public List<NewStratData> mData { get; private set; }
 
         public async Task Initialize()
         {
@@ -34,7 +34,7 @@ namespace BtrexTrader.Strategy.Demo
             foreach (string mk in topMarkets)
             { 
                 await BtrexWS.subscribeMarket("BTC-" + mk);
-                
+                //Add data obj
             }
         }
 

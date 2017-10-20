@@ -280,31 +280,31 @@ namespace BtrexTrader.Strategy.TripletStrategy
 
         public static void AddTripletDeltas(string BTCdelta, string ETHdelta)
         {
-            OrderBook BTCbk = null;
-            OrderBook ETHbk = null;
-            OrderBook B2Ebk = (OrderBook)BtrexData.Markets[0].OrderBook.Clone();
+        //    OrderBook BTCbk = null;
+        //    OrderBook ETHbk = null;
+        //    OrderBook B2Ebk = (OrderBook)BtrexData.Markets[0].OrderBook.Clone();
 
-            foreach (Market market in BtrexData.Markets)
-            {
-                if (BTCbk == null && market.OrderBook.MarketDelta == BTCdelta)
-                {
-                    BTCbk = (OrderBook)market.OrderBook.Clone();
-                }
-                else if (ETHbk == null && market.OrderBook.MarketDelta == ETHdelta)
-                {
-                    ETHbk = (OrderBook)market.OrderBook.Clone();
-                }
-                if (BTCbk != null && ETHbk != null)
-                {
-                    DeltaTrips.Add(new TripletData(BTCbk, ETHbk, B2Ebk));
-                    Console.WriteLine("###TRIPLET ADDED: [{0}]", BTCdelta.Substring(4));
-                    break;
-                }
-            }
-            if (BTCbk == null || ETHbk == null)
-            {
-                Console.WriteLine("    !!!!ERR>> DOUBLET-CLONES NOT SET!");
-            }
+        //    foreach (Market market in BtrexData.Markets)
+        //    {
+        //        if (BTCbk == null && market.OrderBook.MarketDelta == BTCdelta)
+        //        {
+        //            BTCbk = (OrderBook)market.OrderBook.Clone();
+        //        }
+        //        else if (ETHbk == null && market.OrderBook.MarketDelta == ETHdelta)
+        //        {
+        //            ETHbk = (OrderBook)market.OrderBook.Clone();
+        //        }
+        //        if (BTCbk != null && ETHbk != null)
+        //        {
+        //            DeltaTrips.Add(new TripletData(BTCbk, ETHbk, B2Ebk));
+        //            Console.WriteLine("###TRIPLET ADDED: [{0}]", BTCdelta.Substring(4));
+        //            break;
+        //        }
+        //    }
+        //    if (BTCbk == null || ETHbk == null)
+        //    {
+        //        Console.WriteLine("    !!!!ERR>> DOUBLET-CLONES NOT SET!");
+        //    }
         }
 
     }

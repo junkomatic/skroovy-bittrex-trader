@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace BtrexTrader.Data.MarketData
 {
-    public class Market
+    public class Market : ICloneable
     {
         public string MarketDelta { get; private set; }
         public OrderBook OrderBook { get; private set; }
@@ -75,7 +75,7 @@ namespace BtrexTrader.Data.MarketData
                 foreach (mdFill fill in update.Fills)
                 {
                     TradeHistory.RecentFills.Add(fill);
-                    Console.WriteLine("[{5}] {0} {1} == R:{2}...V:{3}...BV:{4}", fill.TimeStamp.ToShortTimeString(), fill.OrderType, fill.Rate, fill.Quantity, (fill.Quantity * fill.Rate), MarketDelta);
+                    //Console.WriteLine("[{5}] {0} {1} == R:{2}...V:{3}...BV:{4}", fill.TimeStamp.ToShortTimeString(), fill.OrderType, fill.Rate, fill.Quantity, (fill.Quantity * fill.Rate), MarketDelta);
                 }
             }            
 
@@ -83,5 +83,10 @@ namespace BtrexTrader.Data.MarketData
 
         }
 
+
+        public object Clone()
+        {
+            return this.MemberwiseClone();
+        }
     }
 }

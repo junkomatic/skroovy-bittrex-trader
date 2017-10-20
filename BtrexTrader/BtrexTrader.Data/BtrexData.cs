@@ -18,7 +18,7 @@ namespace BtrexTrader.Data
 {
     public static class BtrexData
     {
-        public static List<Market> Markets { get; private set; }
+        public static ConcurrentDictionary<string, Market> Markets { get; private set; }
         public static ConcurrentQueue<MarketDataUpdate> UpdateQueue { get; private set; }
         public static decimal USDrate { get; private set; }
 
@@ -27,7 +27,7 @@ namespace BtrexTrader.Data
 
         public static void NewData()
         {
-            Markets = new List<Market>();
+            Markets = new ConcurrentDictionary<string, Market>();
             UpdateQueue = new ConcurrentQueue<MarketDataUpdate>();
         }
 
@@ -61,47 +61,44 @@ namespace BtrexTrader.Data
                     continue;
                 }
 
+
+                //TODO: PEEK UPDATE TO SEE IF MARKET EXISTS IN DATA
+
+
                 bool tryDQ = false;
-                while (!tryDQ)
+                do
                 {
                     MarketDataUpdate mdUpdate = new MarketDataUpdate();
-
                     tryDQ = UpdateQueue.TryDequeue(out mdUpdate);
-
                     if (tryDQ)
                     {
-                        //foreach (OrderBook book in Books)
-                        foreach (Market market in Markets)
+                        if (mdUpdate.Nounce <= Markets[mdUpdate.MarketName].Nounce || Markets[mdUpdate.MarketName] == null)
+                            break;
+                        else if (mdUpdate.Nounce > Markets[mdUpdate.MarketName].Nounce + 1)
                         {
-                            if (mdUpdate.MarketName != market.MarketDelta)
-                                continue;
-                            else if (mdUpdate.Nounce <= market.Nounce)
-                                break;
-                            else if (mdUpdate.Nounce > (market.Nounce + 1))
+                            //IF NOUNCE IS DE-SYNCED, WIPE BOOK AND RE-SNAP
+                            Console.WriteLine("    !!!!ERR>>  NOUNCE OUT OF ORDER! " + mdUpdate.MarketName + " BOOK-DSYNC.  {0}, {1}", Markets[mdUpdate.MarketName].Nounce, mdUpdate.Nounce);
+                            bool removed;
+                            do
                             {
-                                //IF NOUNCE IS DE-SYNCED, WIPE BOOK AND RE-SNAP
-                                Console.WriteLine("    !!!!ERR>>  NOUNCE OUT OF ORDER! " + mdUpdate.MarketName + " BOOK-DSYNC.  {0}, {1}", market.Nounce, mdUpdate.Nounce);
-                                foreach (Market mk in Markets)
-                                {
-                                    if (mk.MarketDelta == mdUpdate.MarketName)
-                                    {
-                                        Markets.Remove(mk);
-                                        break;
-                                    }
-                                }
+                                Market m;
+                                removed = Markets.TryRemove(mdUpdate.MarketName, out m);
+                            } while (!removed);
 
-                                //Request MarketQuery from websocket, and OpenBook() with new snapshot
-                                MarketQueryResponse marketQuery = BtrexWS.btrexHubProxy.Invoke<MarketQueryResponse>("QueryExchangeState", mdUpdate.MarketName).Result;
-                                marketQuery.MarketName = mdUpdate.MarketName;
-                                OpenMarket(marketQuery).Wait();
-                                Console.WriteLine("    [BOOK RE-SYNCED]");
-                                break;
-                            }
-                            else
-                                market.SetUpdate(mdUpdate);
+
+                            //Request MarketQuery from websocket, and OpenBook() with new snapshot
+                            MarketQueryResponse marketQuery = BtrexWS.btrexHubProxy.Invoke<MarketQueryResponse>("QueryExchangeState", mdUpdate.MarketName).Result;
+                            marketQuery.MarketName = mdUpdate.MarketName;
+                            OpenMarket(marketQuery).Wait();
+                            Console.WriteLine("    [BOOK RE-SYNCED]");
+                            break;
+
                         }
+                        else
+                            Markets[mdUpdate.MarketName].SetUpdate(mdUpdate);
+                        
                     }
-                }
+                } while (!tryDQ);
             }
         }
 
@@ -109,14 +106,17 @@ namespace BtrexTrader.Data
         {
             Market market = new Market(snapshot);
             await market.TradeHistory.Resolve5mCandles();
-            Markets.Add(market);
-
+            bool added;
+            do
+            {
+                added = Markets.TryAdd(market.MarketDelta, market);
+            } while (!added);
         }
 
 
         private static void BuildAll5mCandles()
         {
-            foreach (Market market in Markets)
+            foreach (Market market in Markets.Values)
             {
                 DateTime NextCandleStart = market.TradeHistory.LastStoredCandle.AddMinutes(5);
 
@@ -131,7 +131,6 @@ namespace BtrexTrader.Data
                 //Build next candle from RecentFill data
                 market.TradeHistory.BuildCandleFromRecentFills(NextCandleStart);
             }
-        
         }
 
 
@@ -145,7 +144,7 @@ namespace BtrexTrader.Data
                 {
                     using (var tx = conn.BeginTransaction())
                     {
-                        foreach (Market market in Markets)
+                        foreach (Market market in Markets.Values)
                         {
                             market.TradeHistory.SavePurgeCandlesSQLite(cmd);
                             market.TradeHistory.CullRecentFills();
