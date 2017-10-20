@@ -9,7 +9,7 @@ namespace BtrexTrader.Interface
 {
     public class TradeMethods
     {
-        public async Task<List<string>> GetTopMarkets()
+        public async Task<List<string>> GetTopMarketsByBV(int n)
         {
             MarketSummary markets = await BtrexREST.GetMarketSummary();
             Dictionary<string, decimal> topMarketsBTC = new Dictionary<string, decimal>();
@@ -28,7 +28,7 @@ namespace BtrexTrader.Interface
             }
 
             List<string> mks = new List<string>();
-            foreach (KeyValuePair<string, decimal> mk in topMarketsBTC.OrderByDescending(x => x.Value).Take(20))
+            foreach (KeyValuePair<string, decimal> mk in topMarketsBTC.OrderByDescending(x => x.Value).Take(n))
             {
                 string coin = mk.Key.Split('-')[1];
                 if (topMarketsETH.Contains(coin))

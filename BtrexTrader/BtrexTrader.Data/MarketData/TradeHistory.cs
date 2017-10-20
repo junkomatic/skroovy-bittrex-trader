@@ -237,7 +237,7 @@ namespace BtrexTrader.Data.MarketData
 
         public void CullRecentFills()
         {
-            //TODO: CULL RecentFills
+            //CULL RecentFills to 20 minutes before LastCandleTime
             DateTime cullTime = LastStoredCandle.Subtract(TimeSpan.FromMinutes(20));
             List<mdFill> culledFills = new List<mdFill>();
             foreach (mdFill fill in RecentFills)

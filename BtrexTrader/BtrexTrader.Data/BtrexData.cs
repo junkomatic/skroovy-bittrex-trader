@@ -205,7 +205,10 @@ namespace BtrexTrader.Data
     {
         public async Task<IReadOnlyList<Candle>> ImportAsync(string symbol, DateTime? startTime = null, DateTime? endTime = null, PeriodOption period = PeriodOption.Daily, CancellationToken token = default(CancellationToken))
         {
-            //TODO:COMPLETE IMPORTER - PeriodOption missing 5m, does this matter?
+            //TODO:COMPLETE IMPORTER
+
+
+
 
             return null;
         }

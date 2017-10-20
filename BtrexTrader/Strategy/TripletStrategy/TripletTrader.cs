@@ -34,7 +34,7 @@ namespace BtrexTrader.Strategy.TripletStrategy
                 //SUBTRACT MARKETS THAT DONT HAVE ETH DELTAS,
                 //and CalcTrips() will report only.
                 Console.WriteLine("*WATCH ONLY*");
-                List<string> topMarkets = await BtrexREST.TradeMethods.GetTopMarkets();
+                List<string> topMarkets = await BtrexREST.TradeMethods.GetTopMarketsByBV(20);
                 foreach (string mk in topMarkets)
                 {
                     await SubTriplet(mk);
