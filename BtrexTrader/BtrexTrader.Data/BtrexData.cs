@@ -60,11 +60,7 @@ namespace BtrexTrader.Data
                     Thread.Sleep(pause);
                     continue;
                 }
-
-
-                //TODO: PEEK UPDATE TO SEE IF MARKET EXISTS IN DATA
-
-
+                
                 bool tryDQ = false;
                 do
                 {
@@ -84,8 +80,7 @@ namespace BtrexTrader.Data
                                 Market m;
                                 removed = Markets.TryRemove(mdUpdate.MarketName, out m);
                             } while (!removed);
-
-
+                            
                             //Request MarketQuery from websocket, and OpenBook() with new snapshot
                             MarketQueryResponse marketQuery = BtrexWS.btrexHubProxy.Invoke<MarketQueryResponse>("QueryExchangeState", mdUpdate.MarketName).Result;
                             marketQuery.MarketName = mdUpdate.MarketName;

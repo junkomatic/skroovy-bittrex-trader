@@ -51,7 +51,7 @@ namespace BtrexTrader
             await BtrexController.InitializeMarkets();
             await BtrexData.StartDataUpdates();
 
-            //START CALC-STRATEGY WORK:
+            //START CALCS/STRATEGY WORK:
             //BtrexController.StartWork();
 
 

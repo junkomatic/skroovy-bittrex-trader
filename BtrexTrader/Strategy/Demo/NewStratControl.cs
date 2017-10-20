@@ -9,9 +9,7 @@ using BtrexTrader.Data;
 namespace BtrexTrader.Strategy.Demo
 {
     class NewStratControl
-    {        
-        //POSSIBLY CONVERT BtrexData.Markets to ConcurrentDict, 
-        //  replace all 'foreach (Market)' with indexed lookup 
+    {
         private IReadOnlyList<string> SpecificDeltas = new List<string>() { "BTC-ETH", "BTC-NEO", "BTC-XLM", "BTC-QTUM", "BTC-OMG"};
         public List<NewStratData> mData { get; private set; }
 
