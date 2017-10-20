@@ -16,8 +16,8 @@ namespace BtrexTrader.Data
     {
         private static ConcurrentQueue<HistDataResponse> DataQueue = new ConcurrentQueue<HistDataResponse>();
         private static int //downloaded = 0,
-                    saved = 0,
-                    totalCount = 0;
+                            saved = 0,
+                            totalCount = 0;
         private static bool savedComplete = false;
         public const string dbName = "MarketHistory.data";
 
@@ -149,11 +149,7 @@ namespace BtrexTrader.Data
                 CreateNewDataTable(data, cmd);
                 return;
             }
-
-
-            //TODO: REPLACE NULL VALUES IN BV COLUMN WITH DATA
-
-
+            
             cmd.CommandText = string.Format("SELECT * FROM {0} ORDER BY datetime(DateTime) DESC Limit 1", data.MarketDelta);
             DateTime dateTime = Convert.ToDateTime(cmd.ExecuteScalar());
 

@@ -14,7 +14,7 @@ namespace BtrexTrader.Data.MarketData
         public string MarketDelta { get; private set; }
         public List<mdFill> RecentFills { get; private set; }
         public DateTime LastStoredCandle { get; private set; }
-        public List<Candle> Candles5m { get; private set; }
+        public List<HistDataLine> Candles5m { get; private set; }
         private bool CandlesResolved = false;
 
         public TradeHistory(MarketQueryResponse snap)
@@ -23,7 +23,7 @@ namespace BtrexTrader.Data.MarketData
             //if cant rectify imediately, enter rectefication process/state
             MarketDelta = snap.MarketName;
             RecentFills = new List<mdFill>();
-            Candles5m = new List<Candle>();
+            Candles5m = new List<HistDataLine>();
             
             if (snap.Fills.Count() > 0)
             {
@@ -63,7 +63,7 @@ namespace BtrexTrader.Data.MarketData
                     return;
                 }
 
-                Candle nextCandle = BuildCandleFromRecentFills(NextCandleTime);
+                HistDataLine nextCandle = BuildCandleFromRecentFills(NextCandleTime);
 
                 //Console.WriteLine("@@@@@ NEW CANDLE = T:{0} O:{1} H:{2} L:{3} C:{4} V:{5}",
                     //nextCandle.DateTime, nextCandle.Open, nextCandle.High, nextCandle.Low, nextCandle.Close, nextCandle.Volume);
@@ -149,10 +149,10 @@ namespace BtrexTrader.Data.MarketData
                     return;
                 }
 
-                Candle nextCandle = BuildCandleFromRecentFills(NextCandleTime);
+                HistDataLine nextCandle = BuildCandleFromRecentFills(NextCandleTime);
 
-                Console.WriteLine("@@@@@ NEW CANDLE(w/1m!) = T:{0} O:{1} H:{2} L:{3} C:{4} V:{5}",
-                    nextCandle.DateTime, nextCandle.Open, nextCandle.High, nextCandle.Low, nextCandle.Close, nextCandle.Volume);
+                Console.WriteLine("@@@@@ NEW CANDLE(w/1m!) = T:{0} O:{1} H:{2} L:{3} C:{4} V:{5}, BV:{6}",
+                    nextCandle.T, nextCandle.O, nextCandle.H, nextCandle.L, nextCandle.C, nextCandle.V, nextCandle.BV);
 
                 CandlesResolved = true;
             }
@@ -173,8 +173,9 @@ namespace BtrexTrader.Data.MarketData
         }
 
 
-        public Candle BuildCandleFromRecentFills(DateTime NextCandleTime)
+        public HistDataLine BuildCandleFromRecentFills(DateTime NextCandleTime)
         {
+            Decimal BV = 0;
             List<mdFill> candleFills = new List<mdFill>();
             foreach (mdFill fill in RecentFills)
             {
@@ -183,7 +184,11 @@ namespace BtrexTrader.Data.MarketData
                 else if (fill.TimeStamp >= NextCandleTime.AddMinutes(5))
                     break;
                 else
+                {
+                    BV += (fill.Quantity * fill.Rate);
                     candleFills.Add(fill);
+                }
+                    
             }
 
             Decimal O = candleFills.First().Rate,
@@ -192,7 +197,8 @@ namespace BtrexTrader.Data.MarketData
                     C = candleFills.Last().Rate,
                     V = candleFills.Sum(x => x.Quantity);
 
-            Candle candle = new Candle(NextCandleTime, O, H, L, C, V);
+
+            HistDataLine candle = new HistDataLine(NextCandleTime, O, H, L, C, V, BV);
             Candles5m.Add(candle);
             LastStoredCandle = LastStoredCandle.AddMinutes(5);
 
@@ -204,29 +210,29 @@ namespace BtrexTrader.Data.MarketData
             cmd.CommandText = string.Format("SELECT * FROM {0} ORDER BY datetime(DateTime) DESC Limit 1", MarketDelta);
             DateTime dateTime = Convert.ToDateTime(cmd.ExecuteScalar());
 
-            List<Candle> removeList = new List<Candle>();
+            List<HistDataLine> removeList = new List<HistDataLine>();
 
-            foreach (Candle line in Candles5m)
+            foreach (HistDataLine line in Candles5m)
             {
 
-                if (line.DateTime >= LastStoredCandle.Subtract(TimeSpan.FromHours(3)))
+                if (line.T >= LastStoredCandle.Subtract(TimeSpan.FromHours(3)))
                     break;
-                if (line.DateTime <= dateTime)
+                if (line.T <= dateTime)
                     continue;
                 else
                 {
                     cmd.CommandText = string.Format(
                         "INSERT INTO {0} (DateTime, Open, High, Low, Close, Volume, BaseVolume) "
-                        + "VALUES ('{1}', '{2}', '{3}', '{4}', '{5}', '{6}', 'null')",
+                        + "VALUES ('{1}', '{2}', '{3}', '{4}', '{5}', '{6}', '{7}')",
                         MarketDelta,
-                        line.DateTime.ToString("yyyy-MM-dd HH:mm:ss"), line.Open, line.High, line.Low, line.Close, line.Volume);
+                        line.T.ToString("yyyy-MM-dd HH:mm:ss"), line.O, line.H, line.L, line.C, line.V, line.BV);
 
                     cmd.ExecuteNonQuery();
                     removeList.Add(line);
                 }
             }
 
-            Candles5m = (List<Candle>)Candles5m.Except(removeList);
+            Candles5m = (List<HistDataLine>)Candles5m.Except(removeList);
         }
 
         public void CullRecentFills()

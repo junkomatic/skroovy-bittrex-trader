@@ -315,6 +315,17 @@ namespace BtrexTrader
         public decimal V { get; set; }
         public DateTime T { get; set; }
         public decimal BV { get; set; }
+
+        public HistDataLine(DateTime time, decimal open, decimal high, decimal low, decimal close, decimal volume, decimal basevol)
+        {
+            T = time;
+            O = open;
+            H = high;
+            L = low;
+            C = close;
+            V = volume;
+            BV = basevol;
+        }
     }
 
 }
