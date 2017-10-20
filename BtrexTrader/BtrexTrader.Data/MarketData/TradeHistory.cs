@@ -199,6 +199,48 @@ namespace BtrexTrader.Data.MarketData
             return candle;
         }
 
+        public void SavePurgeCandlesSQLite(SQLiteCommand cmd)
+        {
+            cmd.CommandText = string.Format("SELECT * FROM {0} ORDER BY datetime(DateTime) DESC Limit 1", MarketDelta);
+            DateTime dateTime = Convert.ToDateTime(cmd.ExecuteScalar());
+
+            List<Candle> removeList = new List<Candle>();
+
+            foreach (Candle line in Candles5m)
+            {
+
+                if (line.DateTime >= LastStoredCandle.Subtract(TimeSpan.FromHours(3)))
+                    break;
+                if (line.DateTime <= dateTime)
+                    continue;
+                else
+                {
+                    cmd.CommandText = string.Format(
+                        "INSERT INTO {0} (DateTime, Open, High, Low, Close, Volume, BaseVolume) "
+                        + "VALUES ('{1}', '{2}', '{3}', '{4}', '{5}', '{6}', 'NULL')",
+                        MarketDelta,
+                        line.DateTime.ToString("yyyy-MM-dd HH:mm:ss"), line.Open, line.High, line.Low, line.Close, line.Volume);
+
+                    cmd.ExecuteNonQuery();
+                    removeList.Add(line);
+                }
+            }
+
+            Candles5m = (List<Candle>)Candles5m.Except(removeList);
+        }
+
+        public void CullRecentFills()
+        {
+            //TODO: CULL RecentFills
+            DateTime cullTime = LastStoredCandle.Subtract(TimeSpan.FromMinutes(20));
+            List<mdFill> culledFills = new List<mdFill>();
+            foreach (mdFill fill in RecentFills)
+                if (fill.TimeStamp < cullTime)
+                    culledFills.Add(fill);
+
+            RecentFills = (List<mdFill>)RecentFills.Except(culledFills);
+        }
+
 
         public object Clone()
         {

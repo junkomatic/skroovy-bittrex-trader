@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Data.SQLite;
+using Trady.Core;
 using Quartz;
 using Quartz.Impl;
 using BtrexTrader.Interface;
@@ -130,19 +132,28 @@ namespace BtrexTrader.Data
         
         }
 
+
         private static void DumpDataToSQLite()
         {
-            foreach (Market market in Markets)
+            //DUMP CANDLE DATA INTO SQLite & CULL RecentFills TO CONSERVE MEMORY (TRIGGERED EVERY 3 HOURS)
+            using (SQLiteConnection conn = new SQLiteConnection("Data Source=" + HistoricalData.dbName + ";Version=3;"))
             {
-                //TODO: DUMP DATA
+                conn.Open();
+                using (var cmd = new SQLiteCommand(conn))
+                {
+                    using (var tx = conn.BeginTransaction())
+                    {
+                        foreach (Market market in Markets)
+                        {
+                            market.TradeHistory.SavePurgeCandlesSQLite(cmd);
+                            market.TradeHistory.CullRecentFills();
+                        }
 
+                        tx.Commit();
+                    }
+                }
 
-
-
-
-
-
-
+                conn.Close();
             }
         }
 
@@ -164,7 +175,7 @@ namespace BtrexTrader.Data
 
         static ITrigger cleanUpTrigger = TriggerBuilder.Create()
             .WithIdentity("trigger1", "group1")
-            .WithCronSchedule("0 32 0/2 * * ? *")
+            .WithCronSchedule("0 32 0/3 * * ? *")
             .Build();
 
         //DEFINE CRON-JOBS
@@ -184,13 +195,7 @@ namespace BtrexTrader.Data
             }
         }
 
-
-
-
-
-
-
+        
     }
-
-
+    
 }
