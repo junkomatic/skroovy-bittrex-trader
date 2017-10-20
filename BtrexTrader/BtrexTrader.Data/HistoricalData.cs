@@ -150,6 +150,10 @@ namespace BtrexTrader.Data
                 return;
             }
 
+
+            //TODO: REPLACE NULL VALUES IN BV COLUMN WITH DATA
+
+
             cmd.CommandText = string.Format("SELECT * FROM {0} ORDER BY datetime(DateTime) DESC Limit 1", data.MarketDelta);
             DateTime dateTime = Convert.ToDateTime(cmd.ExecuteScalar());
 

@@ -161,7 +161,7 @@ namespace BtrexTrader.Data.MarketData
                 Console.WriteLine("    !!!!ERR CANT_RECTIFY_CANDLES\r\nLast1mCandleCurrent: {0} < LastFill: {1} :: [{2}]", last1mCandleCurrTime, firstFillTime, MarketDelta);
 
                 //CANT RECTIFY WITH 1m CANDLES, 
-                //TODO: WAIT (COLLECT DATA) AND RETRY
+                //TODO: WAIT FOR NEXT 1m CANDLE-PULL AND RETRY
 
 
 
@@ -217,7 +217,7 @@ namespace BtrexTrader.Data.MarketData
                 {
                     cmd.CommandText = string.Format(
                         "INSERT INTO {0} (DateTime, Open, High, Low, Close, Volume, BaseVolume) "
-                        + "VALUES ('{1}', '{2}', '{3}', '{4}', '{5}', '{6}', 'NULL')",
+                        + "VALUES ('{1}', '{2}', '{3}', '{4}', '{5}', '{6}', 'null')",
                         MarketDelta,
                         line.DateTime.ToString("yyyy-MM-dd HH:mm:ss"), line.Open, line.High, line.Low, line.Close, line.Volume);
 
