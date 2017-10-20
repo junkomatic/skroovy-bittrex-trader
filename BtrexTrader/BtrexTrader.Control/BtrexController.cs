@@ -14,7 +14,14 @@ namespace BtrexTrader.Control
 {
     class BtrexTradeController
     {
-        public TripletTrader TripletTrader = new TripletTrader();
+        private NewStratControl NewStrat = new NewStratControl();
+        //private TripletTrader TripletTrader = new TripletTrader();
+
+        public async Task InitializeMarkets()
+        {
+            await NewStrat.Initialize();
+            //await TripletTrader.Initialize();
+        }
 
         public void StartWork()
         {
@@ -26,13 +33,9 @@ namespace BtrexTrader.Control
 
         private async void ScanMarkets()
         {
-            //THIS DOES SETUP/INIT:
-            await TripletTrader.Initialize();
-
             while (true)
             {
-                //Parallel.ForEach<Market>(btrexData.Markets, m => ScanMarket(m));
-                Parallel.ForEach<TripletData>(TripletTrader.DeltaTrips, triplet => TripletTrader.CalcTrips(triplet));
+                //Parallel.ForEach<TripletData>(TripletTrader.DeltaTrips, triplet => TripletTrader.CalcTrips(triplet));
                 Thread.Sleep(100);
             }
         }

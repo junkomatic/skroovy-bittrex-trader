@@ -75,7 +75,7 @@ namespace BtrexTrader.Data.MarketData
                 foreach (mdFill fill in update.Fills)
                 {
                     TradeHistory.RecentFills.Add(fill);
-                    Console.WriteLine("{0} {1} == R:{2}...V:{3}...BV:{4}", fill.TimeStamp, fill.OrderType, fill.Rate, fill.Quantity, (fill.Quantity * fill.Rate));
+                    Console.WriteLine("[{5}] {0} {1} == R:{2}...V:{3}...BV:{4}", fill.TimeStamp.ToShortTimeString(), fill.OrderType, fill.Rate, fill.Quantity, (fill.Quantity * fill.Rate), MarketDelta);
                 }
             }            
 

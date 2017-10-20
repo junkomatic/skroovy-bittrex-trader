@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -9,7 +8,7 @@ namespace BtrexTrader.Interface
 {
     public class TradeMethods
     {
-        public async Task<List<string>> GetTopMarketsByBV(int n)
+        public async Task<List<string>> GetTopMarketsByBVwithETHdelta(int n)
         {
             MarketSummary markets = await BtrexREST.GetMarketSummary();
             Dictionary<string, decimal> topMarketsBTC = new Dictionary<string, decimal>();
@@ -36,6 +35,28 @@ namespace BtrexTrader.Interface
             }
 
             Console.WriteLine("Markets: {0}", mks.Count);
+            return mks;
+        }
+
+        public async Task<List<string>> GetTopMarketsByBVbtcOnly(int n)
+        {
+            MarketSummary markets = await BtrexREST.GetMarketSummary();
+            Dictionary<string, decimal> topMarketsBTC = new Dictionary<string, decimal>();
+            foreach (SummaryResult market in markets.result)
+            {
+                string mkbase = market.MarketName.Split('-')[0];
+                if (mkbase == "BTC")
+                {
+                    topMarketsBTC.Add(market.MarketName, market.BaseVolume);
+                }
+            }
+
+            List<string> mks = new List<string>();
+            foreach (KeyValuePair<string, decimal> mk in topMarketsBTC.OrderByDescending(x => x.Value).Take(n))
+            {
+                mks.Add(mk.Key.Split('-')[1]);
+            }
+            
             return mks;
         }
 
