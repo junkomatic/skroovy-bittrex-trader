@@ -12,13 +12,13 @@ using Trady.Core.Period;
 using Quartz;
 using Quartz.Impl;
 using BtrexTrader.Interface;
-using BtrexTrader.Data.MarketData;
+using BtrexTrader.Data.Market;
 
 namespace BtrexTrader.Data
 {
     public static class BtrexData
     {
-        public static ConcurrentDictionary<string, Market> Markets { get; private set; }
+        public static ConcurrentDictionary<string, Market.Market> Markets { get; private set; }
         public static ConcurrentQueue<MarketDataUpdate> UpdateQueue { get; private set; }
         public static decimal USDrate { get; private set; }
 
@@ -27,7 +27,7 @@ namespace BtrexTrader.Data
 
         public static void NewData()
         {
-            Markets = new ConcurrentDictionary<string, Market>();
+            Markets = new ConcurrentDictionary<string, Market.Market>();
             UpdateQueue = new ConcurrentQueue<MarketDataUpdate>();
         }
 
@@ -77,7 +77,7 @@ namespace BtrexTrader.Data
                             bool removed;
                             do
                             {
-                                Market m;
+                                Market.Market m;
                                 removed = Markets.TryRemove(mdUpdate.MarketName, out m);
                             } while (!removed);
                             
@@ -99,7 +99,7 @@ namespace BtrexTrader.Data
 
         public static async Task OpenMarket(MarketQueryResponse snapshot)
         {
-            Market market = new Market(snapshot);
+            Market.Market market = new Market.Market(snapshot);
             await market.TradeHistory.Resolve5mCandles();
             bool added;
             do
@@ -111,7 +111,7 @@ namespace BtrexTrader.Data
 
         private static void BuildAll5mCandles()
         {
-            foreach (Market market in Markets.Values)
+            foreach (Market.Market market in Markets.Values)
             {
                 DateTime NextCandleStart = market.TradeHistory.LastStoredCandle.AddMinutes(5);
 
@@ -139,7 +139,7 @@ namespace BtrexTrader.Data
                 {
                     using (var tx = conn.BeginTransaction())
                     {
-                        foreach (Market market in Markets.Values)
+                        foreach (Market.Market market in Markets.Values)
                         {
                             market.TradeHistory.SavePurgeCandlesSQLite(cmd);
                             market.TradeHistory.CullRecentFills();

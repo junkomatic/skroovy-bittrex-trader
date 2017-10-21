@@ -7,7 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using BtrexTrader.Interface;
 using BtrexTrader.Data;
-using BtrexTrader.Data.MarketData;
+using BtrexTrader.Data.Market;
 
 namespace BtrexTrader.Strategy.TripletStrategy
 {

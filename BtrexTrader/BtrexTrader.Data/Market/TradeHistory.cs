@@ -7,7 +7,7 @@ using System.Data.SQLite;
 using Trady.Core;
 using BtrexTrader.Interface;
 
-namespace BtrexTrader.Data.MarketData
+namespace BtrexTrader.Data.Market
 {
     public class TradeHistory : ICloneable
     {

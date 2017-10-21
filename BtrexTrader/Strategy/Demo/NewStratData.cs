@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Trady.Core;
 using BtrexTrader.Data;
-using BtrexTrader.Data.MarketData;
+using BtrexTrader.Data.Market;
 
 namespace BtrexTrader.Strategy.Demo
 {

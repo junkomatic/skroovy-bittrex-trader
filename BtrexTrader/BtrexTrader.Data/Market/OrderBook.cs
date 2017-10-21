@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BtrexTrader.Data.MarketData
+namespace BtrexTrader.Data.Market
 {
     public class OrderBook : ICloneable
     {

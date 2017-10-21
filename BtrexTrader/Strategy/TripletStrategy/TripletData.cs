@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using BtrexTrader.Data;
-using BtrexTrader.Data.MarketData;
+using BtrexTrader.Data.Market;
 
 namespace BtrexTrader.Strategy.TripletStrategy
 {
