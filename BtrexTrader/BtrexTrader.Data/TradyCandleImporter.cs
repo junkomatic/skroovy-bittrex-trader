@@ -15,11 +15,11 @@ namespace BtrexTrader.Data
         public async Task<IReadOnlyList<Candle>> ImportAsync(string symbol, DateTime? startTime = null, DateTime? endTime = null, PeriodOption period = PeriodOption.Daily, CancellationToken token = default(CancellationToken))
         {
             //TODO:COMPLETE IMPORTER
-            //Make Candles from Data.RecentFills, 
+            //IMport Candles from Data.Candle5m, 
             //If thats not enough, trim the fuzz and get more data from sqlite
             //Assemble/Return IReadOnlyList in correct order.
-            //Dont forget endTime, dont worry about PeriodOption.
-
+            if (endTime == null)
+                endTime = DateTime.UtcNow;
 
 
 
