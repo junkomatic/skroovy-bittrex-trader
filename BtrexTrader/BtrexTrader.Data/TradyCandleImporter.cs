@@ -18,7 +18,8 @@ namespace BtrexTrader.Data
             //Make Candles from Data.RecentFills, 
             //If thats not enough, trim the fuzz and get more data from sqlite
             //Assemble/Return IReadOnlyList in correct order.
-            //Dont forget endTime...
+            //Dont forget endTime, dont worry about PeriodOption.
+
 
 
 

@@ -84,7 +84,7 @@ namespace BtrexTrader.Data.Market
              
 
             Console.Beep();
-
+            //TODO: CHECK ACCURACY OF w/1m CANDLE SCENARIO, REMOVE DEBUG:
 
             Console.WriteLine("RESOLVING [{0}] CANDLES...", MarketDelta);
             Console.WriteLine("\r\n***Last5mCandleStart: {0}\r\n...CurrTime: {1}\r\n...SnapData Begins: {2}\r\n", LastStoredCandle, DateTime.UtcNow, RecentFills.First().TimeStamp);
