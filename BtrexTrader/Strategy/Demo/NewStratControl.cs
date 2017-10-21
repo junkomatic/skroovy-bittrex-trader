@@ -13,7 +13,6 @@ namespace BtrexTrader.Strategy.Demo
 {
     class NewStratControl
     {
-        private ConcurrentDictionary<string, Market> mData = new ConcurrentDictionary<string, Market>();
         private Dictionary<string, List<Candle>> mCandles = new Dictionary<string, List<Candle>>();
 
         private IReadOnlyList<string> SpecificDeltas = new List<string>()
@@ -21,16 +20,17 @@ namespace BtrexTrader.Strategy.Demo
             "BTC-ETH", "BTC-NEO", "BTC-XLM", "BTC-QTUM", "BTC-OMG"
         };
 
+
         public async Task Initialize()
         {
             await SubTopMarketsByVol(10);
             //await SubSpecificMarkets();
         }
 
-        public async Task StartDemoMarkets()
+        public async Task StartMarketsDemo()
         {
-            //Every iteration, check LastCandleTime to check if refresh mCandles
-
+            //TODO: Every iteration, check LastCandleTime to check if add new mCandle
+                //Display All Data:
 
 
 
@@ -45,10 +45,9 @@ namespace BtrexTrader.Strategy.Demo
             {
                 await BtrexWS.subscribeMarket("BTC-" + mk);
             }
-            //Create SHALLOW COPY (CLONE) of ConDict
-            mData = BtrexData.Markets;
-            await PreloadCandles(3);
+            await PreloadCandlesDict(3);
         }
+
 
         private async Task SubSpecificMarkets()
         {
@@ -56,25 +55,24 @@ namespace BtrexTrader.Strategy.Demo
             {
                 await BtrexWS.subscribeMarket("BTC-" + mk);
             }
-            //Create SHALLOW COPY (CLONE) of ConDict
-            mData = BtrexData.Markets;
-            await PreloadCandles(3);
+            await PreloadCandlesDict(3);
         }
 
-        private async Task PreloadCandles(int hour)
+
+        private async Task PreloadCandlesDict(int hour)
         {
             //TODO: Import (3) hours of canldes into memory for each market.
             //   Aggregate in mCandles Dict
             DateTime startTime = DateTime.UtcNow.Subtract(TimeSpan.FromHours(hour));
-            foreach (Market market in mData.Values)
+            foreach (Market market in BtrexData.Markets.Values)
             {
-                var importer = new CandleImporter();
-                var pre = await importer.ImportAsync(market.MarketDelta, startTime);
-                List<Candle> preCandles = new List<Candle>(pre);
-                mCandles.Add(market.MarketDelta, preCandles);
+                var importer = new TradyCandleImporter();
+                var preCandles = await importer.ImportAsync(market.MarketDelta, startTime);
+                mCandles.Add(market.MarketDelta, new List<Candle>(preCandles));
             }
-
         }
 
     }
+
+
 }

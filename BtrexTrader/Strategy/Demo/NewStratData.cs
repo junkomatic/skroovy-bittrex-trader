@@ -27,16 +27,5 @@ namespace BtrexTrader.Strategy.Demo
             RecentFills = hist.RecentFills;
             RecentCandleHist = hist.Candles5m;
         }
-
-        public async Task<IReadOnlyList<Candle>> GetCandles(DateTime start)
-        {
-            var importer = new CandleImporter();
-            IReadOnlyList<Candle> candles = await importer.ImportAsync(coinName, start);
-
-            return candles;
-        }
-
-
-
     }
 }

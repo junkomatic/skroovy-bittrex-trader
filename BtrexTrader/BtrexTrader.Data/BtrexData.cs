@@ -6,9 +6,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Data.SQLite;
-using Trady.Core;
-using Trady.Core.Infrastructure;
-using Trady.Core.Period;
 using Quartz;
 using Quartz.Impl;
 using BtrexTrader.Interface;
@@ -190,23 +187,8 @@ namespace BtrexTrader.Data
                 DumpDataToSQLite();
             }
         }
-
         
     }
 
 
-    public class CandleImporter : IImporter
-    {
-        public async Task<IReadOnlyList<Candle>> ImportAsync(string symbol, DateTime? startTime = null, DateTime? endTime = null, PeriodOption period = PeriodOption.Daily, CancellationToken token = default(CancellationToken))
-        {
-            //TODO:COMPLETE IMPORTER
-
-
-
-
-            return null;
-        }
-    }
-
-    
 }
