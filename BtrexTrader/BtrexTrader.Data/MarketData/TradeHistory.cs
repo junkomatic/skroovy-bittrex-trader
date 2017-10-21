@@ -46,7 +46,6 @@ namespace BtrexTrader.Data.MarketData
 
             //Candle Time is the START time of the 5m period. This means it is current to +5min from that time.
             DateTime NextCandleTime = LastStoredCandle.AddMinutes(5);
-            Console.WriteLine("\r\n***Last5mCandleStart: {0}\r\n...CurrTime: {1}\r\n...SnapData Begins: {2}\r\n", LastStoredCandle, DateTime.UtcNow, RecentFills.First().TimeStamp);
 
             if (NextCandleTime > RecentFills.Last().TimeStamp)
             {
@@ -63,7 +62,7 @@ namespace BtrexTrader.Data.MarketData
                     return;
                 }
 
-                HistDataLine nextCandle = BuildCandleFromRecentFills(NextCandleTime);
+                BuildCandleFromRecentFills(NextCandleTime);
 
                 //Console.WriteLine("@@@@@ NEW CANDLE = T:{0} O:{1} H:{2} L:{3} C:{4} V:{5}",
                     //nextCandle.DateTime, nextCandle.Open, nextCandle.High, nextCandle.Low, nextCandle.Close, nextCandle.Volume);
@@ -76,17 +75,19 @@ namespace BtrexTrader.Data.MarketData
 
         public async Task Resolve5mCandles()
         {
+            DateTime NextCandleTime = LastStoredCandle.AddMinutes(5);
             if (CandlesResolved)
             {
                 Console.WriteLine("[{1}] CANDLES RESOLVED - LastCandleStart: {0}", LastStoredCandle, MarketDelta);
                 return;
             }
-
+             
 
             Console.Beep();
 
 
             Console.WriteLine("RESOLVING [{0}] CANDLES...", MarketDelta);
+            Console.WriteLine("\r\n***Last5mCandleStart: {0}\r\n...CurrTime: {1}\r\n...SnapData Begins: {2}\r\n", LastStoredCandle, DateTime.UtcNow, RecentFills.First().TimeStamp);
 
             HistDataResponse response = await BtrexREST.GetMarketHistoryV2(MarketDelta, "oneMin");
             if (!response.success)
@@ -120,11 +121,19 @@ namespace BtrexTrader.Data.MarketData
                         H = Candles1m.Max(x => x.H),
                         L = Candles1m.Min(x => x.L),
                         V = Candles1m.Sum(x => x.V);
-
                 List<mdFill> RevisedFills = new List<mdFill>();
                 RevisedFills.Add(new mdFill(LastStoredCandle.AddMinutes(5), O, (V / 3M), "BUY"));
-                RevisedFills.Add(new mdFill(LastStoredCandle.AddMinutes(5.01), H, (V / 3M), "BUY"));
-                RevisedFills.Add(new mdFill(LastStoredCandle.AddMinutes(5.015), L, (V / 3M), "SELL"));
+                RevisedFills.Add(new mdFill(LastStoredCandle.AddMinutes(5.1), H, (V / 3M), "BUY"));
+                RevisedFills.Add(new mdFill(LastStoredCandle.AddMinutes(5.15), L, (V / 3M), "SELL"));
+                
+                //check current, if not, rectify
+                //If candle is current, Candles are Resolved
+                if (NextCandleTime.AddMinutes(5) > DateTime.UtcNow)
+                {
+                    Console.WriteLine("@@@@@ NOT NEXT-CANDLE-TIME YET");
+                    CandlesResolved = true;
+                    return;
+                }
 
                 Console.WriteLine("************RecentFills**************");
                 foreach (mdFill fill in RecentFills)
@@ -139,16 +148,7 @@ namespace BtrexTrader.Data.MarketData
 
                 RecentFills = new List<mdFill>(RevisedFills);
 
-                //check current, if not, rectify
-                //If candle is current, Candles are Resolved
-                DateTime NextCandleTime = LastStoredCandle.AddMinutes(5);
-                if (NextCandleTime.AddMinutes(5) > DateTime.UtcNow)
-                {
-                    Console.WriteLine("@@@@@ NOT NEXT-CANDLE-TIME YET");
-                    CandlesResolved = true;
-                    return;
-                }
-
+                
                 HistDataLine nextCandle = BuildCandleFromRecentFills(NextCandleTime);
 
                 Console.WriteLine("@@@@@ NEW CANDLE(w/1m!) = T:{0} O:{1} H:{2} L:{3} C:{4} V:{5}, BV:{6}",
