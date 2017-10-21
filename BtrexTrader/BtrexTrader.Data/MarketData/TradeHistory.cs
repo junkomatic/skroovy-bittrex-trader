@@ -151,7 +151,7 @@ namespace BtrexTrader.Data.MarketData
                 
                 HistDataLine nextCandle = BuildCandleFromRecentFills(NextCandleTime);
 
-                Console.WriteLine("@@@@@ NEW CANDLE(w/1m!) = T:{0} O:{1} H:{2} L:{3} C:{4} V:{5}, BV:{6}",
+                Console.WriteLine("@@@@@ CANDLE RESOLVED(w/1m!) = T:{0} O:{1} H:{2} L:{3} C:{4} V:{5}, BV:{6}",
                     nextCandle.T, nextCandle.O, nextCandle.H, nextCandle.L, nextCandle.C, nextCandle.V, nextCandle.BV);
 
                 CandlesResolved = true;
