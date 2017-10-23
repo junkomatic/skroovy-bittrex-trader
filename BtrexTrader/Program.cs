@@ -20,6 +20,14 @@ namespace BtrexTrader
             Console.ForegroundColor = ConsoleColor.DarkCyan;
             Console.BackgroundColor = ConsoleColor.Black;
 
+            DateTime startTime = DateTime.UtcNow;
+            string symbol = "BTC-XLM";
+            Console.WriteLine("SELECT * FROM " + symbol.Replace('-', '_') +
+                                                        " WHERE datetime(DateTime) >= datetime(" + startTime + ")" +
+                                                        " ORDER BY datetime(DateTime) ASC"
+                                                        );
+            Console.ReadLine();
+
             //UNCOMMENT 'WHILE' TO RESTART ON FAILURE
             //while (true)
             {

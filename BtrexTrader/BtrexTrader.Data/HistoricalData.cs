@@ -216,13 +216,9 @@ namespace BtrexTrader.Data
                         string path = @"BtrexCSVs\" + tName + ".csv";
 
                         if (!File.Exists(path))
-                        {
-                           GenerateNewCSV(dt, path);                            
-                        }
+                            GenerateNewCSV(dt, path);
                         else
-                        {
-                            UpdateExistingCSV(dt, path);                            
-                        }
+                            UpdateExistingCSV(dt, path);
                     }
                     conn.Close();
                 }
