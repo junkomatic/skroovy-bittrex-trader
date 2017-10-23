@@ -17,14 +17,14 @@ namespace BtrexTrader.Strategy.Demo
 
         private IReadOnlyList<string> SpecificDeltas = new List<string>()
         {
-            "BTC-ETH", "BTC-NEO", "BTC-XLM", "BTC-QTUM", "BTC-OMG"
+            "BTC-XLM"//, "BTC-NEO", "BTC-ETH", "BTC-QTUM", "BTC-OMG"
         };
 
 
         public async Task Initialize()
         {
-            await SubTopMarketsByVol(10);
-            //await SubSpecificMarkets();
+            //await SubTopMarketsByVol(10);
+            await SubSpecificMarkets();
         }
 
         public async Task StartMarketsDemo()
@@ -53,9 +53,9 @@ namespace BtrexTrader.Strategy.Demo
         {
             foreach (string mk in SpecificDeltas)
             {
-                await BtrexWS.subscribeMarket("BTC-" + mk);
+                await BtrexWS.subscribeMarket(mk);
             }
-            await PreloadCandlesDict(3);
+            //await PreloadCandlesDict(3);
         }
 
 

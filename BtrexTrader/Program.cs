@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using BtrexTrader.Control;
 using BtrexTrader.Interface;
 using BtrexTrader.Data;
+using Trady.Core;
 
 namespace BtrexTrader
 {
@@ -19,14 +20,7 @@ namespace BtrexTrader
             PrintTitle();
             Console.ForegroundColor = ConsoleColor.DarkCyan;
             Console.BackgroundColor = ConsoleColor.Black;
-
-            DateTime startTime = DateTime.UtcNow;
-            string symbol = "BTC-XLM";
-            Console.WriteLine("SELECT * FROM " + symbol.Replace('-', '_') +
-                                                        " WHERE datetime(DateTime) >= datetime(" + startTime + ")" +
-                                                        " ORDER BY datetime(DateTime) ASC"
-                                                        );
-            Console.ReadLine();
+            
 
             //UNCOMMENT 'WHILE' TO RESTART ON FAILURE
             //while (true)
@@ -61,6 +55,19 @@ namespace BtrexTrader
 
             //START CALCS/STRATEGY WORK:
             //BtrexController.StartWork();
+
+            var importer = new TradyCandleImporter();
+            DateTime start = DateTime.UtcNow.Subtract(TimeSpan.FromHours(3));
+            List<Candle> cndls = new List<Candle>();
+            cndls.AddRange((List<Candle>)await importer.ImportAsync("BTC-XLM", start));
+
+            Console.WriteLine("\r\n\r\n\r\n&&&&&&IMP MARKS&&&&&&");
+            foreach (Candle cndl in cndls)
+                Console.WriteLine("T:{0}...O:{1}...H:{2}...L:{3}...C:{4}...V:{5}", cndl.DateTime, cndl.Open, cndl.High, cndl.Low, cndl.Close, cndl.Volume);
+
+
+
+
 
 
             Console.WriteLine("\r\n\r\n-PRESS ENTER 3 TIMES TO EXIT-\r\n\r\n");
