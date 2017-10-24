@@ -21,24 +21,24 @@ namespace BtrexTrader.Data
             //Import Candles from Data.Candle5m, get more data from sqlite if needed:
             if (endTime == null)
                 endTime = DateTime.UtcNow;
+
+            bool histLinesReady = BtrexData.Markets[symbol].TradeHistory.Candles5m != null && BtrexData.Markets[symbol].TradeHistory.Candles5m.Any();
+
+            if (histLinesReady)
+            {
+                List<HistDataLine> HistLines = new List<HistDataLine>();
+                HistLines.AddRange(BtrexData.Markets[symbol].TradeHistory.Candles5m);
+
+                if (startTime <= HistLines.First().T)
+                    histLinesReady = false;                
+
+                foreach (HistDataLine histLine in HistLines)
+                    if (histLine.T >= startTime || histLine.T <= endTime)
+                        cndls.Add(new Candle(histLine.T, histLine.O, histLine.H, histLine.L, histLine.C, histLine.V)); 
+            }
             
-            //TODO: IF BtrexData.Candles5m == null, or contains no elements, DO SOMETHING....
 
-
-
-
-
-
-
-            List<HistDataLine> HistLines = new List<HistDataLine>();
-            HistLines.AddRange(BtrexData.Markets[symbol].TradeHistory.Candles5m);   
-
-            foreach (HistDataLine histLine in HistLines)
-                if (histLine.T >= startTime || histLine.T <= endTime)
-                    cndls.Add(new Candle(histLine.T, histLine.O, histLine.H, histLine.L, histLine.C, histLine.V));
-            
-
-            if (startTime <= HistLines.First().T)
+            if (!histLinesReady)
             {
                 //Call lines from SQLite and set cndls in correct order:
                 List<Candle> sqlCndls = new List<Candle>();
