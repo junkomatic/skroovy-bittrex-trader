@@ -27,7 +27,7 @@ namespace BtrexTrader.Strategy.Demo
             await SubSpecificMarkets();
         }
 
-        public async Task StartMarketsDemo()
+        public void StartMarketsDemo()
         {
             //TODO: Every iteration, check BtrexData.Market.LastCandleTime to check if add new mCandle
                 //Display All Data, switch between markets with keyboard:
@@ -42,9 +42,8 @@ namespace BtrexTrader.Strategy.Demo
         {
             List<string> topMarkets = await BtrexREST.TradeMethods.GetTopMarketsByBVbtcOnly(n);
             foreach (string mk in topMarkets)
-            {
                 await BtrexWS.subscribeMarket("BTC-" + mk);
-            }
+
             await PreloadCandlesDict(3);
         }
 
@@ -52,17 +51,15 @@ namespace BtrexTrader.Strategy.Demo
         private async Task SubSpecificMarkets()
         {
             foreach (string mk in SpecificDeltas)
-            {
                 await BtrexWS.subscribeMarket(mk);
-            }
-            //await PreloadCandlesDict(3);
+
+            await PreloadCandlesDict(3);
         }
 
 
         private async Task PreloadCandlesDict(int hour)
         {
-            //TODO: Import (3) hours of canldes into memory for each market.
-            //   Aggregate in mCandles Dict
+            //Aggregate in mCandles Dict:
             DateTime startTime = DateTime.UtcNow.Subtract(TimeSpan.FromHours(hour));
             foreach (Market market in BtrexData.Markets.Values)
             {

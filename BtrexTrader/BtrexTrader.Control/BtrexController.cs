@@ -25,10 +25,14 @@ namespace BtrexTrader.Control
 
         public void StartWork()
         {
-            var WorkThread = new Thread(() => ScanMarkets());
-            WorkThread.IsBackground = true;
-            WorkThread.Name = "Market-Scanning/Work-Thread";
-            WorkThread.Start();
+            NewStrat.StartMarketsDemo();
+
+
+
+            //var WorkThread = new Thread(() => ScanMarkets());
+            //WorkThread.IsBackground = true;
+            //WorkThread.Name = "Market-Scanning/Work-Thread";
+            //WorkThread.Start();
         }
 
         private async void ScanMarkets()
