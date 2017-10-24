@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Trady.Core;
 using BtrexTrader.Interface;
@@ -17,7 +18,7 @@ namespace BtrexTrader.Strategy.Demo
 
         private IReadOnlyList<string> SpecificDeltas = new List<string>()
         {
-            "BTC-XLM"//, "BTC-NEO", "BTC-ETH", "BTC-QTUM", "BTC-OMG"
+            "BTC-XLM", "BTC-NEO"//, "BTC-ETH", "BTC-QTUM", "BTC-OMG"
         };
 
 
@@ -31,6 +32,47 @@ namespace BtrexTrader.Strategy.Demo
         {
             //TODO: Every iteration, check BtrexData.Market.LastCandleTime to check if add new mCandle
                 //Display All Data, switch between markets with keyboard:
+            while (true)
+            {
+                foreach (Market m in BtrexData.Markets.Values)
+                {
+                    while (!(Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Spacebar))
+                    {
+                        Console.Clear();
+                        //Print Candles
+                        foreach (Candle c in mCandles[m.MarketDelta])
+                        {
+                            Console.WriteLine("candle");
+                        }
+
+                        Console.WriteLine("\r\nMarkets currently being tracked:");
+                        foreach (string mk in mCandles.Keys)
+                        {
+                            if (m.MarketDelta == mk)
+                            {
+                                Console.ForegroundColor = ConsoleColor.Green;
+                                Console.Write(" [{0}]", mk);
+
+                                if (mk != mCandles.Keys.Last())
+                                    Console.Write(",");
+                            }
+                            else
+                            {
+                                Console.ForegroundColor = ConsoleColor.White;
+                                Console.Write(" [{0}]", mk);
+
+                                if (mk != mCandles.Keys.Last())
+                                    Console.Write(",");
+                            }
+                        }
+                        Console.WriteLine();
+                        Console.ForegroundColor = ConsoleColor.DarkCyan;
+                        Thread.Sleep(2000);
+                    }
+                }
+            }
+
+
 
 
 
