@@ -30,7 +30,7 @@ namespace BtrexTrader.Strategy.Demo
         public async Task StartMarketsDemo()
         {
             //TODO: Every iteration, check BtrexData.Market.LastCandleTime to check if add new mCandle
-                //Display All Data:
+                //Display All Data, switch between markets with keyboard:
 
 
 

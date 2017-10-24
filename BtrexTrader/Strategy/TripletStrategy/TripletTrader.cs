@@ -195,7 +195,7 @@ namespace BtrexTrader.Strategy.TripletStrategy
                 rots++;
                 Console.WriteLine("\r*#{0} Rotations COMPLETE* - {1}", rots, DateTime.Now.ToShortTimeString());
 
-                //TODO: REPORTING...
+                //REPORTING...
                 //Console.WriteLine(triplet.IDtrade1);
                 //Console.WriteLine(triplet.IDtrade2);
                 //Console.WriteLine(triplet.IDtrade3);
