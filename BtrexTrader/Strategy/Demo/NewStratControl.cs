@@ -30,21 +30,36 @@ namespace BtrexTrader.Strategy.Demo
 
         public void StartMarketsDemo()
         {
-            //TODO: Every iteration, check BtrexData.Market.LastCandleTime to check if add new mCandle
-                //Display All Data, switch between markets with keyboard:
+            //Display All Data, switch between markets with spacebar:
             while (true)
             {
                 foreach (Market m in BtrexData.Markets.Values)
                 {
                     while (!(Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Spacebar))
                     {
-                        Console.Clear();
-                        //Print Candles
-                        foreach (Candle c in mCandles[m.MarketDelta])
-                        {
-                            Console.WriteLine("candle");
-                        }
+                        //TODOS: 
+                        //Every iteration, check BtrexData.Market.LastCandleTime to check if add new mCandles:
 
+
+                        Console.Clear();
+                        //Print MarketTitle
+
+
+                        //Print Candles:
+                        foreach (Candle c in mCandles[m.MarketDelta])
+                            Console.WriteLine("candle");         
+                        
+
+                        //Print demo EMA calcs:
+
+
+                        //Print Bids/Asks:
+
+                        
+                        //Print Recent Fills:
+
+
+                        //Print [active market] ribbon:
                         Console.Write("\r\nMarkets currently being tracked:\r\n    ");
                         foreach (string mk in mCandles.Keys)
                         {
