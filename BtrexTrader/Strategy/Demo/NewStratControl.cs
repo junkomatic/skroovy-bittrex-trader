@@ -82,13 +82,7 @@ namespace BtrexTrader.Strategy.Demo
                         Thread.Sleep(1000);
                     }
                 }
-            }
-
-
-
-
-
-
+            }            
         }
 
 
