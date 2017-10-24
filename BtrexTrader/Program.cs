@@ -56,6 +56,9 @@ namespace BtrexTrader
             //START CALCS/STRATEGY WORK:
             //BtrexController.StartWork();
 
+
+
+            //TEST:
             var importer = new TradyCandleImporter();
             DateTime start = DateTime.UtcNow.Subtract(TimeSpan.FromHours(3));
             List<Candle> cndls = new List<Candle>();
