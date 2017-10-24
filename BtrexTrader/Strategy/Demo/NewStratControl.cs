@@ -63,17 +63,13 @@ namespace BtrexTrader.Strategy.Demo
                         Console.Write("\r\nMarkets currently being tracked:\r\n    ");
                         foreach (string mk in mCandles.Keys)
                         {
-                            if (m.MarketDelta == mk)
-                            {
+                            if (mk == m.MarketDelta)
                                 Console.ForegroundColor = ConsoleColor.Green;
-                                Console.Write(" [{0}]", mk);
-                            }
                             else
-                            {
                                 Console.ForegroundColor = ConsoleColor.White;
-                                Console.Write(" [{0}]", mk);
-                            }
                             
+                            Console.Write(" [{0}]", mk);
+
                             if (mk != mCandles.Keys.Last())
                                 Console.Write(",");
                         }
