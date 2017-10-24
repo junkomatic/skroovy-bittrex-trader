@@ -45,29 +45,26 @@ namespace BtrexTrader.Strategy.Demo
                             Console.WriteLine("candle");
                         }
 
-                        Console.WriteLine("\r\nMarkets currently being tracked:");
+                        Console.Write("\r\nMarkets currently being tracked:\r\n    ");
                         foreach (string mk in mCandles.Keys)
                         {
                             if (m.MarketDelta == mk)
                             {
                                 Console.ForegroundColor = ConsoleColor.Green;
                                 Console.Write(" [{0}]", mk);
-
-                                if (mk != mCandles.Keys.Last())
-                                    Console.Write(",");
                             }
                             else
                             {
                                 Console.ForegroundColor = ConsoleColor.White;
                                 Console.Write(" [{0}]", mk);
-
-                                if (mk != mCandles.Keys.Last())
-                                    Console.Write(",");
                             }
+                            
+                            if (mk != mCandles.Keys.Last())
+                                Console.Write(",");
                         }
                         Console.WriteLine();
                         Console.ForegroundColor = ConsoleColor.DarkCyan;
-                        Thread.Sleep(2000);
+                        Thread.Sleep(1000);
                     }
                 }
             }
