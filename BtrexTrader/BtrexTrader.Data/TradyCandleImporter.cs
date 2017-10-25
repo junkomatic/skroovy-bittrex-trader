@@ -45,7 +45,7 @@ namespace BtrexTrader.Data
                 using (SQLiteConnection conn = new SQLiteConnection("Data Source=" + HistoricalData.dbName + ";Version=3;"))
                 {
                     conn.Open();
-                    string startTimeString = startTime.Value.Subtract(TimeSpan.FromMinutes(5)).ToString("yyyy-MM-dd HH:mm:ss"),
+                    string startTimeString = startTime.Value.ToString("yyyy-MM-dd HH:mm:ss"),
                            endTimeString = endTime.Value.ToString("yyyy-MM-dd HH:mm:ss");
                     
                     DataTable dt = new DataTable();

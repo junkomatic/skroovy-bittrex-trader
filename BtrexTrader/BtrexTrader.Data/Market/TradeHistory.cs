@@ -56,13 +56,6 @@ namespace BtrexTrader.Data.Market
             }
             else if (NextCandleTime >= RecentFills.First().TimeStamp)
             {
-                //If candle is current, Candles are Resolved
-                if (NextCandleTime.AddMinutes(5) > DateTime.UtcNow)
-                {
-                    CandlesResolved = true;
-                    return;
-                }
-
                 BuildCandleFromRecentFills(NextCandleTime);
 
                 //Console.WriteLine("@@@@@ NEW CANDLE = T:{0} O:{1} H:{2} L:{3} C:{4} V:{5}",
@@ -77,7 +70,7 @@ namespace BtrexTrader.Data.Market
         public async Task Resolve5mCandles()
         {
             DateTime NextCandleTime = LastStoredCandle.AddMinutes(5);
-            DateTime NextCandleCurrTime = NextCandleTime.AddMinutes(5);
+            DateTime NextCandleCurrTime = LastStoredCandle.AddMinutes(10);
             if (CandlesResolved)
             {
                 Console.WriteLine("[{1}] CANDLES RESOLVED - LastCandleStart: {0}", LastStoredCandle, MarketDelta);
@@ -129,14 +122,7 @@ namespace BtrexTrader.Data.Market
                         RecentFills = new List<mdFill>(RevisedFills);
                     }
 
-                    //check current, if not, rectify
-                    //If candle is current, Candles are Resolved
-                    if (NextCandleCurrTime > DateTime.UtcNow)
-                    {
-                        CandlesResolved = true;
-                        Console.WriteLine("[{1}] CANDLES RESOLVED - LastCandleStart: {0}", LastStoredCandle, MarketDelta);
-                        return;
-                    }
+                    
 
                     BuildCandleFromRecentFills(NextCandleTime);
                     
@@ -159,6 +145,11 @@ namespace BtrexTrader.Data.Market
 
         public void BuildCandleFromRecentFills(DateTime NextCandleTime)
         {
+            //check current, if not, rectify
+            //If candle is current, Candles are Resolved
+            if (NextCandleTime.AddMinutes(5) > DateTime.UtcNow)            
+                return;            
+
             Decimal BV = 0;
             List<mdFill> candleFills = new List<mdFill>();
             foreach (mdFill fill in RecentFills)
@@ -174,6 +165,9 @@ namespace BtrexTrader.Data.Market
                 }
                     
             }
+
+            if (candleFills.Count == 0)
+                return; 
 
             Decimal O = candleFills.First().Rate,
                     H = candleFills.Max(x => x.Rate),

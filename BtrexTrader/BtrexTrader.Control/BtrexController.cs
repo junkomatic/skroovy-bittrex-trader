@@ -25,7 +25,7 @@ namespace BtrexTrader.Control
 
         public void StartWork()
         {
-            NewStrat.StartMarketsDemo();
+            NewStrat.StartMarketsDemo().Wait();
 
 
 
