@@ -11,15 +11,15 @@ using BtrexTrader.Interface;
 using BtrexTrader.Data;
 using BtrexTrader.Data.Market;
 
-namespace BtrexTrader.Strategy.Demo
+namespace BtrexTrader.Strategy.EMAofRSI1
 {
-    class NewStratControl
+    class EofR1control
     {
         private Dictionary<string, List<Candle>> mCandles = new Dictionary<string, List<Candle>>();
 
         private IReadOnlyList<string> SpecificDeltas = new List<string>()
         {
-            "BTC-XLM", "BTC-ADA"//, "BTC-ETH", "BTC-QTUM", "BTC-OMG"
+            "BTC-XLM", "BTC-ADA", "BTC-ETH", "BTC-QTUM", "BTC-OMG"
         };
 
         int showPastPeriods = 12;
