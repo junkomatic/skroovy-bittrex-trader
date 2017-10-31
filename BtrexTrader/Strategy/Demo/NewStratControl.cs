@@ -22,7 +22,7 @@ namespace BtrexTrader.Strategy.Demo
             "BTC-XLM", "BTC-ADA"//, "BTC-ETH", "BTC-QTUM", "BTC-OMG"
         };
 
-        int showPastPeriods = 12;
+        int showPastPeriods = 36;
 
         public async Task Initialize()
         {
