@@ -40,7 +40,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             await PreloadCandleDicts();
 
             //TODO:
-            //CheckHoldings()  ...load in holdings w/Stop-Loss-limits data
+            //CheckHoldings()  ...load in holdings w/Stop-Loss-limits dataset
         }
 
         public async Task Start()
@@ -193,10 +193,10 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         {
             //Aggregate in Candles Dicts:
             DateTime startTime = DateTime.UtcNow.Subtract(TimeSpan.FromDays(11));
-            foreach (Market market in BtrexData.Markets.Values)
+            foreach (string marketDelta in BtrexData.Markets.Keys)
             {
                 var importer = new TradyCandleImporter();
-                var preCandles = await importer.ImportAsync(market.MarketDelta, startTime);
+                var preCandles = await importer.ImportAsync(marketDelta, startTime);
                 
                 //TODO: TRANSFORM AND PRELOAD ALL CANDLE PERIOD DICTS (AT LEAST 21 PERIODS):
 
@@ -205,7 +205,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
 
 
-                //    Candles5m.Add(market.MarketDelta, new List<Candle>(preCandles));
+                //Candles5m.Add(market.MarketDelta, new List<Candle>(preCandles));
             }
         }
 
