@@ -36,8 +36,73 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             //await SubTopMarketsByVol(50);
             await SubSpecificMarkets();
 
-            checkNewTradesHistData();
-            await PreloadCandleDicts(21);
+            //checkNewTradesHistData();
+            await PreloadCandleDicts(26);
+
+
+
+            //[TEST]::Print Candles:
+            foreach (string mDelta in Candles5m.Keys)
+            {
+
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine("===================[{0}]===================", mDelta);
+                Console.WriteLine("\r\n\r\n#CANDLES 12h:");
+                Console.ForegroundColor = ConsoleColor.DarkCyan;
+                int index = 1;
+                foreach (Candle c in Candles12h[mDelta])
+                {
+                    Console.WriteLine("{6}    T:{0}...O:{1:0.00000000}...H:{2:0.00000000}...L:{3:0.00000000}...C:{4:0.00000000}...V:{5:0.00000000}", c.DateTime, c.Open, c.High, c.Low, c.Close, c.Volume, index);
+                    index++;
+                }
+
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine("\r\n\r\n#CANDLES 4h:");
+                Console.ForegroundColor = ConsoleColor.DarkCyan;
+                index = 1;
+                foreach (Candle c in Candles4h[mDelta])
+                {
+                    Console.WriteLine("{6}    T:{0}...O:{1:0.00000000}...H:{2:0.00000000}...L:{3:0.00000000}...C:{4:0.00000000}...V:{5:0.00000000}", c.DateTime, c.Open, c.High, c.Low, c.Close, c.Volume, index);
+                    index++;
+                }
+                
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine("\r\n\r\n#CANDLES 1h:");
+                Console.ForegroundColor = ConsoleColor.DarkCyan;
+                index = 1;
+                foreach (Candle c in Candles1h[mDelta])
+                {
+                    Console.WriteLine("{6}    T:{0}...O:{1:0.00000000}...H:{2:0.00000000}...L:{3:0.00000000}...C:{4:0.00000000}...V:{5:0.00000000}", c.DateTime, c.Open, c.High, c.Low, c.Close, c.Volume, index);
+                    index++;
+                }
+
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine("\r\n\r\n#CANDLES 20m:");
+                Console.ForegroundColor = ConsoleColor.DarkCyan;
+                index = 1;
+                foreach (Candle c in Candles20m[mDelta])
+                {
+                    Console.WriteLine("{6}    T:{0}...O:{1:0.00000000}...H:{2:0.00000000}...L:{3:0.00000000}...C:{4:0.00000000}...V:{5:0.00000000}", c.DateTime, c.Open, c.High, c.Low, c.Close, c.Volume, index);
+                    index++;
+                }
+
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine("\r\n\r\n#CANDLES 5m:");
+                Console.ForegroundColor = ConsoleColor.DarkCyan;
+                index = 1;
+                foreach (Candle c in Candles5m[mDelta])
+                {
+                    Console.WriteLine("{6}    T:{0}...O:{1:0.00000000}...H:{2:0.00000000}...L:{3:0.00000000}...C:{4:0.00000000}...V:{5:0.00000000}", c.DateTime, c.Open, c.High, c.Low, c.Close, c.Volume, index);
+                    index++;
+                }
+
+
+            }
+
+
+
+
+
 
             //TODO:
             //CheckHoldings()  ...load in holdings w/Stop-Loss-limits dataset
@@ -192,14 +257,18 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         private async Task PreloadCandleDicts(int numPeriods)
         {
             //Aggregate in Candles Dicts:
-            DateTime startTime = DateTime.UtcNow.Subtract(TimeSpan.FromDays(11));
+            DateTime startTime = DateTime.UtcNow.Subtract(TimeSpan.FromDays((numPeriods / 2D) + 0.5));
+
+            
+
             foreach (string marketDelta in BtrexData.Markets.Keys)
             {
+                
+
                 Candles12h.Add(marketDelta, new List<Candle>());
                 Candles4h.Add(marketDelta, new List<Candle>());
                 Candles1h.Add(marketDelta, new List<Candle>());
                 Candles20m.Add(marketDelta, new List<Candle>());
-                Candles5m.Add(marketDelta, new List<Candle>());
 
                 var importer = new TradyCandleImporter();
                 var preCandles = await importer.ImportAsync(marketDelta, startTime);
@@ -230,15 +299,20 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
 
                 //GET FIRST CANDLE TIME FOR 20m
-
-
+                var candleTime20m = DateTime.UtcNow.Date
+                                     .AddHours(DateTime.UtcNow.Hour)
+                                     .AddMinutes((int)(20M * Math.Floor(DateTime.UtcNow.Minute / 20M)))
+                                     .Subtract(TimeSpan.FromMinutes(20 * numPeriods));
 
 
                 //GET FIRST CANDLE TIME FOR 5m
-
-
+                var candleTime5m = DateTime.UtcNow.Date
+                                     .AddHours(DateTime.UtcNow.Hour)
+                                     .AddMinutes((int)(5M * Math.Floor(DateTime.UtcNow.Minute / 5M)))
+                                     .Subtract(TimeSpan.FromMinutes(5 * numPeriods));
 
                 
+
 
                 for (int i = 0; i < numPeriods; i++)
                 {
@@ -246,9 +320,9 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     var nextCandleTime12h = candleTime12h.AddHours(12);
                     var CandleRange12h =
                         from Candles in preCandles
-                        where Candles.DateTime >= candleTime12h && Candles.DateTime < nextCandleTime12h
+                        where (Candles.DateTime >= candleTime12h) && (Candles.DateTime < nextCandleTime12h)
                         select Candles;
-
+                                        
                     Candles12h[marketDelta].Add(new Candle(candleTime12h, 
                                                            CandleRange12h.First().Open, 
                                                            CandleRange12h.Max(x => x.High), 
@@ -264,7 +338,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     var nextCandleTime4h = candleTime4h.AddHours(4);
                     var CandleRange4h =
                         from Candles in preCandles
-                        where Candles.DateTime >= candleTime4h && Candles.DateTime < nextCandleTime4h
+                        where (Candles.DateTime >= candleTime4h) && (Candles.DateTime < nextCandleTime4h)
                         select Candles;
 
                     Candles4h[marketDelta].Add(new Candle(candleTime4h,
@@ -278,13 +352,15 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     candleTime4h = nextCandleTime4h;
 
 
+
+
                     //ADD NEXT 1h CANDLE:
                     var nextCandleTime1h = candleTime1h.AddHours(1);
                     var CandleRange1h =
                         from Candles in preCandles
-                        where Candles.DateTime >= candleTime1h && Candles.DateTime < nextCandleTime1h
+                        where (Candles.DateTime >= candleTime1h) && (Candles.DateTime < nextCandleTime1h)
                         select Candles;
-
+                    
                     Candles1h[marketDelta].Add(new Candle(candleTime1h,
                                                            CandleRange1h.First().Open,
                                                            CandleRange1h.Max(x => x.High),
@@ -297,27 +373,31 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
 
                     //ADD NEXT 20m CANDLE:
-
-
-
-
-
-
-
-
+                    var nextCandleTime20m = candleTime20m.AddMinutes(20);
+                    var CandleRange20m =
+                        from Candles in preCandles
+                        where (Candles.DateTime >= candleTime20m) && (Candles.DateTime < nextCandleTime20m)
+                        select Candles;
+                    
+                    Candles20m[marketDelta].Add(new Candle(candleTime20m,
+                                                           CandleRange20m.First().Open,
+                                                           CandleRange20m.Max(x => x.High),
+                                                           CandleRange20m.Min(x => x.Low),
+                                                           CandleRange20m.Last().Close,
+                                                           CandleRange20m.Sum(x => x.Volume)
+                                                          )
+                                                );
+                    candleTime20m = nextCandleTime20m;
+                    
                 }
 
 
-
-
-
-
-
-
-
-
-
-                //Candles5m.Add(market.MarketDelta, new List<Candle>(preCandles));
+                //FINALLY, ADD ALL 5m CANDLES
+                Candles5m[marketDelta] = new List<Candle>(
+                                    from Candles in preCandles
+                                    where Candles.DateTime >= candleTime5m
+                                    select Candles);
+                                
             }
         }
 

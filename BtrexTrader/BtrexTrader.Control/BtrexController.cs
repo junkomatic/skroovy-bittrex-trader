@@ -9,26 +9,34 @@ using System.Diagnostics;
 using BtrexTrader.Interface;
 using BtrexTrader.Strategy.TripletStrategy;
 using BtrexTrader.Strategy.Demo;
+using BtrexTrader.Strategy.EMAofRSI1;
 
 namespace BtrexTrader.Control
 {
     class BtrexTradeController
     {
-        private NewStratControl NewStrat = new NewStratControl();
+        private EofR1control eofR1Control = new EofR1control();
+        //private NewStratControl NewStrat = new NewStratControl();
         //private TripletTrader TripletTrader = new TripletTrader();
 
         public async Task InitializeMarkets()
         {
-            await NewStrat.Initialize();
+            await eofR1Control.Initialize();
+            //await NewStrat.Initialize();
             //await TripletTrader.Initialize();
         }
 
         public void StartWork()
         {
-            NewStrat.StartMarketsDemo().Wait();
+            
+            
+            
+            
+            //DEMO STRAT:
+            //NewStrat.StartMarketsDemo().Wait();
 
 
-
+            //TRIPLET STRAT:
             //var WorkThread = new Thread(() => ScanMarkets());
             //WorkThread.IsBackground = true;
             //WorkThread.Name = "Market-Scanning/Work-Thread";

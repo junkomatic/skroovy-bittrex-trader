@@ -48,7 +48,6 @@ namespace BtrexTrader.Strategy.Demo
 
                     while (!(Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Spacebar))
                     {
-                        //TODOS: 
                         //Every iteration, check BtrexData.Market.LastCandleTime to check if add new mCandles:
                         if (m.TradeHistory.LastStoredCandle > mCandles[m.MarketDelta].Last().DateTime)
                         {
