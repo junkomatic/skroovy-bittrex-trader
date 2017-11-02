@@ -27,17 +27,17 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
         private IReadOnlyList<string> SpecificDeltas = new List<string>()
         {
-            "BTC-XLM", "BTC-ADA", "BTC-ETH", "BTC-QTUM", "BTC-OMG"
+            "BTC-XLM"//, "BTC-ADA", "BTC-ETH", "BTC-QTUM", "BTC-OMG"
         };
         
 
         public async Task Initialize()
         {
-            await SubTopMarketsByVol(50);
-            //await SubSpecificMarkets();
+            //await SubTopMarketsByVol(50);
+            await SubSpecificMarkets();
 
             checkNewTradesHistData();
-            await PreloadCandleDicts();
+            await PreloadCandleDicts(21);
 
             //TODO:
             //CheckHoldings()  ...load in holdings w/Stop-Loss-limits dataset
@@ -189,16 +189,128 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         }
 
 
-        private async Task PreloadCandleDicts()
+        private async Task PreloadCandleDicts(int numPeriods)
         {
             //Aggregate in Candles Dicts:
             DateTime startTime = DateTime.UtcNow.Subtract(TimeSpan.FromDays(11));
             foreach (string marketDelta in BtrexData.Markets.Keys)
             {
+                Candles12h.Add(marketDelta, new List<Candle>());
+                Candles4h.Add(marketDelta, new List<Candle>());
+                Candles1h.Add(marketDelta, new List<Candle>());
+                Candles20m.Add(marketDelta, new List<Candle>());
+                Candles5m.Add(marketDelta, new List<Candle>());
+
                 var importer = new TradyCandleImporter();
                 var preCandles = await importer.ImportAsync(marketDelta, startTime);
                 
-                //TODO: TRANSFORM AND PRELOAD ALL CANDLE PERIOD DICTS (AT LEAST 21 PERIODS):
+                //GET FIRST CANDLE TIME FOR 12h:
+                var offsetSpan12h = new TimeSpan();   
+              
+                if (DateTime.UtcNow.Hour < 2)
+                    offsetSpan12h = (DateTime.UtcNow - DateTime.UtcNow.Date) + TimeSpan.FromHours(10);
+                else if (DateTime.UtcNow.Hour < 14)
+                    offsetSpan12h = DateTime.UtcNow - DateTime.UtcNow.Date.AddHours(2);
+                else if (DateTime.UtcNow.Hour >= 14)
+                    offsetSpan12h = DateTime.UtcNow - DateTime.UtcNow.Date.AddHours(14);
+
+                var candleTime12h = (DateTime.UtcNow.Subtract(offsetSpan12h)) - TimeSpan.FromDays(Convert.ToDouble(numPeriods) / 2D);
+
+
+                //GET FIRST CANDLE TIME FOR 4h:
+                var candleTime4h = DateTime.UtcNow.Date
+                                    .AddHours((int)(4M * Math.Floor(DateTime.UtcNow.Hour / 4M)))
+                                    .Subtract(TimeSpan.FromHours(4 * numPeriods));
+
+
+                //GET FIRST CANDLE TIME FOR 1h
+                var candleTime1h = DateTime.UtcNow.Date
+                                    .AddHours(DateTime.UtcNow.Hour)
+                                    .Subtract(TimeSpan.FromHours(numPeriods));
+
+
+                //GET FIRST CANDLE TIME FOR 20m
+
+
+
+
+                //GET FIRST CANDLE TIME FOR 5m
+
+
+
+                
+
+                for (int i = 0; i < numPeriods; i++)
+                {
+                    //ADD NEXT 12h CANDLE:
+                    var nextCandleTime12h = candleTime12h.AddHours(12);
+                    var CandleRange12h =
+                        from Candles in preCandles
+                        where Candles.DateTime >= candleTime12h && Candles.DateTime < nextCandleTime12h
+                        select Candles;
+
+                    Candles12h[marketDelta].Add(new Candle(candleTime12h, 
+                                                           CandleRange12h.First().Open, 
+                                                           CandleRange12h.Max(x => x.High), 
+                                                           CandleRange12h.Min(x => x.Low), 
+                                                           CandleRange12h.Last().Close, 
+                                                           CandleRange12h.Sum(x => x.Volume)
+                                                          )
+                                                );
+                    candleTime12h = nextCandleTime12h;
+
+
+                    //ADD NEXT 4h CANDLE:
+                    var nextCandleTime4h = candleTime4h.AddHours(4);
+                    var CandleRange4h =
+                        from Candles in preCandles
+                        where Candles.DateTime >= candleTime4h && Candles.DateTime < nextCandleTime4h
+                        select Candles;
+
+                    Candles4h[marketDelta].Add(new Candle(candleTime4h,
+                                                           CandleRange4h.First().Open,
+                                                           CandleRange4h.Max(x => x.High),
+                                                           CandleRange4h.Min(x => x.Low),
+                                                           CandleRange4h.Last().Close,
+                                                           CandleRange4h.Sum(x => x.Volume)
+                                                          )
+                                                );
+                    candleTime4h = nextCandleTime4h;
+
+
+                    //ADD NEXT 1h CANDLE:
+                    var nextCandleTime1h = candleTime1h.AddHours(1);
+                    var CandleRange1h =
+                        from Candles in preCandles
+                        where Candles.DateTime >= candleTime1h && Candles.DateTime < nextCandleTime1h
+                        select Candles;
+
+                    Candles1h[marketDelta].Add(new Candle(candleTime1h,
+                                                           CandleRange1h.First().Open,
+                                                           CandleRange1h.Max(x => x.High),
+                                                           CandleRange1h.Min(x => x.Low),
+                                                           CandleRange1h.Last().Close,
+                                                           CandleRange1h.Sum(x => x.Volume)
+                                                          )
+                                                );
+                    candleTime1h = nextCandleTime1h;
+
+
+                    //ADD NEXT 20m CANDLE:
+
+
+
+
+
+
+
+
+                }
+
+
+
+
+
 
 
 
