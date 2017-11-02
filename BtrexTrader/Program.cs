@@ -57,17 +57,6 @@ namespace BtrexTrader
             BtrexController.StartWork();
             
 
-            //TEST:
-            //var importer = new TradyCandleImporter();
-            //DateTime start = DateTime.UtcNow.Subtract(TimeSpan.FromHours(3));
-            //List<Candle> cndls = new List<Candle>();
-            //cndls.AddRange((List<Candle>)await importer.ImportAsync("BTC-XLM", start));
-
-            //Console.WriteLine("\r\n\r\n\r\n&&&&&&IMP MARKS&&&&&&");
-            //foreach (Candle cndl in cndls)
-            //    Console.WriteLine("T:{0}...O:{1}...H:{2}...L:{3}...C:{4}...V:{5}", cndl.DateTime, cndl.Open, cndl.High, cndl.Low, cndl.Close, cndl.Volume);
-            
-
             Console.WriteLine("\r\n\r\n-PRESS ENTER 3 TIMES TO EXIT-\r\n\r\n");
             Console.ReadLine();
             Console.ReadLine();
