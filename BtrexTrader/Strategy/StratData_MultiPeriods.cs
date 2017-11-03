@@ -5,13 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.IO;
-using System.Data.SQLite;
 using Trady.Core;
-using Trady.Analysis;
-using BtrexTrader.Interface;
 using BtrexTrader.Data;
-using BtrexTrader.Data.Market;
 
 namespace BtrexTrader.Strategy
 {

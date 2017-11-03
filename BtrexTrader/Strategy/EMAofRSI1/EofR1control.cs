@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.IO;
+using System.Data;
 using System.Data.SQLite;
 using Trady.Core;
 using Trady.Analysis;
@@ -21,6 +22,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         private SQLiteConnection conn;
 
         private StratData_MultiPeriods StratData = new StratData_MultiPeriods();
+        private DataSet Holdings = new DataSet();
         
         private IReadOnlyList<string> SpecificDeltas = new List<string>()
         {
@@ -34,8 +36,8 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             //await SubTopMarketsByVol(50);
             await SubSpecificMarkets();
 
-            checkNewTradesHistData();
-            CheckHoldings();
+            OpenSQLiteConn();
+            LoadHoldings();
 
             await StratData.PreloadCandleDicts(26);            
         }
@@ -44,18 +46,13 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         {          
             using (var cmd = new SQLiteCommand(conn))
             {
-                while (true)
+                while (!(Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Backspace))
                 {
-                    //TODO: CHECK CURRENTLY OWNED ASSETS and STOP LOSSES:
-
-
-
-
-
-
-
-
-
+                    //CHECK CURRENTLY OWNED ASSETS + STOP LOSSES FOR EXECUTION:
+                    CheckStopLosses();
+                        
+                    
+                    //BEGIN CANDLES ASSESSMENTS:
                     foreach (Market m in BtrexData.Markets.Values)
                     {
                         bool candles5mChanged = false,
@@ -152,7 +149,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         }
 
 
-        private bool checkNewTradesHistData()
+        private bool OpenSQLiteConn()
         {
             if (!File.Exists(dataFile))
             {
@@ -164,19 +161,15 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 {
                     using (var tx = conn.BeginTransaction())
                     {
-                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS 5m (DateTimeBUY TEXT, Qty TEXT, BoughtRate TEXT, DateTimeSELL, SoldRate TEXT, StopLossRate TEXT, SL_Executed INTEGER)";
+                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS 5m (MarketDelta TEXT, DateTimeBUY TEXT, Qty TEXT, BoughtRate TEXT, DateTimeSELL TEXT, SoldRate TEXT, StopLossRate TEXT, SL_Executed INTEGER)";
                         cmd.ExecuteNonQuery();
-
-                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS 20m (DateTimeBUY TEXT, Qty TEXT, BoughtRate TEXT, DateTimeSELL, SoldRate TEXT, StopLossRate TEXT, SL_Executed INTEGER)";
+                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS 20m (MarketDelta TEXT, DateTimeBUY TEXT, Qty TEXT, BoughtRate TEXT, DateTimeSELL TEXT, SoldRate TEXT, StopLossRate TEXT, SL_Executed INTEGER)";
                         cmd.ExecuteNonQuery();
-
-                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS 1h (DateTimeBUY TEXT, Qty TEXT, BoughtRate TEXT, DateTimeSELL, SoldRate TEXT, StopLossRate TEXT, SL_Executed INTEGER)";
+                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS 1h (MarketDelta TEXT, DateTimeBUY TEXT, Qty TEXT, BoughtRate TEXT, DateTimeSELL TEXT, SoldRate TEXT, StopLossRate TEXT, SL_Executed INTEGER)";
                         cmd.ExecuteNonQuery();
-
-                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS 4h (DateTimeBUY TEXT, Qty TEXT, BoughtRate TEXT, DateTimeSELL, SoldRate TEXT, StopLossRate TEXT, SL_Executed INTEGER)";
+                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS 4h (MarketDelta TEXT, DateTimeBUY TEXT, Qty TEXT, BoughtRate TEXT, DateTimeSELL TEXT, SoldRate TEXT, StopLossRate TEXT, SL_Executed INTEGER)";
                         cmd.ExecuteNonQuery();
-
-                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS 12h (DateTimeBUY TEXT, Qty TEXT, BoughtRate TEXT, DateTimeSELL, SoldRate TEXT, StopLossRate TEXT, SL_Executed INTEGER)";
+                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS 12h (MarketDelta TEXT, DateTimeBUY TEXT, Qty TEXT, BoughtRate TEXT, DateTimeSELL TEXT, SoldRate TEXT, StopLossRate TEXT, SL_Executed INTEGER)";
                         cmd.ExecuteNonQuery();
 
                         tx.Commit();
@@ -195,13 +188,44 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         }
 
 
-        private void CheckHoldings()
+        private void LoadHoldings()
         {
-            //TODO: Load held assets, stoploss amts, period, from SQLite
+            //Load held assets, stoploss amts, from SQLite for each period:
+            AddHoldingsTable("5m");
+            AddHoldingsTable("20m");
+            AddHoldingsTable("1h");
+            AddHoldingsTable("4h");
+            AddHoldingsTable("12h");          
+        }
+
+        private void AddHoldingsTable(string periodName)
+        {
+            var dt = new DataTable();
+            using (var sqlAdapter = new SQLiteDataAdapter("SELECT * from "+ periodName +" WHERE DateTimeSELL = 'OWNED'", conn))
+                sqlAdapter.Fill(dt);
+            Holdings.Tables.Add(dt);
+        }
+
+
+        private void CheckStopLosses()
+        {
+            foreach (DataTable table in Holdings.Tables)
+            {
+                foreach (DataRow row in table.Rows)
+                {
+                    var marketDelta = Convert.ToString(row[0]);
+                    if (BtrexData.Markets[marketDelta].TradeHistory.RecentFills.Last().Rate <= Convert.ToDecimal(row[6]))
+                    {
+                        //TODO: EXECUTE STOP-LOSS + RECORD IN SAVED DATA
 
 
 
 
+                    }
+
+                }
+            }
+            
         }
 
     }
