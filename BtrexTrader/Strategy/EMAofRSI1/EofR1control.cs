@@ -89,7 +89,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                                         candles4hChanged = StratData.BuildNew4hCndls(m.MarketDelta);
                                     }
 
-                                    if (m.TradeHistory.LastStoredCandle.AddMinutes(5) > StratData.Candles12h[m.MarketDelta].Last().DateTime.AddHours(12))
+                                    if (m.TradeHistory.LastStoredCandle.AddMinutes(5) > StratData.Candles12h[m.MarketDelta].Last().DateTime.AddHours(24))
                                     {
                                         //Build new 12h candles
                                         candles12hChanged = StratData.BuildNew12hCndls(m.MarketDelta);
