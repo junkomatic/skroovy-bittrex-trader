@@ -48,19 +48,64 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             while (true)
             {
                 //TODO:
+                foreach (Market m in BtrexData.Markets.Values)
+                {
+                    bool candles5mChanged = false,
+                        candles20mChanged = false,
+                        candles1hChanged = false,
+                        candles4hChanged = false,
+                        candles12hChanged = false;
+
+
+                    if (m.TradeHistory.LastStoredCandle > Candles5m[m.MarketDelta].Last().DateTime)
+                    {
+                        //Get new 5m candles:
+                        var Importer = new TradyCandleImporter();
+                        var newCandles = await Importer.ImportAsync(m.MarketDelta, Candles5m[m.MarketDelta].Last().DateTime.AddMinutes(5));
+                        Candles5m[m.MarketDelta].AddRange(newCandles);
+                        candles5mChanged = true;
+
+                        if (m.TradeHistory.LastStoredCandle > Candles20m[m.MarketDelta].Last().DateTime.AddMinutes(35))
+                        {
+                            //Build new 20m candles:
+                            candles20mChanged = BuildNew20mCndls(m.MarketDelta);                            
+
+                            if (m.TradeHistory.LastStoredCandle > Candles1h[m.MarketDelta].Last().DateTime.AddMinutes(115))
+                            {
+                                //Build new 1h candles:
+                                candles1hChanged = BuildNew1hCndls(m.MarketDelta);
+
+                                if (m.TradeHistory.LastStoredCandle > Candles4h[m.MarketDelta].Last().DateTime.AddMinutes(475))
+                                {
+                                    //Build new 4h candles
+                                    candles4hChanged = BuildNew4hCndls(m.MarketDelta);
+                                }
+
+                                
+                                {
+                                    //TODO: Build new 12h candles
 
 
 
 
 
+                                }
+                            }
+                        }
+                    }
+
+                    //CALC RSIs for candlesChanged
 
 
 
 
 
+                }
 
 
 
+
+                
 
 
 
@@ -185,6 +230,104 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             }            
         }
 
+        private bool BuildNew20mCndls(string marketDelta)
+        {
+            bool changed = false;
+            var candleTime20m = Candles20m[marketDelta].Last().DateTime.AddMinutes(20);
+            while (BtrexData.Markets[marketDelta].TradeHistory.LastStoredCandle >= candleTime20m.AddMinutes(15))
+            {
+                var nextCandleTime20m = candleTime20m.AddMinutes(20);
+                var CandleRange20m =
+                    from Candles in Candles5m[marketDelta]
+                    where (Candles.DateTime >= candleTime20m) && (Candles.DateTime < nextCandleTime20m)
+                    select Candles;
+
+                if (CandleRange20m.Count() == 0)
+                {
+                    candleTime20m = nextCandleTime20m;
+                    continue;
+                }
+
+                Candles20m[marketDelta].Add(new Candle(candleTime20m,
+                                                       CandleRange20m.First().Open,
+                                                       CandleRange20m.Max(x => x.High),
+                                                       CandleRange20m.Min(x => x.Low),
+                                                       CandleRange20m.Last().Close,
+                                                       CandleRange20m.Sum(x => x.Volume)
+                                                      )
+                                            );
+
+                changed = true;
+                candleTime20m = nextCandleTime20m;
+            }
+            return changed;
+        }
+
+        private bool BuildNew1hCndls(string marketDelta)
+        {
+            bool changed = false;
+            var candleTime1h = Candles1h[marketDelta].Last().DateTime.AddHours(1);
+            while (BtrexData.Markets[marketDelta].TradeHistory.LastStoredCandle >= candleTime1h.AddMinutes(55))
+            {
+                var nextCandleTime1h = candleTime1h.AddHours(1);
+                var CandleRange1h =
+                    from Candles in Candles5m[marketDelta]
+                    where (Candles.DateTime >= candleTime1h) && (Candles.DateTime < nextCandleTime1h)
+                    select Candles;
+
+                if (CandleRange1h.Count() == 0)
+                {
+                    candleTime1h = nextCandleTime1h;
+                    continue;
+                }
+
+                Candles1h[marketDelta].Add(new Candle(candleTime1h,
+                                                        CandleRange1h.First().Open,
+                                                        CandleRange1h.Max(x => x.High),
+                                                        CandleRange1h.Min(x => x.Low),
+                                                        CandleRange1h.Last().Close,
+                                                        CandleRange1h.Sum(x => x.Volume)
+                                                        )
+                                            );
+
+                changed = true;
+                candleTime1h = nextCandleTime1h;
+            }
+            return changed;
+        }
+
+        private bool BuildNew4hCndls(string marketDelta)
+        {
+            bool changed = false;
+            var candleTime4h = Candles4h[marketDelta].Last().DateTime.AddHours(4);
+            while (BtrexData.Markets[marketDelta].TradeHistory.LastStoredCandle >= candleTime4h.AddMinutes(235))
+            {
+                var nextCandleTime4h = candleTime4h.AddHours(4);
+                var CandleRange4h =
+                    from Candles in Candles5m[marketDelta]
+                    where (Candles.DateTime >= candleTime4h) && (Candles.DateTime < nextCandleTime4h)
+                    select Candles;
+
+                if (CandleRange4h.Count() == 0)
+                {
+                    candleTime4h = nextCandleTime4h;
+                    continue;
+                }
+
+                Candles1h[marketDelta].Add(new Candle(candleTime4h,
+                                                       CandleRange4h.First().Open,
+                                                       CandleRange4h.Max(x => x.High),
+                                                       CandleRange4h.Min(x => x.Low),
+                                                       CandleRange4h.Last().Close,
+                                                       CandleRange4h.Sum(x => x.Volume)
+                                                      )
+                                            );
+
+                changed = true;
+                candleTime4h = nextCandleTime4h;
+            }
+            return changed;
+        }
 
         private async Task SubTopMarketsByVol(int n)
         {
@@ -338,6 +481,8 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                                     select Candles);                                
             }
         }
+
+
 
 
         private static bool checkNewTradesHistData()
