@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Data;
 using System.Data.SQLite;
+using System.Diagnostics;
 using Trady.Core;
 using Trady.Analysis;
 using BtrexTrader.Interface;
@@ -23,6 +24,8 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
         private StratData_MultiPeriods StratData = new StratData_MultiPeriods();
         private DataSet Holdings = new DataSet();
+
+        private List<Order> Orders = new List<Order>();
         
         private IReadOnlyList<string> SpecificDeltas = new List<string>()
         {
@@ -48,6 +51,8 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             {
                 while (!(Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Backspace))
                 {
+                    Orders.Clear();
+
                     //CHECK CURRENTLY OWNED ASSETS + STOP LOSSES FOR EXECUTION:
                     CheckStopLosses();
                         
@@ -97,6 +102,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
 
                         //TODO: CALC RSIs/Indicators for candlesChanged
+                        //ADD BUY OBJs TO ORDERS LIST
                         if (candles5mChanged)
                         {
 
@@ -124,7 +130,16 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
                     }
 
-                    Thread.Sleep(1000);
+                    //TODO: EXECUTE ALL List<Orders> HERE, 
+                    //SET STOP-LOSS FOR BUYS, SAVE ALL DATA WHEN COMPLETE:
+
+
+
+
+
+
+
+                    Thread.Sleep(TimeSpan.FromSeconds(10));
 
                 }
             }
@@ -216,8 +231,10 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     var marketDelta = Convert.ToString(row[0]);
                     if (BtrexData.Markets[marketDelta].TradeHistory.RecentFills.Last().Rate <= Convert.ToDecimal(row[6]))
                     {
-                        //TODO: EXECUTE STOP-LOSS + RECORD IN SAVED DATA
+                        //TODO: ADD SELL OBJs TO ORDERS LIST, MARK SL_Executed in Holdings (dont save yet)
+                          //OR: MOVE UP STOP-LOSS IF APPRPRIATE AND SAVE
 
+                        
 
 
 
@@ -227,6 +244,14 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             }
             
         }
+
+    }
+
+    public class Order
+    {
+        string MarketDelta { get; set; }
+        string BuyOrSell { get; set; }
+
 
     }
 
