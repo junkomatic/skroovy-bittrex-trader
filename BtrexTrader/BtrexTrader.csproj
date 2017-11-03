@@ -207,6 +207,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Strategy\EMAofRSI1\EofR1control.cs" />
+    <Compile Include="Strategy\StratData_MultiPeriods.cs" />
     <Compile Include="Strategy\TripletStrategy\TripletData.cs" />
     <Compile Include="Strategy\TripletStrategy\TripletTrader.cs" />
   </ItemGroup>

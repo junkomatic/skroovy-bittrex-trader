@@ -17,19 +17,17 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 {
     class EofR1control
     {
-        private Dictionary<string, List<Candle>> Candles5m = new Dictionary<string, List<Candle>>();
-        private Dictionary<string, List<Candle>> Candles20m = new Dictionary<string, List<Candle>>();
-        private Dictionary<string, List<Candle>> Candles1h = new Dictionary<string, List<Candle>>();
-        private Dictionary<string, List<Candle>> Candles4h = new Dictionary<string, List<Candle>>();
-        private Dictionary<string, List<Candle>> Candles12h = new Dictionary<string, List<Candle>>();
-
         private const string dataFile = "EMAofRSI1trades.data";
+        private SQLiteConnection conn;
 
+        private StratData_MultiPeriods StratData = new StratData_MultiPeriods();
+        
         private IReadOnlyList<string> SpecificDeltas = new List<string>()
         {
             "BTC-XLM"//, "BTC-ADA", "BTC-ETH", "BTC-QTUM", "BTC-OMG"
         };
         
+
 
         public async Task Initialize()
         {
@@ -37,233 +35,106 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             await SubSpecificMarkets();
 
             checkNewTradesHistData();
-            await PreloadCandleDicts(26);
-            
-            //TODO:
-            //CheckHoldings()  ...load in holdings w/Stop-Loss-limits dataset
+            CheckHoldings();
+
+            await StratData.PreloadCandleDicts(26);            
         }
 
         public async Task Start()
-        {
-            while (true)
+        {          
+            using (var cmd = new SQLiteCommand(conn))
             {
-                foreach (Market m in BtrexData.Markets.Values)
+                while (true)
                 {
-                    bool candles5mChanged = false,
-                        candles20mChanged = false,
-                        candles1hChanged = false,
-                        candles4hChanged = false,
-                        candles12hChanged = false;
+                    //TODO: CHECK CURRENTLY OWNED ASSETS and STOP LOSSES:
 
 
-                    if (m.TradeHistory.LastStoredCandle > Candles5m[m.MarketDelta].Last().DateTime)
+
+
+
+
+
+
+
+                    foreach (Market m in BtrexData.Markets.Values)
                     {
-                        //Get new 5m candles:
-                        var Importer = new TradyCandleImporter();
-                        var newCandles = await Importer.ImportAsync(m.MarketDelta, Candles5m[m.MarketDelta].Last().DateTime.AddMinutes(5));
-                        Candles5m[m.MarketDelta].AddRange(newCandles);
-                        candles5mChanged = true;
+                        bool candles5mChanged = false,
+                                candles20mChanged = false,
+                                candles1hChanged = false,
+                                candles4hChanged = false,
+                                candles12hChanged = false;
 
-                        if (m.TradeHistory.LastStoredCandle > Candles20m[m.MarketDelta].Last().DateTime.AddMinutes(35))
+                        //CHECK FOR NEW CANDLES:
+                        if (m.TradeHistory.LastStoredCandle > StratData.Candles5m[m.MarketDelta].Last().DateTime)
                         {
-                            //Build new 20m candles:
-                            candles20mChanged = BuildNew20mCndls(m.MarketDelta);                            
+                            //Get new 5m candles:
+                            var Importer = new TradyCandleImporter();
+                            var newCandles = await Importer.ImportAsync(m.MarketDelta, StratData.Candles5m[m.MarketDelta].Last().DateTime.AddMinutes(5));
+                            StratData.Candles5m[m.MarketDelta].AddRange(newCandles);
+                            candles5mChanged = true;
 
-                            if (m.TradeHistory.LastStoredCandle > Candles1h[m.MarketDelta].Last().DateTime.AddMinutes(115))
+                            if (m.TradeHistory.LastStoredCandle > StratData.Candles20m[m.MarketDelta].Last().DateTime.AddMinutes(35))
                             {
-                                //Build new 1h candles:
-                                candles1hChanged = BuildNew1hCndls(m.MarketDelta);
+                                //Build new 20m candles:
+                                candles20mChanged = StratData.BuildNew20mCndls(m.MarketDelta);
 
-                                if (m.TradeHistory.LastStoredCandle > Candles4h[m.MarketDelta].Last().DateTime.AddMinutes(475))
+                                if (m.TradeHistory.LastStoredCandle > StratData.Candles1h[m.MarketDelta].Last().DateTime.AddMinutes(115))
                                 {
-                                    //Build new 4h candles
-                                    candles4hChanged = BuildNew4hCndls(m.MarketDelta);
-                                }
+                                    //Build new 1h candles:
+                                    candles1hChanged = StratData.BuildNew1hCndls(m.MarketDelta);
 
-                                if (m.TradeHistory.LastStoredCandle.AddMinutes(5) > Candles12h[m.MarketDelta].Last().DateTime.AddHours(12))
-                                {
-                                    //Build new 12h candles
-                                    candles12hChanged = BuildNew12hCndls(m.MarketDelta);
+                                    if (m.TradeHistory.LastStoredCandle > StratData.Candles4h[m.MarketDelta].Last().DateTime.AddMinutes(475))
+                                    {
+                                        //Build new 4h candles
+                                        candles4hChanged = StratData.BuildNew4hCndls(m.MarketDelta);
+                                    }
+
+                                    if (m.TradeHistory.LastStoredCandle.AddMinutes(5) > StratData.Candles12h[m.MarketDelta].Last().DateTime.AddHours(12))
+                                    {
+                                        //Build new 12h candles
+                                        candles12hChanged = StratData.BuildNew12hCndls(m.MarketDelta);
+                                    }
                                 }
                             }
                         }
+
+
+                        //TODO: CALC RSIs/Indicators for candlesChanged
+                        if (candles5mChanged)
+                        {
+
+                        }
+
+                        if (candles20mChanged)
+                        {
+
+                        }
+
+                        if (candles1hChanged)
+                        {
+
+                        }
+
+                        if (candles4hChanged)
+                        {
+
+                        }
+
+                        if (candles12hChanged)
+                        {
+
+                        }
+
                     }
 
-                    //TODO: CALC RSIs/Indicators for candlesChanged
-                    if (candles5mChanged)
-                    {
-
-                    }
-
-                    if (candles20mChanged)
-                    {
-
-                    }
-
-                    if (candles1hChanged)
-                    {
-
-                    }
-
-                    if (candles4hChanged)
-                    {
-
-                    }
-
-                    if (candles12hChanged)
-                    {
-
-                    }
-
-
-
-
-
-
-
-
-
+                    Thread.Sleep(1000);
 
                 }
-
-                
-
-                Thread.Sleep(1000);
-                                
-            }            
-        }
-
-        private bool BuildNew20mCndls(string marketDelta)
-        {
-            bool changed = false;
-            var candleTime20m = Candles20m[marketDelta].Last().DateTime.AddMinutes(20);
-            while (BtrexData.Markets[marketDelta].TradeHistory.LastStoredCandle >= candleTime20m.AddMinutes(15))
-            {
-                var nextCandleTime20m = candleTime20m.AddMinutes(20);
-                var CandleRange20m =
-                    from Candles in Candles5m[marketDelta]
-                    where (Candles.DateTime >= candleTime20m) && (Candles.DateTime < nextCandleTime20m)
-                    select Candles;
-
-                if (CandleRange20m.Count() == 0)
-                {
-                    candleTime20m = nextCandleTime20m;
-                    continue;
-                }
-
-                Candles20m[marketDelta].Add(new Candle(candleTime20m,
-                                                       CandleRange20m.First().Open,
-                                                       CandleRange20m.Max(x => x.High),
-                                                       CandleRange20m.Min(x => x.Low),
-                                                       CandleRange20m.Last().Close,
-                                                       CandleRange20m.Sum(x => x.Volume)
-                                                      )
-                                            );
-
-                changed = true;
-                candleTime20m = nextCandleTime20m;
             }
-            return changed;
+            conn.Close();
+            
         }
-
-        private bool BuildNew1hCndls(string marketDelta)
-        {
-            bool changed = false;
-            var candleTime1h = Candles1h[marketDelta].Last().DateTime.AddHours(1);
-            while (BtrexData.Markets[marketDelta].TradeHistory.LastStoredCandle >= candleTime1h.AddMinutes(55))
-            {
-                var nextCandleTime1h = candleTime1h.AddHours(1);
-                var CandleRange1h =
-                    from Candles in Candles5m[marketDelta]
-                    where (Candles.DateTime >= candleTime1h) && (Candles.DateTime < nextCandleTime1h)
-                    select Candles;
-
-                if (CandleRange1h.Count() == 0)
-                {
-                    candleTime1h = nextCandleTime1h;
-                    continue;
-                }
-
-                Candles1h[marketDelta].Add(new Candle(candleTime1h,
-                                                        CandleRange1h.First().Open,
-                                                        CandleRange1h.Max(x => x.High),
-                                                        CandleRange1h.Min(x => x.Low),
-                                                        CandleRange1h.Last().Close,
-                                                        CandleRange1h.Sum(x => x.Volume)
-                                                        )
-                                            );
-
-                changed = true;
-                candleTime1h = nextCandleTime1h;
-            }
-            return changed;
-        }
-
-        private bool BuildNew4hCndls(string marketDelta)
-        {
-            bool changed = false;
-            var candleTime4h = Candles4h[marketDelta].Last().DateTime.AddHours(4);
-            while (BtrexData.Markets[marketDelta].TradeHistory.LastStoredCandle >= candleTime4h.AddMinutes(235))
-            {
-                var nextCandleTime4h = candleTime4h.AddHours(4);
-                var CandleRange4h =
-                    from Candles in Candles5m[marketDelta]
-                    where (Candles.DateTime >= candleTime4h) && (Candles.DateTime < nextCandleTime4h)
-                    select Candles;
-
-                if (CandleRange4h.Count() == 0)
-                {
-                    candleTime4h = nextCandleTime4h;
-                    continue;
-                }
-
-                Candles1h[marketDelta].Add(new Candle(candleTime4h,
-                                                       CandleRange4h.First().Open,
-                                                       CandleRange4h.Max(x => x.High),
-                                                       CandleRange4h.Min(x => x.Low),
-                                                       CandleRange4h.Last().Close,
-                                                       CandleRange4h.Sum(x => x.Volume)
-                                                      )
-                                            );
-
-                changed = true;
-                candleTime4h = nextCandleTime4h;
-            }
-            return changed;
-        }
-
-        private bool BuildNew12hCndls(string marketDelta)
-        {
-            bool changed = false;
-            var candleTime12h = Candles12h[marketDelta].Last().DateTime.AddHours(12);
-            while (BtrexData.Markets[marketDelta].TradeHistory.LastStoredCandle.AddMinutes(5) >= candleTime12h.AddHours(12))
-            {
-                var nextCandleTime12h = candleTime12h.AddHours(12);
-                var CandleRange12h =
-                    from Candles in Candles5m[marketDelta]
-                    where (Candles.DateTime >= candleTime12h) && (Candles.DateTime < nextCandleTime12h)
-                    select Candles;
-
-                if (CandleRange12h.Count() == 0)
-                {
-                    candleTime12h = nextCandleTime12h;
-                    continue;
-                }
-
-                Candles1h[marketDelta].Add(new Candle(candleTime12h,
-                                                       CandleRange12h.First().Open,
-                                                       CandleRange12h.Max(x => x.High),
-                                                       CandleRange12h.Min(x => x.Low),
-                                                       CandleRange12h.Last().Close,
-                                                       CandleRange12h.Sum(x => x.Volume)
-                                                      )
-                                            );
-
-                changed = true;
-                candleTime12h = nextCandleTime12h;
-            }
-            return changed;
-        }
+        
 
 
         private async Task SubTopMarketsByVol(int n)
@@ -281,253 +152,56 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         }
 
 
-        private async Task PreloadCandleDicts(int numPeriods)
-        {
-            //Aggregate in Candles Dicts:
-            DateTime startTime = DateTime.UtcNow.Subtract(TimeSpan.FromDays((numPeriods / 2D) + 0.5));
-            
-            foreach (string marketDelta in BtrexData.Markets.Keys)
-            {
-                Candles12h.Add(marketDelta, new List<Candle>());
-                Candles4h.Add(marketDelta, new List<Candle>());
-                Candles1h.Add(marketDelta, new List<Candle>());
-                Candles20m.Add(marketDelta, new List<Candle>());
-
-                var importer = new TradyCandleImporter();
-                var preCandles = await importer.ImportAsync(marketDelta, startTime);
-                
-                //GET FIRST CANDLE TIME FOR 12h:
-                var offsetSpan12h = new TimeSpan();   
-              
-                if (DateTime.UtcNow.Hour < 2)
-                    offsetSpan12h = (DateTime.UtcNow - DateTime.UtcNow.Date) + TimeSpan.FromHours(10);
-                else if (DateTime.UtcNow.Hour < 14)
-                    offsetSpan12h = DateTime.UtcNow - DateTime.UtcNow.Date.AddHours(2);
-                else if (DateTime.UtcNow.Hour >= 14)
-                    offsetSpan12h = DateTime.UtcNow - DateTime.UtcNow.Date.AddHours(14);
-
-                var candleTime12h = (DateTime.UtcNow.Subtract(offsetSpan12h)) - TimeSpan.FromDays(Convert.ToDouble(numPeriods) / 2D);
-
-
-                //GET FIRST CANDLE TIME FOR 4h:
-                var candleTime4h = DateTime.UtcNow.Date
-                                    .AddHours((int)(4M * Math.Floor(DateTime.UtcNow.Hour / 4M)))
-                                    .Subtract(TimeSpan.FromHours(4 * numPeriods));
-
-
-                //GET FIRST CANDLE TIME FOR 1h
-                var candleTime1h = DateTime.UtcNow.Date
-                                    .AddHours(DateTime.UtcNow.Hour)
-                                    .Subtract(TimeSpan.FromHours(numPeriods));
-
-
-                //GET FIRST CANDLE TIME FOR 20m
-                var candleTime20m = DateTime.UtcNow.Date
-                                     .AddHours(DateTime.UtcNow.Hour)
-                                     .AddMinutes((int)(20M * Math.Floor(DateTime.UtcNow.Minute / 20M)))
-                                     .Subtract(TimeSpan.FromMinutes(20 * numPeriods));
-
-
-                //GET FIRST CANDLE TIME FOR 5m
-                var candleTime5m = DateTime.UtcNow.Date
-                                     .AddHours(DateTime.UtcNow.Hour)
-                                     .AddMinutes((int)(5M * Math.Floor(DateTime.UtcNow.Minute / 5M)))
-                                     .Subtract(TimeSpan.FromMinutes(5 * numPeriods));
-                
-
-                //FORM ALL CANDLES:
-                for (int i = 0; i < numPeriods; i++)
-                {
-                    //ADD NEXT 12h CANDLE:
-                    var nextCandleTime12h = candleTime12h.AddHours(12);
-                    var CandleRange12h =
-                        from Candles in preCandles
-                        where (Candles.DateTime >= candleTime12h) && (Candles.DateTime < nextCandleTime12h)
-                        select Candles;
-                                        
-                    Candles12h[marketDelta].Add(new Candle(candleTime12h, 
-                                                           CandleRange12h.First().Open, 
-                                                           CandleRange12h.Max(x => x.High), 
-                                                           CandleRange12h.Min(x => x.Low), 
-                                                           CandleRange12h.Last().Close, 
-                                                           CandleRange12h.Sum(x => x.Volume)
-                                                          )
-                                                );
-                    candleTime12h = nextCandleTime12h;
-
-
-                    //ADD NEXT 4h CANDLE:
-                    var nextCandleTime4h = candleTime4h.AddHours(4);
-                    var CandleRange4h =
-                        from Candles in preCandles
-                        where (Candles.DateTime >= candleTime4h) && (Candles.DateTime < nextCandleTime4h)
-                        select Candles;
-
-                    Candles4h[marketDelta].Add(new Candle(candleTime4h,
-                                                           CandleRange4h.First().Open,
-                                                           CandleRange4h.Max(x => x.High),
-                                                           CandleRange4h.Min(x => x.Low),
-                                                           CandleRange4h.Last().Close,
-                                                           CandleRange4h.Sum(x => x.Volume)
-                                                          )
-                                                );
-                    candleTime4h = nextCandleTime4h;
-                    
-
-                    //ADD NEXT 1h CANDLE:
-                    var nextCandleTime1h = candleTime1h.AddHours(1);
-                    var CandleRange1h =
-                        from Candles in preCandles
-                        where (Candles.DateTime >= candleTime1h) && (Candles.DateTime < nextCandleTime1h)
-                        select Candles;
-                    
-                    Candles1h[marketDelta].Add(new Candle(candleTime1h,
-                                                           CandleRange1h.First().Open,
-                                                           CandleRange1h.Max(x => x.High),
-                                                           CandleRange1h.Min(x => x.Low),
-                                                           CandleRange1h.Last().Close,
-                                                           CandleRange1h.Sum(x => x.Volume)
-                                                          )
-                                                );
-                    candleTime1h = nextCandleTime1h;
-
-
-                    //ADD NEXT 20m CANDLE:
-                    var nextCandleTime20m = candleTime20m.AddMinutes(20);
-                    var CandleRange20m =
-                        from Candles in preCandles
-                        where (Candles.DateTime >= candleTime20m) && (Candles.DateTime < nextCandleTime20m)
-                        select Candles;
-                    
-                    Candles20m[marketDelta].Add(new Candle(candleTime20m,
-                                                           CandleRange20m.First().Open,
-                                                           CandleRange20m.Max(x => x.High),
-                                                           CandleRange20m.Min(x => x.Low),
-                                                           CandleRange20m.Last().Close,
-                                                           CandleRange20m.Sum(x => x.Volume)
-                                                          )
-                                                );
-                    candleTime20m = nextCandleTime20m;
-                    
-                }
-                
-                //FINALLY, ADD ALL 5m CANDLES
-                Candles5m[marketDelta] = new List<Candle>(
-                                    from Candles in preCandles
-                                    where Candles.DateTime >= candleTime5m
-                                    select Candles);                                
-            }
-        }
-
-
-
-
-        private static bool checkNewTradesHistData()
+        private bool checkNewTradesHistData()
         {
             if (!File.Exists(dataFile))
             {
                 Console.WriteLine("CREATING NEW '{0}' FILE...", dataFile);
                 SQLiteConnection.CreateFile(dataFile);
-                using (SQLiteConnection conn = new SQLiteConnection("Data Source=" + dataFile + ";Version=3;"))
+                conn = new SQLiteConnection("Data Source=" + dataFile + ";Version=3;");
+                conn.Open();
+                using (var cmd = new SQLiteCommand(conn))
                 {
-                    conn.Open();
-                    using (var cmd = new SQLiteCommand(conn))
+                    using (var tx = conn.BeginTransaction())
                     {
-                        using (var tx = conn.BeginTransaction())
-                        {
-                            cmd.CommandText = string.Format("CREATE TABLE IF NOT EXISTS EMAofRSI1_5m (DateTime TEXT, Open TEXT, Rate TEXT, Qty TEXT)");
-                            cmd.ExecuteNonQuery();
+                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS 5m (DateTimeBUY TEXT, Qty TEXT, BoughtRate TEXT, DateTimeSELL, SoldRate TEXT, StopLossRate TEXT, SL_Executed INTEGER)";
+                        cmd.ExecuteNonQuery();
 
-                            cmd.CommandText = string.Format("CREATE TABLE IF NOT EXISTS EMAofRSI1_20m (DateTime TEXT, Open TEXT, Rate TEXT, Qty TEXT)");
-                            cmd.ExecuteNonQuery();
+                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS 20m (DateTimeBUY TEXT, Qty TEXT, BoughtRate TEXT, DateTimeSELL, SoldRate TEXT, StopLossRate TEXT, SL_Executed INTEGER)";
+                        cmd.ExecuteNonQuery();
 
-                            cmd.CommandText = string.Format("CREATE TABLE IF NOT EXISTS EMAofRSI1_1h (DateTime TEXT, Open TEXT, Rate TEXT, Qty TEXT)");
-                            cmd.ExecuteNonQuery();
+                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS 1h (DateTimeBUY TEXT, Qty TEXT, BoughtRate TEXT, DateTimeSELL, SoldRate TEXT, StopLossRate TEXT, SL_Executed INTEGER)";
+                        cmd.ExecuteNonQuery();
 
-                            cmd.CommandText = string.Format("CREATE TABLE IF NOT EXISTS EMAofRSI1_4h (DateTime TEXT, Open TEXT, Rate TEXT, Qty TEXT)");
-                            cmd.ExecuteNonQuery();
+                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS 4h (DateTimeBUY TEXT, Qty TEXT, BoughtRate TEXT, DateTimeSELL, SoldRate TEXT, StopLossRate TEXT, SL_Executed INTEGER)";
+                        cmd.ExecuteNonQuery();
 
-                            cmd.CommandText = string.Format("CREATE TABLE IF NOT EXISTS EMAofRSI1_12h (DateTime TEXT, Open TEXT, Rate TEXT, Qty TEXT)");
-                            cmd.ExecuteNonQuery();
+                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS 12h (DateTimeBUY TEXT, Qty TEXT, BoughtRate TEXT, DateTimeSELL, SoldRate TEXT, StopLossRate TEXT, SL_Executed INTEGER)";
+                        cmd.ExecuteNonQuery();
 
-                            tx.Commit();
-                        }                        
+                        tx.Commit();
                     }
-                    conn.Close();
                 }
+
                 return true;
             }
             else
+            {
+                conn = new SQLiteConnection("Data Source=" + dataFile + ";Version=3;");
+                conn.Open();
+
                 return false;
+            }
         }
 
 
-
-
-
-        
-
-
-        private void PrintDictsTest()
+        private void CheckHoldings()
         {
-
-            //[TEST]::Print Candles:
-            foreach (string mDelta in Candles5m.Keys)
-            {
-
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.WriteLine("===================[{0}]===================", mDelta);
-                Console.WriteLine("\r\n\r\n#CANDLES 12h:");
-                Console.ForegroundColor = ConsoleColor.DarkCyan;
-                int index = 1;
-                foreach (Candle c in Candles12h[mDelta])
-                {
-                    Console.WriteLine("{6}    T:{0}...O:{1:0.00000000}...H:{2:0.00000000}...L:{3:0.00000000}...C:{4:0.00000000}...V:{5:0.00000000}", c.DateTime, c.Open, c.High, c.Low, c.Close, c.Volume, index);
-                    index++;
-                }
-
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.WriteLine("\r\n\r\n#CANDLES 4h:");
-                Console.ForegroundColor = ConsoleColor.DarkCyan;
-                index = 1;
-                foreach (Candle c in Candles4h[mDelta])
-                {
-                    Console.WriteLine("{6}    T:{0}...O:{1:0.00000000}...H:{2:0.00000000}...L:{3:0.00000000}...C:{4:0.00000000}...V:{5:0.00000000}", c.DateTime, c.Open, c.High, c.Low, c.Close, c.Volume, index);
-                    index++;
-                }
-
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.WriteLine("\r\n\r\n#CANDLES 1h:");
-                Console.ForegroundColor = ConsoleColor.DarkCyan;
-                index = 1;
-                foreach (Candle c in Candles1h[mDelta])
-                {
-                    Console.WriteLine("{6}    T:{0}...O:{1:0.00000000}...H:{2:0.00000000}...L:{3:0.00000000}...C:{4:0.00000000}...V:{5:0.00000000}", c.DateTime, c.Open, c.High, c.Low, c.Close, c.Volume, index);
-                    index++;
-                }
-
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.WriteLine("\r\n\r\n#CANDLES 20m:");
-                Console.ForegroundColor = ConsoleColor.DarkCyan;
-                index = 1;
-                foreach (Candle c in Candles20m[mDelta])
-                {
-                    Console.WriteLine("{6}    T:{0}...O:{1:0.00000000}...H:{2:0.00000000}...L:{3:0.00000000}...C:{4:0.00000000}...V:{5:0.00000000}", c.DateTime, c.Open, c.High, c.Low, c.Close, c.Volume, index);
-                    index++;
-                }
-
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.WriteLine("\r\n\r\n#CANDLES 5m:");
-                Console.ForegroundColor = ConsoleColor.DarkCyan;
-                index = 1;
-                foreach (Candle c in Candles5m[mDelta])
-                {
-                    Console.WriteLine("{6}    T:{0}...O:{1:0.00000000}...H:{2:0.00000000}...L:{3:0.00000000}...C:{4:0.00000000}...V:{5:0.00000000}", c.DateTime, c.Open, c.High, c.Low, c.Close, c.Volume, index);
-                    index++;
-                }
+            //TODO: Load held assets, stoploss amts, period, from SQLite
 
 
-            }
+
+
         }
 
     }
