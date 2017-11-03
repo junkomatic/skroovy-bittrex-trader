@@ -47,7 +47,6 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         {
             while (true)
             {
-                //TODO:
                 foreach (Market m in BtrexData.Markets.Values)
                 {
                     bool candles5mChanged = false,
@@ -81,20 +80,45 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                                     candles4hChanged = BuildNew4hCndls(m.MarketDelta);
                                 }
 
-                                
+                                if (m.TradeHistory.LastStoredCandle.AddMinutes(5) > Candles12h[m.MarketDelta].Last().DateTime.AddHours(12))
                                 {
-                                    //TODO: Build new 12h candles
-
-
-
-
-
+                                    //Build new 12h candles
+                                    candles12hChanged = BuildNew12hCndls(m.MarketDelta);
                                 }
                             }
                         }
                     }
 
-                    //CALC RSIs for candlesChanged
+                    //TODO: CALC RSIs/Indicators for candlesChanged
+                    if (candles5mChanged)
+                    {
+
+                    }
+
+                    if (candles20mChanged)
+                    {
+
+                    }
+
+                    if (candles1hChanged)
+                    {
+
+                    }
+
+                    if (candles4hChanged)
+                    {
+
+                    }
+
+                    if (candles12hChanged)
+                    {
+
+                    }
+
+
+
+
+
 
 
 
@@ -102,131 +126,10 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
                 }
 
-
-
-
                 
 
-
-
-
-
                 Thread.Sleep(1000);
-
-
-                //foreach (Market m in BtrexData.Markets.Values)
-                //{
-                //    IEnumerable<Candle> RecentCandles = Candles5m[m.MarketDelta].Skip(Math.Max(0, Candles5m[m.MarketDelta].Count - showPastPeriods));
-
-                //    //PRECALC EMAS HERE
-                //    var closes = Candles5m[m.MarketDelta].Select(x => x.Close);
-                //    var EMA26 = closes.Ema(26).Skip(Math.Max(0, Candles5m[m.MarketDelta].Count - showPastPeriods)).ToArray();
-                //    var EMA12 = closes.Ema(12).Skip(Math.Max(0, Candles5m[m.MarketDelta].Count - showPastPeriods)).ToArray();
-                //    var EMA9 = closes.Ema(9).Skip(Math.Max(0, Candles5m[m.MarketDelta].Count - showPastPeriods)).ToArray();
-
-                //    while (!(Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Spacebar))
-                //    {
-                //        //TODOS: 
-                //        //Every iteration, check BtrexData.Market.LastCandleTime to check if add new mCandles:
-                //        if (m.TradeHistory.LastStoredCandle > Candles5m[m.MarketDelta].Last().DateTime)
-                //        {
-                //            var Importer = new TradyCandleImporter();
-                //            foreach (var c in Candles5m)
-                //            {
-                //                var newCandles = await Importer.ImportAsync(c.Key, Candles5m[m.MarketDelta].Last().DateTime.AddMinutes(5));
-                //                c.Value.AddRange(newCandles);
-                //            }
-
-                //            RecentCandles = Candles5m[m.MarketDelta].Skip(Math.Max(0, Candles5m[m.MarketDelta].Count - showPastPeriods));
-                //            closes = Candles5m[m.MarketDelta].Select(x => x.Close);
-                //            EMA26 = closes.Ema(26).Skip(Math.Max(0, Candles5m[m.MarketDelta].Count - showPastPeriods)).ToArray();
-                //            EMA12 = closes.Ema(12).Skip(Math.Max(0, Candles5m[m.MarketDelta].Count - showPastPeriods)).ToArray();
-                //            EMA9 = closes.Ema(9).Skip(Math.Max(0, Candles5m[m.MarketDelta].Count - showPastPeriods)).ToArray();
-                //        }
-
-                //        //Assign Orderbook before Console.Clear()
-                //        List<KeyValuePair<decimal, decimal>> bidsTop10 = m.OrderBook.Bids.ToArray().OrderByDescending(k => k.Key).Take(10).ToList();
-                //        List<KeyValuePair<decimal, decimal>> asksTop10 = m.OrderBook.Asks.ToArray().OrderBy(k => k.Key).Take(10).ToList();
-
-
-                //        Console.Clear();
-                //        //Print MarketTitle
-                //        Console.Write("\r\n------------------------------------------------------");
-                //        Console.ForegroundColor = ConsoleColor.White;
-                //        Console.Write("[{0}]", m.MarketDelta);
-                //        Console.ForegroundColor = ConsoleColor.DarkCyan;
-                //        Console.WriteLine("--------------------------------------------------------\r\n" +
-                //                        "=======================================================================================================================");
-
-                //        //Print Candles:
-                //        Console.ForegroundColor = ConsoleColor.White;
-                //        Console.WriteLine("\r\n#CANDLES:");
-                //        Console.ForegroundColor = ConsoleColor.DarkCyan;
-                //        int index = 0;
-                //        foreach (Candle c in RecentCandles)
-                //        {
-                //            Console.WriteLine("    T:{0}...O:{1:0.00000000}...H:{2:0.00000000}...L:{3:0.00000000}...C:{4:0.00000000}...V:{5:0.00000000}", c.DateTime, c.Open, c.High, c.Low, c.Close, c.Volume);
-                //            Console.ForegroundColor = ConsoleColor.DarkGray;
-                //            Console.WriteLine("        EMA(26)={0:0.00000000}, EMA(12)={1:0.00000000}, EMA(9)={2:0.00000000}", EMA26[index], EMA12[index], EMA9[index]);
-                //            Console.ForegroundColor = ConsoleColor.DarkCyan;
-                //            index++;
-                //        }
-
-
-                //        //Print Bids/Asks:
-                //        Console.ForegroundColor = ConsoleColor.White;
-                //        Console.WriteLine("\r\n                                         #BIDS(Top10)    #ASKS(Top10)");
-                //        Console.ForegroundColor = ConsoleColor.DarkCyan;
-                //        Console.WriteLine("             ----------------------------------------    ----------------------------------------");
-                //        for (int i = 0; i < 10; i++)     
-                //            Console.WriteLine("             {0,25:0.00000000}  |  {1:0.00000000}    {2:0.00000000}  |  {3:0.00000000}              ", bidsTop10[i].Value, bidsTop10[i].Key, asksTop10[i].Key, asksTop10[i].Value);
-
-
-
-
-                //        //Print Recent Fills:
-                //        Console.ForegroundColor = ConsoleColor.White;
-                //        Console.WriteLine("\r\n#RECENT FILLS(Last20):");
-                //        Console.ForegroundColor = ConsoleColor.DarkCyan;
-                //        foreach (mdFill fill in m.TradeHistory.RecentFills.ToArray().OrderByDescending(x => x.TimeStamp).Take(20))
-                //            Console.WriteLine("{0,8} :: {1}.....Rate={2:0.00000000}, Qty={3:0.########}", fill.OrderType, fill.TimeStamp, fill.Rate, fill.Quantity);
-
-
-
-                //        //Print [active market] ribbon:
-                //        Console.Write("\r\nMarkets currently being tracked:\r\n    ");
-                //        int n = 1;
-                //        foreach (string mk in Candles5m.Keys)
-                //        {
-                //            if (mk == m.MarketDelta)
-                //                Console.ForegroundColor = ConsoleColor.Green;
-                //            else
-                //                Console.ForegroundColor = ConsoleColor.White;
-                            
-                //            Console.Write(" [{0}]", mk);
-
-                //            if (mk != Candles5m.Keys.Last())
-                //                Console.Write(",");
-                //            else
-                //                break;
-
-                //            if (n % 10 == 0)
-                //            {
-                //                Console.Write("\r\n    ");
-                //            }
-                //            n++;
-                //        }
-                //        Console.ForegroundColor = ConsoleColor.DarkCyan;
-                //        Console.Write("\r\n\r\n                                         -");
-                //        Console.ForegroundColor = ConsoleColor.White;
-                //        Console.Write("Press SPACEBAR for Next Market");
-                //        Console.ForegroundColor = ConsoleColor.DarkCyan;
-                //        Console.WriteLine("-");
-
-
-                //        Thread.Sleep(1000);
-                //    }
-                //}
+                                
             }            
         }
 
@@ -328,6 +231,40 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             }
             return changed;
         }
+
+        private bool BuildNew12hCndls(string marketDelta)
+        {
+            bool changed = false;
+            var candleTime12h = Candles12h[marketDelta].Last().DateTime.AddHours(12);
+            while (BtrexData.Markets[marketDelta].TradeHistory.LastStoredCandle.AddMinutes(5) >= candleTime12h.AddHours(12))
+            {
+                var nextCandleTime12h = candleTime12h.AddHours(12);
+                var CandleRange12h =
+                    from Candles in Candles5m[marketDelta]
+                    where (Candles.DateTime >= candleTime12h) && (Candles.DateTime < nextCandleTime12h)
+                    select Candles;
+
+                if (CandleRange12h.Count() == 0)
+                {
+                    candleTime12h = nextCandleTime12h;
+                    continue;
+                }
+
+                Candles1h[marketDelta].Add(new Candle(candleTime12h,
+                                                       CandleRange12h.First().Open,
+                                                       CandleRange12h.Max(x => x.High),
+                                                       CandleRange12h.Min(x => x.Low),
+                                                       CandleRange12h.Last().Close,
+                                                       CandleRange12h.Sum(x => x.Volume)
+                                                      )
+                                            );
+
+                changed = true;
+                candleTime12h = nextCandleTime12h;
+            }
+            return changed;
+        }
+
 
         private async Task SubTopMarketsByVol(int n)
         {
