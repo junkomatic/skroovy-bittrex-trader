@@ -228,12 +228,12 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             {
                 foreach (DataRow row in table.Rows)
                 {
-                    var marketDelta = Convert.ToString(row[0]);
-                    if (BtrexData.Markets[marketDelta].TradeHistory.RecentFills.Last().Rate <= Convert.ToDecimal(row[6]))
+                    string marketDelta = (string)(row[0]);
+                    if (BtrexData.Markets[marketDelta].TradeHistory.RecentFills.Last().Rate <= (decimal)(row[6]))
                     {
                         //TODO: ADD SELL OBJs TO ORDERS LIST, MARK SL_Executed in Holdings (dont save yet)
-                          //OR: MOVE UP STOP-LOSS IF APPRPRIATE AND SAVE
-
+                        //OR: MOVE UP STOP-LOSS IF APPRPRIATE AND SAVE
+                        Orders.Add(new Order(marketDelta, "SELL", (decimal)row[2], (decimal)row[6], table.TableName));
                         
 
 
@@ -247,11 +247,23 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
     }
 
+
     public class Order
     {
         string MarketDelta { get; set; }
-        string BuyOrSell { get; set; }
+        string BUYorSELL { get; set; }
+        decimal Qty { get; set; }
+        decimal DesiredRate { get; set; }
+        string PeriodName { get; set; }
 
+        public Order(string mDelta, string BUYSELL, decimal quantity, decimal rateDesired, string pName)
+        {
+            MarketDelta = mDelta;
+            BUYorSELL = BUYSELL;
+            Qty = quantity;
+            DesiredRate = rateDesired;
+            PeriodName = pName;
+        }
 
     }
 
