@@ -231,14 +231,14 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     string marketDelta = (string)(row[0]);
                     if (BtrexData.Markets[marketDelta].TradeHistory.RecentFills.Last().Rate <= (decimal)(row[6]))
                     {
-                        //TODO: ADD SELL OBJs TO ORDERS LIST, MARK SL_Executed in Holdings (dont save yet)
-                        //OR: MOVE UP STOP-LOSS IF APPRPRIATE AND SAVE
+                        //TODO: ADD SELL OBJs TO ORDERS LIST, MARK SL_Executed in Holdings (dont save yet)                        
                         Orders.Add(new Order(marketDelta, "SELL", (decimal)row[2], (decimal)row[6], table.TableName));
-                        
-
-
-
+                        row[7] = 1;
                     }
+
+                    //OR: MOVE UP STOP-LOSS IF APPRPRIATE (2-5%?) AND SAVE
+
+
 
                 }
             }
