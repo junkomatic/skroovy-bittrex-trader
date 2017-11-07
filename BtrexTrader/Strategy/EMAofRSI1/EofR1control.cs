@@ -47,7 +47,9 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         }
 
         public async Task Start()
-        {          
+        {
+            StopLossController.StartWatching();
+
             using (var cmd = new SQLiteCommand(conn))
             {
                 while (!(Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Backspace))
@@ -130,6 +132,9 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     //TODO: EXECUTE ALL List<Orders> HERE, 
                     //Register StopLosses for BUYS
                     //SAVE DATA (callbacks)
+
+
+
 
 
 

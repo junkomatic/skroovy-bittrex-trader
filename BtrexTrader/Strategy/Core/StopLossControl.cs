@@ -15,10 +15,9 @@ namespace BtrexTrader.Strategy.Core
         private static bool isStarted = false;
 
         private static readonly TimeSpan WatchFrequency = TimeSpan.FromMilliseconds(500);
-        //Stopwatch
+        //Stopwatch for differing TimeSpans up/down
 
-
-
+            
         public static void StartWatching()
         {
             if (!isStarted)
@@ -37,9 +36,15 @@ namespace BtrexTrader.Strategy.Core
         {
             while (true)
             {
+                if (SL_Book.Count == 0)
+                {
+                    Thread.Sleep(500);
+                    continue;
+                }
+
                 foreach (StopLoss stop in SL_Book)
                 {
-                    //Check to move up (trailing) more frequently than check to exe
+                    //Check to move up (trailing) more frequently than check to execute
                     
                     
 
@@ -60,9 +65,17 @@ namespace BtrexTrader.Strategy.Core
         }
 
 
-        public static void RegisterStopLoss()
+        public static void RegisterStopLoss(string delta, decimal rate, decimal qty, Action<string> callBack = null)
         {
+            StopLoss sl = new StopLoss();
+            sl.MarketDelta = delta;
+            sl.StopRate = rate;
+            sl.Quantity = qty;
+            
+            if (callBack != null)
+                sl.Callback = callBack;
 
+            SL_Book.Add(sl);
         }
 
 
@@ -72,7 +85,13 @@ namespace BtrexTrader.Strategy.Core
 
     public class StopLoss
     {
-        Action Callback;
+        public string MarketDelta { get; set; }
+        public decimal StopRate { get; set; }
+        public decimal Quantity { get; set; }
+        
+        //Callback to Strategy, containing CandlePeriod parameter(optional):
+        public Action<string> Callback { get; set; }
+        
     }
 
 
