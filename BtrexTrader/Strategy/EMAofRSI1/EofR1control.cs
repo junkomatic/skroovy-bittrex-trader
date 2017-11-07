@@ -225,22 +225,25 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         }
 
 
+
+
        
         //TODO: CALLBACK FUNCTIONS FOR STOPLOSS AND ORDER CREATION/EXECUTION
-            //SAVE TABLE/SAVE SET FUNCTIONS
+        
+        
+        
+        
+
+
+
+
+        //TODO: SAVE TABLE/SAVE SET FUNCTIONS
 
 
 
 
 
-
-
-
-
-
-
-
-
+        
 
 
     }
