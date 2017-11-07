@@ -105,6 +105,28 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                         //ADD BUY OBJs TO ORDERS LIST
                         if (candles5mChanged)
                         {
+                            var closes = new List<decimal>(StratData.Candles5m[m.MarketDelta].Select(c => c.Close));
+                            var closesRSI = closes.Rsi(21);
+                            var EMAofRSI = closesRSI.Ema(14);
+
+                            if (closesRSI.Last() > EMAofRSI.Last())
+                            {
+                                if (closesRSI[closesRSI.Count - 2] <= EMAofRSI[EMAofRSI.Count - 2])
+                                {
+                                    //RSI has crossed above its EMA and is RISING:
+
+
+                                }
+                            }
+                            else if (closesRSI.Last() < EMAofRSI.Last())
+                            {
+                                if (closesRSI[closesRSI.Count - 2] >= EMAofRSI[EMAofRSI.Count - 2])
+                                {
+                                    //RSI has crossed below its EMA and is FALLING:
+
+
+                                }
+                            }
 
                         }
 
@@ -150,6 +172,25 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             
         }
         
+
+        private bool? EMAofRSI1_STRATEGY(List<decimal> closes)
+        {
+            var closesRSI = closes.Rsi(21);
+            var EMAofRSI = closesRSI.Ema(14);
+
+            if (closesRSI.Last() > EMAofRSI.Last() && closesRSI[closesRSI.Count - 2] <= EMAofRSI[EMAofRSI.Count - 2])
+            {
+                    //RSI has crossed above its EMA and is RISING:
+                    return true;                
+            }
+            else if (closesRSI.Last() < EMAofRSI.Last() && closesRSI[closesRSI.Count - 2] >= EMAofRSI[EMAofRSI.Count - 2])
+            {
+                    //RSI has crossed below its EMA and is FALLING:
+                    return false;                
+            }
+            
+            return null;
+        }
 
 
         private async Task SubTopMarketsByVol(int n)
