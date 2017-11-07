@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Data;
 using System.Data.SQLite;
 using Quartz;
 using Quartz.Impl;
@@ -35,7 +36,8 @@ namespace BtrexTrader.Data
 
             //Start crontriggered jobs:
             sched.Start();
-            sched.ScheduleJob(buildCandles, candleTrigger);
+            sched.ScheduleJob(BuildCandles, candleTrigger);
+            //sched.ScheduleJob(DataCleanup, cleanUpTrigger);
 
             //Begin Dequeue Thread:
             var DequeueThread = new Thread(() => ProcessQueue());
@@ -105,7 +107,7 @@ namespace BtrexTrader.Data
             } while (!added);
         }
 
-
+        
         private static void BuildAll5mCandles()
         {
             foreach (Market.Market market in Markets.Values)
@@ -152,7 +154,7 @@ namespace BtrexTrader.Data
 
         
         //CREATE CRON-JOBS
-        static IJobDetail buildCandles = JobBuilder.Create<Build5mCandles>()
+        static IJobDetail BuildCandles = JobBuilder.Create<Build5mCandles>()
             .WithIdentity("candlesJob", "group1")
             .Build();
 

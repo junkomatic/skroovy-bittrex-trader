@@ -17,15 +17,15 @@ namespace BtrexTrader.Control
     {
         private EofR1control eofR1Control = new EofR1control();
 
-        //private NewStratControl NewStrat = new NewStratControl();
+        //private DemoControl Demo = new DemoControl();
 
         //private TripletTrader TripletTrader = new TripletTrader();
-
+        
         public async Task InitializeMarkets()
         {
             await eofR1Control.Initialize();
 
-            //await NewStrat.Initialize();
+            //await Demo.Initialize();
 
             //await TripletTrader.Initialize();
         }
@@ -37,7 +37,7 @@ namespace BtrexTrader.Control
             
             
             //DEMO STRAT:
-            //NewStrat.StartMarketsDemo().Wait();
+            //Demo.StartMarketsDemo().Wait();
 
 
             //TRIPLET STRAT:

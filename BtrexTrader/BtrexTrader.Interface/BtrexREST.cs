@@ -22,7 +22,7 @@ namespace BtrexTrader.Interface
         private readonly static string API_KEY3 = ConfigurationManager.AppSettings["API_KEY3"];
         private readonly static string SECRET_KEY3 = ConfigurationManager.AppSettings["SECRET_KEY3"];
 
-        public static TradeMethods TradeMethods = new TradeMethods();
+        public static TradeControl TradeController = new TradeControl();
 
         private static HttpClient client = new HttpClient()
         {
@@ -443,7 +443,57 @@ namespace BtrexTrader.Interface
         }
 
 
+        public static async Task<List<string>> GetTopMarketsByBVwithETHdelta(int n)
+        {
+            MarketSummary markets = await BtrexREST.GetMarketSummary();
+            Dictionary<string, decimal> topMarketsBTC = new Dictionary<string, decimal>();
+            List<string> topMarketsETH = new List<string>();
+            foreach (SummaryResult market in markets.result)
+            {
+                string mkbase = market.MarketName.Split('-')[0];
+                if (mkbase == "BTC")
+                {
+                    topMarketsBTC.Add(market.MarketName, market.BaseVolume);
+                }
+                else if (mkbase == "ETH")
+                {
+                    topMarketsETH.Add(market.MarketName.Split('-')[1]);
+                }
+            }
 
+            List<string> mks = new List<string>();
+            foreach (KeyValuePair<string, decimal> mk in topMarketsBTC.OrderByDescending(x => x.Value).Take(n))
+            {
+                string coin = mk.Key.Split('-')[1];
+                if (topMarketsETH.Contains(coin))
+                    mks.Add(coin);
+            }
+
+            Console.WriteLine("Markets: {0}", mks.Count);
+            return mks;
+        }
+
+        public static async Task<List<string>> GetTopMarketsByBVbtcOnly(int n)
+        {
+            MarketSummary markets = await BtrexREST.GetMarketSummary();
+            Dictionary<string, decimal> topMarketsBTC = new Dictionary<string, decimal>();
+            foreach (SummaryResult market in markets.result)
+            {
+                string mkbase = market.MarketName.Split('-')[0];
+                if (mkbase == "BTC")
+                {
+                    topMarketsBTC.Add(market.MarketName, market.BaseVolume);
+                }
+            }
+
+            List<string> mks = new List<string>();
+            foreach (KeyValuePair<string, decimal> mk in topMarketsBTC.OrderByDescending(x => x.Value).Take(n))
+            {
+                mks.Add(mk.Key.Split('-')[1]);
+            }
+
+            return mks;
+        }
 
     }
 }

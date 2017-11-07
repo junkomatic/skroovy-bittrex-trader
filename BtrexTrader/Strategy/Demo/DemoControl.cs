@@ -13,7 +13,7 @@ using BtrexTrader.Data.Market;
 
 namespace BtrexTrader.Strategy.Demo
 {
-    class NewStratControl
+    class DemoControl
     {
         private Dictionary<string, List<Candle>> mCandles = new Dictionary<string, List<Candle>>();
 
@@ -152,7 +152,7 @@ namespace BtrexTrader.Strategy.Demo
 
         private async Task SubTopMarketsByVol(int n)
         {
-            List<string> topMarkets = await BtrexREST.TradeMethods.GetTopMarketsByBVbtcOnly(n);
+            List<string> topMarkets = await BtrexREST.GetTopMarketsByBVbtcOnly(n);
             foreach (string mk in topMarkets)
                 await BtrexWS.subscribeMarket("BTC-" + mk);
 

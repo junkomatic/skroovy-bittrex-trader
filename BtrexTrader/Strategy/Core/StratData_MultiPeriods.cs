@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Trady.Core;
 using BtrexTrader.Data;
 
-namespace BtrexTrader.Strategy
+namespace BtrexTrader.Strategy.Core
 {
     class StratData_MultiPeriods
     {

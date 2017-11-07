@@ -14,16 +14,17 @@ using Trady.Analysis;
 using BtrexTrader.Interface;
 using BtrexTrader.Data;
 using BtrexTrader.Data.Market;
+using BtrexTrader.Strategy.Core;
 
 namespace BtrexTrader.Strategy.EMAofRSI1
 {
     class EofR1control
-    {
-        private const string dataFile = "EMAofRSI1trades.data";
-        private SQLiteConnection conn;
-
+    { 
         private StratData_MultiPeriods StratData = new StratData_MultiPeriods();
         private DataSet Holdings = new DataSet();
+
+        private const string dataFile = "EMAofRSI1trades.data";
+        private SQLiteConnection conn;
 
         private List<Order> Orders = new List<Order>();
         
@@ -51,11 +52,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             {
                 while (!(Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Backspace))
                 {
-                    Orders.Clear();
-
-                    //CHECK CURRENTLY OWNED ASSETS + STOP LOSSES FOR EXECUTION:
-                    CheckStopLosses();
-                        
+                    Orders.Clear();                                       
                     
                     //BEGIN CANDLES ASSESSMENTS:
                     foreach (Market m in BtrexData.Markets.Values)
@@ -131,8 +128,8 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     }
 
                     //TODO: EXECUTE ALL List<Orders> HERE, 
-                    //SET STOP-LOSS FOR BUYS, SAVE ALL DATA WHEN COMPLETE:
-
+                    //Register StopLosses for BUYS
+                    //SAVE DATA (callbacks)
 
 
 
@@ -151,7 +148,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
         private async Task SubTopMarketsByVol(int n)
         {
-            List<string> topMarkets = await BtrexREST.TradeMethods.GetTopMarketsByBVbtcOnly(n);
+            List<string> topMarkets = await BtrexREST.GetTopMarketsByBVbtcOnly(n);
             foreach (string mk in topMarkets)
                 await BtrexWS.subscribeMarket("BTC-" + mk);
         }
@@ -222,28 +219,23 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         }
 
 
-        private void CheckStopLosses()
-        {
-            foreach (DataTable table in Holdings.Tables)
-            {
-                foreach (DataRow row in table.Rows)
-                {
-                    string marketDelta = (string)(row[0]);
-                    if (BtrexData.Markets[marketDelta].TradeHistory.RecentFills.Last().Rate <= (decimal)(row[6]))
-                    {
-                        //TODO: ADD SELL OBJs TO ORDERS LIST, MARK SL_Executed in Holdings (dont save yet)                        
-                        Orders.Add(new Order(marketDelta, "SELL", (decimal)row[2], (decimal)row[6], table.TableName));
-                        row[7] = 1;
-                    }
-
-                    //OR: MOVE UP STOP-LOSS IF APPRPRIATE (2-5%?) AND SAVE
+       
+        //TODO: CALLBACK FUNCTIONS FOR STOPLOSS AND ORDER CREATION/EXECUTION
+            //SAVE TABLE/SAVE SET FUNCTIONS
 
 
 
-                }
-            }
-            
-        }
+
+
+
+
+
+
+
+
+
+
+
 
     }
 
