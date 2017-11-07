@@ -203,7 +203,7 @@
     <Compile Include="BtrexTrader.Data\POCOclasses.cs" />
     <Compile Include="BtrexTrader.Interface\BtrexWS.cs" />
     <Compile Include="BtrexTrader.Interface\TradeControl.cs" />
-    <Compile Include="Strategy\Core\StopLossControl.cs" />
+    <Compile Include="Strategy\Core\StopLossController.cs" />
     <Compile Include="Strategy\Demo\DemoControl.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

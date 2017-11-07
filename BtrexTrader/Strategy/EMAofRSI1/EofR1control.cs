@@ -74,23 +74,24 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                             StratData.Candles5m[m.MarketDelta].AddRange(newCandles);
                             candles5mChanged = true;
 
-                            if (m.TradeHistory.LastStoredCandle > StratData.Candles20m[m.MarketDelta].Last().DateTime.AddMinutes(35))
+                            var CandleCurrentTime = m.TradeHistory.LastStoredCandle.AddMinutes(5);
+                            if (CandleCurrentTime > StratData.Candles20m[m.MarketDelta].Last().DateTime.AddMinutes(40))
                             {
                                 //Build new 20m candles:
                                 candles20mChanged = StratData.BuildNew20mCndls(m.MarketDelta);
 
-                                if (m.TradeHistory.LastStoredCandle > StratData.Candles1h[m.MarketDelta].Last().DateTime.AddMinutes(115))
+                                if (CandleCurrentTime > StratData.Candles1h[m.MarketDelta].Last().DateTime.AddHours(2))
                                 {
                                     //Build new 1h candles:
                                     candles1hChanged = StratData.BuildNew1hCndls(m.MarketDelta);
 
-                                    if (m.TradeHistory.LastStoredCandle > StratData.Candles4h[m.MarketDelta].Last().DateTime.AddMinutes(475))
+                                    if (CandleCurrentTime > StratData.Candles4h[m.MarketDelta].Last().DateTime.AddHours(8))
                                     {
                                         //Build new 4h candles
                                         candles4hChanged = StratData.BuildNew4hCndls(m.MarketDelta);
                                     }
 
-                                    if (m.TradeHistory.LastStoredCandle.AddMinutes(5) > StratData.Candles12h[m.MarketDelta].Last().DateTime.AddHours(24))
+                                    if (CandleCurrentTime > StratData.Candles12h[m.MarketDelta].Last().DateTime.AddHours(24))
                                     {
                                         //Build new 12h candles
                                         candles12hChanged = StratData.BuildNew12hCndls(m.MarketDelta);

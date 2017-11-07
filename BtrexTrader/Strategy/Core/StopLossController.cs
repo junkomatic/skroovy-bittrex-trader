@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Linq;
@@ -10,7 +11,7 @@ namespace BtrexTrader.Strategy.Core
 {
     public static class StopLossController
     {
-        private static List<StopLoss> SL_Book = new List<StopLoss>();
+        private static ConcurrentDictionary<string, StopLoss> SL_Book = new ConcurrentDictionary<string, StopLoss>();
         private static Thread StopLossThread;
         private static bool isStarted = false;
 
@@ -42,11 +43,10 @@ namespace BtrexTrader.Strategy.Core
                     continue;
                 }
 
-                foreach (StopLoss stop in SL_Book)
+                foreach (var stop in SL_Book)
                 {
-                    //Check to move up (trailing) more frequently than check to execute
-                    
-                    
+                    //TODO: Check to move up (trailing) more frequently than check to execute
+                    //After execution, call callback
 
 
 
@@ -65,7 +65,7 @@ namespace BtrexTrader.Strategy.Core
         }
 
 
-        public static void RegisterStopLoss(string delta, decimal rate, decimal qty, Action<string> callBack = null)
+        public static void RegisterStopLoss(string uniqueIdentifier, string delta, decimal rate, decimal qty, Action<string> callBack = null)
         {
             StopLoss sl = new StopLoss();
             sl.MarketDelta = delta;
@@ -75,10 +75,22 @@ namespace BtrexTrader.Strategy.Core
             if (callBack != null)
                 sl.Callback = callBack;
 
-            SL_Book.Add(sl);
+            bool added;
+            do
+            {
+                added = SL_Book.TryAdd(uniqueIdentifier, sl);
+            } while (!added);
+            
         }
 
-
+        public static void CancelStopLoss(string uniqueIdentifier)
+        {
+            bool removed;
+            do
+            {
+                removed = SL_Book.TryRemove(uniqueIdentifier, out var s);
+            } while (!removed);
+        }
     }
 
 

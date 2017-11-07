@@ -8,7 +8,7 @@ namespace BtrexTrader.Interface
 {
     public class TradeControl
     {
-
+        //TODO: HIGHER TRADE FUNCTIONS
 
 
 
