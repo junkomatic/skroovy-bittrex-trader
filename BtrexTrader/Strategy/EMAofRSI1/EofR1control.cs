@@ -229,6 +229,12 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             AddHoldingsTable("1h");
             AddHoldingsTable("4h");
             AddHoldingsTable("12h");          
+
+            //TODO: REGISTER NEW STOP-LOSSES
+
+
+
+
         }
 
         private void AddHoldingsTable(string periodName)

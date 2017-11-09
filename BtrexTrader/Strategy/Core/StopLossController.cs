@@ -65,16 +65,8 @@ namespace BtrexTrader.Strategy.Core
         }
 
 
-        public static void RegisterStopLoss(string uniqueIdentifier, string delta, decimal rate, decimal qty, Action<string> callBack = null)
+        public static void RegisterStopLoss(StopLoss sl, string uniqueIdentifier)
         {
-            StopLoss sl = new StopLoss();
-            sl.MarketDelta = delta;
-            sl.StopRate = rate;
-            sl.Quantity = qty;
-            
-            if (callBack != null)
-                sl.Callback = callBack;
-
             bool added;
             do
             {
@@ -100,10 +92,22 @@ namespace BtrexTrader.Strategy.Core
         public string MarketDelta { get; set; }
         public decimal StopRate { get; set; }
         public decimal Quantity { get; set; }
-
         //Callback to Strategy, containing CandlePeriod parameter(optional):
         public Action<string> Callback { get; set; }
+        public string CandlePeriod { get; set; }
 
+        public StopLoss(string mDelta, decimal rate, decimal qty, Action<string> cBack = null, string period = null)
+        {
+            MarketDelta = mDelta;
+            StopRate = rate;
+            Quantity = qty;
+
+            if (cBack != null)
+                Callback = cBack;
+
+            if (period != null)
+                CandlePeriod = period;
+        }
     }
 
 
