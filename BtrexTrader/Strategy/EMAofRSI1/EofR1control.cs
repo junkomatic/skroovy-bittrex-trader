@@ -22,14 +22,14 @@ namespace BtrexTrader.Strategy.EMAofRSI1
     { 
         private StratData_MultiPeriods StratData = new StratData_MultiPeriods();
         private DataSet Holdings = new DataSet();
+        
+        private List<NewOrder> NewOrders = new List<NewOrder>();
+        private List<NewOrder> PendingOrders = new List<NewOrder>();
+        private ConcurrentQueue<string> SQLDataWrites = new ConcurrentQueue<string>();
 
         private const string dataFile = "EMAofRSI1trades.data";
         private SQLiteConnection conn;
 
-        private List<NewOrder> NewOrders = new List<NewOrder>();
-        private List<NewOrder> PendingOrders = new List<NewOrder>();
-        private ConcurrentQueue<string> SQLDataWrites = new ConcurrentQueue<string>();
-        
         private IReadOnlyList<string> SpecificDeltas = new List<string>()
         {
             "BTC-XLM"//, "BTC-ADA", "BTC-ETH", "BTC-QTUM", "BTC-OMG"
