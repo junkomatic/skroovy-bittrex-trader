@@ -58,8 +58,10 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             {
                 while (!(Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Backspace))
                 {
-                    NewOrders.Clear();                                       
+                    //WRITE/SAVE SQL DATA CHANGES:
+                    SaveSQLData();
                     
+
                     //BEGIN CANDLES ASSESSMENTS:
                     foreach (Market m in BtrexData.Markets.Values)
                     {
@@ -99,25 +101,17 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     }
 
 
-                    //TODO: EXECUTE ALL List<Orders> HERE, 
-                    //Register StopLosses for BUYS
-                    //SAVE DATA (callbacks)
-                    PendingOrders.AddRange(NewOrders);
-                    BtrexREST.TradeController.ExecuteNewOrderList(NewOrders);
-
-
-
-
-
-
-
-
-
-
-
-
-
-                    Thread.Sleep(TimeSpan.FromSeconds(2));
+                    //EXECUTE ALL List<NewOrders>:
+                    if (NewOrders.Count > 0)
+                    {
+                        PendingOrders.AddRange(NewOrders);
+                        var ords = new List<NewOrder>(NewOrders);
+                        NewOrders.Clear();
+                        BtrexREST.TradeController.ExecuteNewOrderList(ords);
+                    }
+                          
+                    
+                    Thread.Sleep(TimeSpan.FromSeconds(5));
 
                 }
             }
@@ -245,9 +239,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             Holdings.Tables.Add(dt);
         }
 
-
-
-
+        
        
         //TODO: CALLBACK FUNCTIONS FOR STOPLOSS AND ORDER CREATION/EXECUTION
         public void NewOrderCallback(string o)
@@ -258,6 +250,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
         }
         
+
         public void StopLossCallback()
         {
 
@@ -267,22 +260,17 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         }
         
 
-
-
-
-        //TODO: SAVE TABLE/SAVE SET FUNCTIONS
-
+        private void SaveSQLData()
+        {
+            //TODO: SAVE DATASET CHANGES
 
 
 
 
+        }
         
-
 
     }
 
-
     
-
-
 }
