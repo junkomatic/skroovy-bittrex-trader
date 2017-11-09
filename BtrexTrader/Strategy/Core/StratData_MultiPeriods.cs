@@ -300,76 +300,9 @@ namespace BtrexTrader.Strategy.Core
             }
             return changed;
         }
-
-
-
-
-
-
-
-
-        //[TEST]::Print Candles:
-        private void PrintDictsTest()
-        {
-            foreach (string mDelta in Candles5m.Keys)
-            {
-
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.WriteLine("===================[{0}]===================", mDelta);
-                Console.WriteLine("\r\n\r\n#CANDLES 12h:");
-                Console.ForegroundColor = ConsoleColor.DarkCyan;
-                int index = 1;
-                foreach (Candle c in Candles12h[mDelta])
-                {
-                    Console.WriteLine("{6}    T:{0}...O:{1:0.00000000}...H:{2:0.00000000}...L:{3:0.00000000}...C:{4:0.00000000}...V:{5:0.00000000}", c.DateTime, c.Open, c.High, c.Low, c.Close, c.Volume, index);
-                    index++;
-                }
-
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.WriteLine("\r\n\r\n#CANDLES 4h:");
-                Console.ForegroundColor = ConsoleColor.DarkCyan;
-                index = 1;
-                foreach (Candle c in Candles4h[mDelta])
-                {
-                    Console.WriteLine("{6}    T:{0}...O:{1:0.00000000}...H:{2:0.00000000}...L:{3:0.00000000}...C:{4:0.00000000}...V:{5:0.00000000}", c.DateTime, c.Open, c.High, c.Low, c.Close, c.Volume, index);
-                    index++;
-                }
-
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.WriteLine("\r\n\r\n#CANDLES 1h:");
-                Console.ForegroundColor = ConsoleColor.DarkCyan;
-                index = 1;
-                foreach (Candle c in Candles1h[mDelta])
-                {
-                    Console.WriteLine("{6}    T:{0}...O:{1:0.00000000}...H:{2:0.00000000}...L:{3:0.00000000}...C:{4:0.00000000}...V:{5:0.00000000}", c.DateTime, c.Open, c.High, c.Low, c.Close, c.Volume, index);
-                    index++;
-                }
-
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.WriteLine("\r\n\r\n#CANDLES 20m:");
-                Console.ForegroundColor = ConsoleColor.DarkCyan;
-                index = 1;
-                foreach (Candle c in Candles20m[mDelta])
-                {
-                    Console.WriteLine("{6}    T:{0}...O:{1:0.00000000}...H:{2:0.00000000}...L:{3:0.00000000}...C:{4:0.00000000}...V:{5:0.00000000}", c.DateTime, c.Open, c.High, c.Low, c.Close, c.Volume, index);
-                    index++;
-                }
-
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.WriteLine("\r\n\r\n#CANDLES 5m:");
-                Console.ForegroundColor = ConsoleColor.DarkCyan;
-                index = 1;
-                foreach (Candle c in Candles5m[mDelta])
-                {
-                    Console.WriteLine("{6}    T:{0}...O:{1:0.00000000}...H:{2:0.00000000}...L:{3:0.00000000}...C:{4:0.00000000}...V:{5:0.00000000}", c.DateTime, c.Open, c.High, c.Low, c.Close, c.Volume, index);
-                    index++;
-                }
-
-
-            }
-        }
-
-
+        
 
     }
+
+
 }

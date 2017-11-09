@@ -4,12 +4,40 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+
 namespace BtrexTrader.Interface
 {
     public class TradeControl
     {
         //TODO: HIGHER TRADE FUNCTIONS
+        public async Task ExecuteStopLoss(Strategy.Core.StopLoss stopLoss)
+        {
 
+
+
+
+
+            stopLoss.Callback("");
+        }
+
+        
+        public async Task ExecuteNewOrder(NewOrder order)
+        {
+
+
+
+
+
+
+            order.Callback("");
+        }
+        
+
+        public async Task ExecuteNewOrderList(List<NewOrder> NewOrderList)
+        {
+            var placeOrders = NewOrderList.Select(ExecuteNewOrder).ToArray();
+            await Task.WhenAll(placeOrders);
+        }
 
 
         public async Task<bool> MatchBottomAskUntilFilled(string orderID, string qtyORamt)
@@ -200,6 +228,35 @@ namespace BtrexTrader.Interface
         }
 
 
+
+    }
+
+
+
+    public class NewOrder
+    {
+        public string MarketDelta { get; set; }
+        public string BUYorSELL { get; set; }
+        public decimal Qty { get; set; }
+        public decimal DesiredRate { get; set; }
+        public string CandlePeriod { get; set; }
+        public Action<string> Callback { get; set; }
+
+        public NewOrder(string mDelta, string BUYSELL, decimal quantity, decimal? rateDesired, Action<string> cback = null, string cPeriod = null)
+        {
+            MarketDelta = mDelta;
+            BUYorSELL = BUYSELL;
+            Qty = quantity;
+
+            if (rateDesired != null)
+                DesiredRate = (decimal)rateDesired;
+
+            if (cback != null)
+                Callback = cback;
+
+            if (cPeriod != null)
+                CandlePeriod = cPeriod;
+        }
 
     }
 }

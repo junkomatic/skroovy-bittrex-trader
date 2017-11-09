@@ -26,12 +26,16 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         private const string dataFile = "EMAofRSI1trades.data";
         private SQLiteConnection conn;
 
-        private List<Order> Orders = new List<Order>();
+        private List<NewOrder> NewOrders = new List<NewOrder>();
+        private List<NewOrder> PendingOrders = new List<NewOrder>();
+        private ConcurrentQueue<string> SQLDataWrites = new ConcurrentQueue<string>();
         
         private IReadOnlyList<string> SpecificDeltas = new List<string>()
         {
             "BTC-XLM"//, "BTC-ADA", "BTC-ETH", "BTC-QTUM", "BTC-OMG"
         };
+
+        private decimal WagerAmt = 0.001M;
         
 
 
@@ -54,17 +58,11 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             {
                 while (!(Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Backspace))
                 {
-                    Orders.Clear();                                       
+                    NewOrders.Clear();                                       
                     
                     //BEGIN CANDLES ASSESSMENTS:
                     foreach (Market m in BtrexData.Markets.Values)
                     {
-                        bool candles5mChanged = false,
-                                candles20mChanged = false,
-                                candles1hChanged = false,
-                                candles4hChanged = false,
-                                candles12hChanged = false;
-
                         //CHECK FOR NEW CANDLES:
                         if (m.TradeHistory.LastStoredCandle > StratData.Candles5m[m.MarketDelta].Last().DateTime)
                         {
@@ -72,89 +70,40 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                             var Importer = new TradyCandleImporter();
                             var newCandles = await Importer.ImportAsync(m.MarketDelta, StratData.Candles5m[m.MarketDelta].Last().DateTime.AddMinutes(5));
                             StratData.Candles5m[m.MarketDelta].AddRange(newCandles);
-                            candles5mChanged = true;
-                            
-                            //Build new 20m candles:
+                            CheckStrategy(StratData.Candles5m[m.MarketDelta], m.MarketDelta, "5m");
+
+                            //Build new 20m candles + Check strategy for buy/sell signals:
                             var CandleCurrentTime = m.TradeHistory.LastStoredCandle.AddMinutes(5);
                             if (CandleCurrentTime > StratData.Candles20m[m.MarketDelta].Last().DateTime.AddMinutes(40))
                             {
-                                candles20mChanged = StratData.BuildNew20mCndls(m.MarketDelta);
+                                if (StratData.BuildNew20mCndls(m.MarketDelta))
+                                    CheckStrategy(StratData.Candles20m[m.MarketDelta], m.MarketDelta, "20m");
 
-                                //Build new 1h candles:
+                                //Build new 1h candles + Check strategy for buy/sell signals:
                                 if (CandleCurrentTime > StratData.Candles1h[m.MarketDelta].Last().DateTime.AddHours(2))
                                 {
-                                    candles1hChanged = StratData.BuildNew1hCndls(m.MarketDelta);
+                                    if (StratData.BuildNew1hCndls(m.MarketDelta))
+                                        CheckStrategy(StratData.Candles1h[m.MarketDelta], m.MarketDelta, "1h");
 
-                                    //Build new 4h candles
-                                    if (CandleCurrentTime > StratData.Candles4h[m.MarketDelta].Last().DateTime.AddHours(8))
-                                    {
-                                        candles4hChanged = StratData.BuildNew4hCndls(m.MarketDelta);
-                                    }
+                                    //Build new 4h candles + Check strategy for buy/sell signals:
+                                    if (CandleCurrentTime > StratData.Candles4h[m.MarketDelta].Last().DateTime.AddHours(8) && StratData.BuildNew4hCndls(m.MarketDelta))
+                                        CheckStrategy(StratData.Candles4h[m.MarketDelta], m.MarketDelta, "4h");
 
-                                    //Build new 12h candles
-                                    if (CandleCurrentTime > StratData.Candles12h[m.MarketDelta].Last().DateTime.AddHours(24))
-                                    {
-                                        candles12hChanged = StratData.BuildNew12hCndls(m.MarketDelta);
-                                    }
+                                    //Build new 12h candles + Check strategy for buy/sell signals:
+                                    if (CandleCurrentTime > StratData.Candles12h[m.MarketDelta].Last().DateTime.AddHours(24) && StratData.BuildNew12hCndls(m.MarketDelta))
+                                        CheckStrategy(StratData.Candles12h[m.MarketDelta], m.MarketDelta, "12h");
                                 }
                             }
-                        }
-
-
-                        //TODO: CALC RSIs/Indicators for candlesChanged
-                        //ADD BUY OBJs TO ORDERS LIST
-                        if (candles5mChanged)
-                        {
-                            var closes = new List<decimal>(StratData.Candles5m[m.MarketDelta].Select(c => c.Close));
-                            var closesRSI = closes.Rsi(21);
-                            var EMAofRSI = closesRSI.Ema(14);
-
-                            if (closesRSI.Last() > EMAofRSI.Last())
-                            {
-                                if (closesRSI[closesRSI.Count - 2] <= EMAofRSI[EMAofRSI.Count - 2])
-                                {
-                                    //RSI has crossed above its EMA and is RISING:
-
-
-                                }
-                            }
-                            else if (closesRSI.Last() < EMAofRSI.Last())
-                            {
-                                if (closesRSI[closesRSI.Count - 2] >= EMAofRSI[EMAofRSI.Count - 2])
-                                {
-                                    //RSI has crossed below its EMA and is FALLING:
-
-
-                                }
-                            }
-
-                        }
-
-                        if (candles20mChanged)
-                        {
-
-                        }
-
-                        if (candles1hChanged)
-                        {
-
-                        }
-
-                        if (candles4hChanged)
-                        {
-
-                        }
-
-                        if (candles12hChanged)
-                        {
-
-                        }
-
+                        }                        
+                        
                     }
+
 
                     //TODO: EXECUTE ALL List<Orders> HERE, 
                     //Register StopLosses for BUYS
                     //SAVE DATA (callbacks)
+                    PendingOrders.AddRange(NewOrders);
+                    BtrexREST.TradeController.ExecuteNewOrderList(NewOrders);
 
 
 
@@ -164,7 +113,11 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
 
 
-                    Thread.Sleep(TimeSpan.FromSeconds(10));
+
+
+
+
+                    Thread.Sleep(TimeSpan.FromSeconds(2));
 
                 }
             }
@@ -190,6 +143,33 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             }
             
             return null;
+        }
+
+
+        public void CheckStrategy(List<Candle> candles, string delta, string periodName)
+        {
+            if (PendingOrders.Where(o => (o.CandlePeriod == periodName) && (o.MarketDelta == delta)).Count() == 0)
+            {
+                var closes = new List<decimal>(candles.Select(c => c.Close));
+                bool? call = EMAofRSI1_STRATEGY(closes);
+
+                if (call != null)
+                {
+                    bool owned = Holdings.Tables[periodName].AsEnumerable().Any(row => delta == row.Field<string>("MarketDelta"));
+
+                    if (call == true && !owned)
+                    {
+                        //Add BUY order on period
+                        NewOrders.Add(new NewOrder(delta, "BUY", WagerAmt, null, o => NewOrderCallback(o), periodName));
+                    }
+                    else if (call == false && owned)
+                    {
+                        //ADD SELL ORDER on period
+                        NewOrders.Add(new NewOrder(delta, "SELL", WagerAmt, null, o => NewOrderCallback(o), periodName));
+                    }
+                }
+            }
+
         }
 
 
@@ -270,9 +250,21 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
        
         //TODO: CALLBACK FUNCTIONS FOR STOPLOSS AND ORDER CREATION/EXECUTION
+        public void NewOrderCallback(string o)
+        {
+            //Pull from pending orders, enter into holdings, drop/save table, create stoploss and reg
+
+
+
+        }
         
-        
-        
+        public void StopLossCallback()
+        {
+
+
+
+
+        }
         
 
 
@@ -290,24 +282,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
     }
 
 
-    public class Order
-    {
-        string MarketDelta { get; set; }
-        string BUYorSELL { get; set; }
-        decimal Qty { get; set; }
-        decimal DesiredRate { get; set; }
-        string PeriodName { get; set; }
-
-        public Order(string mDelta, string BUYSELL, decimal quantity, decimal rateDesired, string pName)
-        {
-            MarketDelta = mDelta;
-            BUYorSELL = BUYSELL;
-            Qty = quantity;
-            DesiredRate = rateDesired;
-            PeriodName = pName;
-        }
-
-    }
+    
 
 
 }

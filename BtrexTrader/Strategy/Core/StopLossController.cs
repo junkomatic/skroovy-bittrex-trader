@@ -100,10 +100,10 @@ namespace BtrexTrader.Strategy.Core
         public string MarketDelta { get; set; }
         public decimal StopRate { get; set; }
         public decimal Quantity { get; set; }
-        
+
         //Callback to Strategy, containing CandlePeriod parameter(optional):
         public Action<string> Callback { get; set; }
-        
+
     }
 
 
