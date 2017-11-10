@@ -19,13 +19,13 @@ using BtrexTrader.Strategy.Core;
 namespace BtrexTrader.Strategy.EMAofRSI1
 {
     class EofR1control
-    { 
+    {
         private StratData_MultiPeriods StratData = new StratData_MultiPeriods();
         private DataSet Holdings = new DataSet();
-        
+
         private List<NewOrder> NewOrders = new List<NewOrder>();
         private List<NewOrder> PendingOrders = new List<NewOrder>();
-        private ConcurrentQueue<string> SQLDataWrites = new ConcurrentQueue<string>();
+        private ConcurrentQueue<SaveDataUpdate> SQLDataWrites = new ConcurrentQueue<SaveDataUpdate>();
 
         private const string dataFile = "EMAofRSI1trades.data";
         private SQLiteConnection conn;
@@ -36,8 +36,8 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         };
 
         private decimal WagerAmt = 0.001M;
-        
 
+        
 
         public async Task Initialize()
         {
@@ -47,7 +47,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             OpenSQLiteConn();
             LoadHoldings();
 
-            await StratData.PreloadCandleDicts(26);            
+            await StratData.PreloadCandleDicts(26);
         }
 
         public async Task Start()
@@ -60,7 +60,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 {
                     //WRITE/SAVE SQL DATA CHANGES:
                     SaveSQLData();
-                    
+
 
                     //BEGIN CANDLES ASSESSMENTS:
                     foreach (Market m in BtrexData.Markets.Values)
@@ -96,8 +96,8 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                                         CheckStrategy(StratData.Candles12h[m.MarketDelta], m.MarketDelta, "12h");
                                 }
                             }
-                        }                        
-                        
+                        }
+
                     }
 
 
@@ -109,16 +109,16 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                         NewOrders.Clear();
                         BtrexREST.TradeController.ExecuteNewOrderList(ords);
                     }
-                          
-                    
+
+
                     Thread.Sleep(TimeSpan.FromSeconds(5));
 
                 }
             }
             conn.Close();
-            
+
         }
-        
+
 
         private bool? EMAofRSI1_STRATEGY(List<decimal> closes)
         {
@@ -127,15 +127,15 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
             if (closesRSI.Last() > EMAofRSI.Last() && closesRSI[closesRSI.Count - 2] <= EMAofRSI[EMAofRSI.Count - 2])
             {
-                    //RSI has crossed above its EMA and is RISING:
-                    return true;                
+                //RSI has crossed above its EMA and is RISING:
+                return true;
             }
             else if (closesRSI.Last() < EMAofRSI.Last() && closesRSI[closesRSI.Count - 2] >= EMAofRSI[EMAofRSI.Count - 2])
             {
-                    //RSI has crossed below its EMA and is FALLING:
-                    return false;                
+                //RSI has crossed below its EMA and is FALLING:
+                return false;
             }
-            
+
             return null;
         }
 
@@ -228,7 +228,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             AddHoldingsTable("20m");
             AddHoldingsTable("1h");
             AddHoldingsTable("4h");
-            AddHoldingsTable("12h");          
+            AddHoldingsTable("12h");
 
             //TODO: REGISTER NEW STOP-LOSSES
 
@@ -240,13 +240,13 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         private void AddHoldingsTable(string periodName)
         {
             var dt = new DataTable();
-            using (var sqlAdapter = new SQLiteDataAdapter("SELECT * from "+ periodName +" WHERE DateTimeSELL = 'OWNED'", conn))
+            using (var sqlAdapter = new SQLiteDataAdapter("SELECT * from " + periodName + " WHERE DateTimeSELL = 'OWNED'", conn))
                 sqlAdapter.Fill(dt);
             Holdings.Tables.Add(dt);
         }
 
-        
-       
+
+
         //TODO: CALLBACK FUNCTIONS FOR STOPLOSS AND ORDER CREATION/EXECUTION
         public void NewOrderCallback(string o)
         {
@@ -255,7 +255,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
 
         }
-        
+
 
         public void StopLossCallback()
         {
@@ -264,7 +264,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
 
         }
-        
+
 
         private void SaveSQLData()
         {
@@ -274,9 +274,32 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
 
         }
-        
+
 
     }
 
-    
+    public class SaveDataUpdate
+    { 
+        public string PeriodName { get; set; }
+        public string MarketName { get; set; }
+        public string BUYorSELL { get; set; }
+        public DateTime TimeStamp{ get; set; }
+        public decimal Quantity { get; set; }
+        public decimal Rate { get; set; }
+        public bool StopLossExecuted { get; set; }
+
+        public SaveDataUpdate(string period, string market, string buyORsell, DateTime time, decimal qty, decimal price, bool stoploss = false)
+        {
+            PeriodName = period;
+            MarketName = market;
+            BUYorSELL = buyORsell;
+            TimeStamp = time;
+            Quantity = qty;
+            Rate = price;
+            StopLossExecuted = stoploss;
+        }
+    }
+
+
+
 }
