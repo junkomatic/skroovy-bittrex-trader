@@ -59,7 +59,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 while (!(Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Backspace))
                 {
                     //WRITE/SAVE SQL DATA CHANGES:
-                    SaveSQLData();
+                    SaveSQLData(cmd);
 
 
                     //BEGIN CANDLES ASSESSMENTS:
@@ -266,33 +266,70 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         }
 
 
-        private void SaveSQLData()
+        private void SaveSQLData(SQLiteCommand cmd)
         {
-            //TODO: SAVE DATASET CHANGES
+            if (!SQLDataWrites.IsEmpty)
+            { 
+                using (var tx = conn.BeginTransaction())
+                {
+                    //SAVE DATA EVENT CHANGES
+                    while (!SQLDataWrites.IsEmpty)
+                    {
 
+                        SaveDataUpdate update;
+                        bool dqed;
+                        do
+                        {
+                            dqed = SQLDataWrites.TryDequeue(out update);
+                        } while (!dqed);
 
+                        //Execute SaveData SQL commands:
+                        if (update.BUYorSELLorSL_MOVE.ToUpper() == "BUY")
+                        {
+                            cmd.CommandText = string.Format("INSERT INTO {0} VALUES ({1}, {2}, {3}, {4}, {5}, {6}, {7}, {8})", update.PeriodName, update.MarketName, update.TimeStamp, update.Quantity, update.Rate, "OWNED", "OWNED", update.StopLossRate, "0");
+                            cmd.ExecuteNonQuery();
 
+                        }
+                        else if (update.BUYorSELLorSL_MOVE.ToUpper() == "SELL")
+                        {
+                            cmd.CommandText = string.Format("UPDATE {0} SET DateTimeSELL = {1}, SoldRate = {2}, SL_Executed = {3} WHERE MarketName = {4}", update.PeriodName, update.TimeStamp, update.Rate, update.StopLossExecuted ? "1" : "0", update.MarketName);
+                            cmd.ExecuteNonQuery();
+                        } 
+                        else if (update.BUYorSELLorSL_MOVE.ToUpper() == "SL_MOVE")
+                        {
+                            cmd.CommandText = string.Format("UPDATE {0} SET StopLossRate = {1} WHERE MarketName = {2}", update.PeriodName, update.StopLossRate, update.MarketName);
+                            cmd.ExecuteNonQuery();
+                        }   
+                        
+                    }
 
+                    tx.Commit();
+                }
+            }
         }
 
 
     }
 
+
+    
+
     public class SaveDataUpdate
     { 
         public string PeriodName { get; set; }
         public string MarketName { get; set; }
-        public string BUYorSELL { get; set; }
+        public string BUYorSELLorSL_MOVE { get; set; }
         public DateTime TimeStamp{ get; set; }
         public decimal Quantity { get; set; }
         public decimal Rate { get; set; }
+        public decimal StopLossRate { get; set; }
         public bool StopLossExecuted { get; set; }
 
         public SaveDataUpdate(string period, string market, string buyORsell, DateTime time, decimal qty, decimal price, bool stoploss = false)
         {
             PeriodName = period;
             MarketName = market;
-            BUYorSELL = buyORsell;
+            BUYorSELLorSL_MOVE = buyORsell;
             TimeStamp = time;
             Quantity = qty;
             Rate = price;
