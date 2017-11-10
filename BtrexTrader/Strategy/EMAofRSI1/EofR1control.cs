@@ -154,12 +154,12 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     if (call == true && !owned)
                     {
                         //Add BUY order on period
-                        NewOrders.Add(new NewOrder(delta, "BUY", WagerAmt, null, o => NewOrderCallback(o), periodName));
+                        NewOrders.Add(new NewOrder(delta, "BUY", WagerAmt, null, (a, b) => OrderExecutedCallback(a, b), periodName));
                     }
                     else if (call == false && owned)
                     {
                         //ADD SELL ORDER on period
-                        NewOrders.Add(new NewOrder(delta, "SELL", WagerAmt, null, o => NewOrderCallback(o), periodName));
+                        NewOrders.Add(new NewOrder(delta, "SELL", WagerAmt, null, (a, b) => OrderExecutedCallback(a, b), periodName));
                     }
                 }
             }
@@ -220,6 +220,14 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             }
         }
 
+        
+        private void AddHoldingsTable(string periodName)
+        {
+            var dt = new DataTable();
+            using (var sqlAdapter = new SQLiteDataAdapter("SELECT * from " + periodName + " WHERE DateTimeSELL = 'OWNED'", conn))
+                sqlAdapter.Fill(dt);
+            Holdings.Tables.Add(dt);
+        }
 
         private void LoadHoldings()
         {
@@ -237,18 +245,9 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
         }
 
-        private void AddHoldingsTable(string periodName)
-        {
-            var dt = new DataTable();
-            using (var sqlAdapter = new SQLiteDataAdapter("SELECT * from " + periodName + " WHERE DateTimeSELL = 'OWNED'", conn))
-                sqlAdapter.Fill(dt);
-            Holdings.Tables.Add(dt);
-        }
 
-
-
-        //TODO: CALLBACK FUNCTIONS FOR STOPLOSS AND ORDER CREATION/EXECUTION
-        public void NewOrderCallback(string o)
+        //TODO: CALLBACK FUNCTIONS FOR STOPLOSS EXE/MOVE AND ORDER EXECUTION
+        public void OrderExecutedCallback(GetOrderResponse OrderResponse, string period)
         {
             //Pull from pending orders, enter into holdings, drop/save table, create stoploss and reg
 
@@ -257,7 +256,15 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         }
 
 
-        public void StopLossCallback()
+        public void StopLossExecutedCallback(GetOrderResponse OrderResponse, string period)
+        {
+
+
+
+
+        }
+
+        public void StopLossMovedCallback(string market, decimal newRate, string period)
         {
 
 
@@ -322,10 +329,10 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         public DateTime TimeStamp{ get; set; }
         public decimal Quantity { get; set; }
         public decimal Rate { get; set; }
-        public decimal StopLossRate { get; set; }
+        public decimal? StopLossRate { get; set; }
         public bool StopLossExecuted { get; set; }
 
-        public SaveDataUpdate(string period, string market, string buyORsell, DateTime time, decimal qty, decimal price, bool stoploss = false)
+        public SaveDataUpdate(string period, string market, string buyORsell, DateTime time, decimal qty, decimal price, decimal? SL_rate = null, bool stoplossExe = false)
         {
             PeriodName = period;
             MarketName = market;
@@ -333,7 +340,10 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             TimeStamp = time;
             Quantity = qty;
             Rate = price;
-            StopLossExecuted = stoploss;
+            StopLossExecuted = stoplossExe;
+
+            if (SL_rate != null)
+                StopLossRate = SL_rate;
         }
     }
 

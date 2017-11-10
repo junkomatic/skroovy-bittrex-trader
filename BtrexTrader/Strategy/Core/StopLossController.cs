@@ -92,18 +92,22 @@ namespace BtrexTrader.Strategy.Core
         public string MarketDelta { get; set; }
         public decimal StopRate { get; set; }
         public decimal Quantity { get; set; }
-        //Callback to Strategy, containing CandlePeriod parameter(optional):
-        public Action<string> Callback { get; set; }
+        //Callbacks to Strategy, containing CandlePeriod parameter(optional):
+        public Action<string, decimal, string> MovedCallback { get; set; }
+        public Action<GetOrderResponse, string> ExecutionCallback { get; set; }
         public string CandlePeriod { get; set; }
 
-        public StopLoss(string mDelta, decimal rate, decimal qty, Action<string> cBack = null, string period = null)
+        public StopLoss(string mDelta, decimal rate, decimal qty, Action<string, decimal, string> MOVEDcBack = null, Action<GetOrderResponse, string> EXEcBack = null, string period = null)
         {
             MarketDelta = mDelta;
             StopRate = rate;
             Quantity = qty;
 
-            if (cBack != null)
-                Callback = cBack;
+            if (MOVEDcBack != null)
+                MovedCallback = MOVEDcBack;
+
+            if (EXEcBack != null)
+                ExecutionCallback = EXEcBack;
 
             if (period != null)
                 CandlePeriod = period;

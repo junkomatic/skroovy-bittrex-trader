@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using BtrexTrader.Strategy.Core;
 
 
 namespace BtrexTrader.Interface
@@ -10,14 +11,14 @@ namespace BtrexTrader.Interface
     public class TradeControl
     {
         //TODO: HIGHER TRADE FUNCTIONS
-        public async Task ExecuteStopLoss(Strategy.Core.StopLoss stopLoss)
+        public async Task ExecuteStopLoss(StopLoss stopLoss)
         {
 
 
 
 
 
-            stopLoss.Callback("");
+            stopLoss.ExecutionCallback(new GetOrderResponse(), stopLoss.CandlePeriod);
         }
 
         
@@ -29,7 +30,7 @@ namespace BtrexTrader.Interface
 
 
 
-            order.Callback("");
+            order.Callback(new GetOrderResponse(), order.CandlePeriod);
         }
         
 
@@ -240,9 +241,9 @@ namespace BtrexTrader.Interface
         public decimal Qty { get; set; }
         public decimal DesiredRate { get; set; }
         public string CandlePeriod { get; set; }
-        public Action<string> Callback { get; set; }
+        public Action<GetOrderResponse, string> Callback { get; set; }
 
-        public NewOrder(string mDelta, string BUYSELL, decimal quantity, decimal? rateDesired, Action<string> cback = null, string cPeriod = null)
+        public NewOrder(string mDelta, string BUYSELL, decimal quantity, decimal? rateDesired, Action<GetOrderResponse, string> cback = null, string cPeriod = null)
         {
             MarketDelta = mDelta;
             BUYorSELL = BUYSELL;
