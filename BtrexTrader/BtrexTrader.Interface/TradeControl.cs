@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using BtrexTrader.Strategy.Core;
+using BtrexTrader.Data;
 
 
 namespace BtrexTrader.Interface
@@ -56,6 +57,8 @@ namespace BtrexTrader.Interface
 
             GetOrderResponse order = new GetOrderResponse();
             bool orderComplete = false;
+            var orderRate = ord.DesiredRate;
+
             do
             {
                 Thread.Sleep(1000);
@@ -66,39 +69,51 @@ namespace BtrexTrader.Interface
                 }
 
                 orderComplete = !order.result.IsOpen;
-
-                if (order.result.IsOpen && Stopwatch.Elapsed > TimeSpan.FromSeconds(30))
+                if (Stopwatch.Elapsed > TimeSpan.FromSeconds(30) && order.result.IsOpen)
                 {
-                    //EXECUTE TRADE ORDER IF NOT IMMEDIATE EXE
-                    LimitOrderResponse cancel = await BtrexREST.CancelLimitOrder(order.result.OrderUuid);
-                    if (!cancel.success)
+                    //RECALC RATE and (BUY)QTY AND REPOST ORDER AT DATA PRICE
+                    if (ord.BUYorSELL.ToUpper() == "BUY" && BtrexData.Markets[ord.MarketDelta].OrderBook.Bids.ToList().OrderByDescending(k => k.Key).First().Value > orderRate)
                     {
-                        Console.WriteLine("    !!!!ERR CANCEL-MOVE>> " + cancel.message);
-                        return;
-                    }
+                        //CANCEL TRADE ORDER IF NOT IMMEDIATE EXE
+                        LimitOrderResponse cancel = await BtrexREST.CancelLimitOrder(order.result.OrderUuid);
+                        if (!cancel.success)
+                        {
+                            Console.WriteLine("    !!!!ERR CANCEL-MOVE>> " + cancel.message);
+                            return;
+                        }
 
-                    //TODO: GET ORDER AND SEE AMT COMPLETED (KEEP TRACK OF UNITS AND AVG PRICE)
+                        orderRate = BtrexData.Markets[ord.MarketDelta].OrderBook.Bids.ToList().OrderByDescending(k => k.Key).First().Value;
 
-
-
-
-
-
-                    //TODO: RECALC RATE and QTY AND REPOST ORDER AT DATA PRICE
-                    if (ord.BUYorSELL.ToUpper() == "BUY")
-                    {
+                        //TODO: GET ORDER AND SEE AMT COMPLETED (KEEP TRACK OF UNITS AND AVG PRICE)
 
 
-
-                    }
-                    else if (ord.BUYorSELL.ToUpper() == "SELL")
-                    {
 
 
 
 
                     }
-                    
+                    else if (ord.BUYorSELL.ToUpper() == "SELL" && BtrexData.Markets[ord.MarketDelta].OrderBook.Asks.ToList().OrderBy(k => k.Key).First().Value < orderRate)
+                    {
+                        //CANCEL TRADE ORDER IF NOT IMMEDIATE EXE
+                        LimitOrderResponse cancel = await BtrexREST.CancelLimitOrder(order.result.OrderUuid);
+                        if (!cancel.success)
+                        {
+                            Console.WriteLine("    !!!!ERR CANCEL-MOVE>> " + cancel.message);
+                            return;
+                        }
+
+                        orderRate = BtrexData.Markets[ord.MarketDelta].OrderBook.Asks.ToList().OrderBy(k => k.Key).First().Value;
+
+                        //TODO: GET ORDER AND SEE AMT COMPLETED (KEEP TRACK OF UNITS AND AVG PRICE)
+
+
+
+
+
+
+
+                    }
+
                 }
 
             } while (!orderComplete);                     
@@ -113,6 +128,14 @@ namespace BtrexTrader.Interface
             await Task.WhenAll(placeOrders);
         }
         
+
+
+
+
+
+
+
+        //LEGACY METHODS (TRIPLET TRADER):
 
 
         public async Task<bool> MatchBottomAskUntilFilled(string orderID, string qtyORamt)
