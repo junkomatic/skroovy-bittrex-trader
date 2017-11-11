@@ -154,12 +154,17 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     if (call == true && !owned)
                     {
                         //Add BUY order on period
-                        NewOrders.Add(new NewOrder(delta, "BUY", WagerAmt, null, (a, b) => OrderExecutedCallback(a, b), periodName));
+                        var rate = BtrexData.Markets[delta].TradeHistory.RecentFills.Last().Rate;
+                        var amt = WagerAmt / rate * 1.0025M;
+                        NewOrders.Add(new NewOrder(delta, "BUY", amt, rate, (a, b) => OrderExecutedCallback(a, b), periodName));
                     }
                     else if (call == false && owned)
                     {
                         //ADD SELL ORDER on period
-                        NewOrders.Add(new NewOrder(delta, "SELL", WagerAmt, null, (a, b) => OrderExecutedCallback(a, b), periodName));
+                        var rate = BtrexData.Markets[delta].TradeHistory.RecentFills.Last().Rate;
+                        var amt = (decimal)Holdings.Tables[periodName].AsEnumerable().Where(o => (string)o["MarketDelta"] == delta).First()["Qty"];
+
+                        NewOrders.Add(new NewOrder(delta, "SELL", amt, rate, (a, b) => OrderExecutedCallback(a, b), periodName));
                     }
                 }
             }

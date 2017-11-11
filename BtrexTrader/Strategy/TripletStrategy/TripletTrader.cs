@@ -34,7 +34,7 @@ namespace BtrexTrader.Strategy.TripletStrategy
                 //SUBTRACT MARKETS THAT DONT HAVE ETH DELTAS,
                 //and CalcTrips() will report only.
                 Console.WriteLine("*WATCH ONLY*");
-                List<string> topMarkets = await BtrexREST.TradeMethods.GetTopMarketsByBVwithETHdelta(20);
+                List<string> topMarkets = await BtrexREST.GetTopMarketsByBVwithETHdelta(20);
                 foreach (string mk in topMarkets)
                 {
                     await SubTriplet(mk);
@@ -157,7 +157,7 @@ namespace BtrexTrader.Strategy.TripletStrategy
                                 {
                                     if (ord.OrderType == "LIMIT_SELL")
                                     {
-                                        bool completed = await BtrexREST.TradeMethods.MatchBottomAskUntilFilled(ord.OrderUuid, "qty");
+                                        bool completed = await BtrexREST.TradeController.MatchBottomAskUntilFilled(ord.OrderUuid, "qty");
                                         if (completed)
                                             Console.WriteLine("\r###FORCE COMPLETED SELL: [{0}]                                           ", ord.Exchange);
                                         else
@@ -165,7 +165,7 @@ namespace BtrexTrader.Strategy.TripletStrategy
                                     }
                                     else if (ord.OrderType == "LIMIT_BUY")
                                     {
-                                        bool completed = await BtrexREST.TradeMethods.MatchTopBidUntilFilled(ord.OrderUuid, "qty");
+                                        bool completed = await BtrexREST.TradeController.MatchTopBidUntilFilled(ord.OrderUuid, "qty");
                                         if (completed)
                                             Console.WriteLine("\r###FORCE COMPLETED BUY: [{0}]                                            ", ord.Exchange);
                                         else

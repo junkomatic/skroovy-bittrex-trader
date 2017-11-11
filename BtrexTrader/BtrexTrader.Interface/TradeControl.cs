@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Diagnostics;
 using BtrexTrader.Strategy.Core;
 
 
@@ -10,27 +11,99 @@ namespace BtrexTrader.Interface
 {
     public class TradeControl
     {
-        //TODO: HIGHER TRADE FUNCTIONS
         public async Task ExecuteStopLoss(StopLoss stopLoss)
         {
+            var lowestRate = 0.0007M / stopLoss.Quantity;
+            LimitOrderResponse orderResp = await BtrexREST.PlaceLimitOrder(stopLoss.MarketDelta, "sell", stopLoss.Quantity, lowestRate);
+            if (!orderResp.success)
+            {
+                Console.WriteLine("    !!!!ERR ExecuteStopLoss-PLACE-ORDER1>> " + orderResp.message);
+                Console.WriteLine(" QTY: {1} ... STOP-LOSS RATE: {2}", stopLoss.Quantity, stopLoss.StopRate);
 
+                orderResp = await BtrexREST.PlaceLimitOrder(stopLoss.MarketDelta, "sell", stopLoss.Quantity, lowestRate * 2M);
+                if (!orderResp.success)
+                {
+                    Console.WriteLine("    !!!!ERR ExecuteStopLoss-PLACE-ORDER1.2ndTry>> " + orderResp.message);
+                    Console.WriteLine(" QTY: {1} ... STOP-LOSS RATE: {2}", stopLoss.Quantity, stopLoss.StopRate);
+                    return;
+                }
+            }
 
+            Thread.Sleep(1500);
 
+            GetOrderResponse order = await BtrexREST.GetOrder(orderResp.result.uuid);
+            if (!order.success)
+            {
+                Console.WriteLine("    !!!!ERR STOPLOSS.X-GET-ORDER: " + order.message);
+            }
 
-
-            stopLoss.ExecutionCallback(new GetOrderResponse(), stopLoss.CandlePeriod);
+            stopLoss.ExecutionCallback(order, stopLoss.CandlePeriod);
         }
 
         
-        public async Task ExecuteNewOrder(NewOrder order)
+        public async Task ExecuteNewOrder(NewOrder ord)
         {
+            LimitOrderResponse orderResp = await BtrexREST.PlaceLimitOrder(ord.MarketDelta, ord.BUYorSELL, ord.Qty, ord.DesiredRate);
+            if (!orderResp.success)
+            {
+                Console.WriteLine("    !!!!ERR ExecuteNewOrder-PLACE-ORDER1>> " + orderResp.message);
+                Console.WriteLine(" QTY: {1} ...  RATE: {2}", ord.Qty, ord.DesiredRate);
+            }
+
+
+            var Stopwatch = new Stopwatch();
+            Stopwatch.Start();
+
+            GetOrderResponse order = new GetOrderResponse();
+            bool orderComplete = false;
+            do
+            {
+                Thread.Sleep(1000);
+                order = await BtrexREST.GetOrder(orderResp.result.uuid);
+                if (!order.success)
+                {
+                    Console.WriteLine("    !!!!ERR ExecuteNewOrder-GET-ORDER: " + order.message);
+                }
+
+                orderComplete = !order.result.IsOpen;
+
+                if (order.result.IsOpen && Stopwatch.Elapsed > TimeSpan.FromSeconds(30))
+                {
+                    //EXECUTE TRADE ORDER IF NOT IMMEDIATE EXE
+                    LimitOrderResponse cancel = await BtrexREST.CancelLimitOrder(order.result.OrderUuid);
+                    if (!cancel.success)
+                    {
+                        Console.WriteLine("    !!!!ERR CANCEL-MOVE>> " + cancel.message);
+                        return;
+                    }
+
+                    //TODO: GET ORDER AND SEE AMT COMPLETED (KEEP TRACK OF UNITS AND AVG PRICE)
 
 
 
 
 
 
-            order.Callback(new GetOrderResponse(), order.CandlePeriod);
+                    //TODO: RECALC RATE and QTY AND REPOST ORDER AT DATA PRICE
+                    if (ord.BUYorSELL.ToUpper() == "BUY")
+                    {
+
+
+
+                    }
+                    else if (ord.BUYorSELL.ToUpper() == "SELL")
+                    {
+
+
+
+
+                    }
+                    
+                }
+
+            } while (!orderComplete);                     
+
+            ord.Callback(order, ord.CandlePeriod);
         }
         
 
@@ -39,6 +112,7 @@ namespace BtrexTrader.Interface
             var placeOrders = NewOrderList.Select(ExecuteNewOrder).ToArray();
             await Task.WhenAll(placeOrders);
         }
+        
 
 
         public async Task<bool> MatchBottomAskUntilFilled(string orderID, string qtyORamt)
