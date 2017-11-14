@@ -111,7 +111,7 @@ namespace BtrexTrader.Interface
                 Console.WriteLine("FAIL:  " + response.ReasonPhrase);
 
             history.MarketDelta = delta.Replace('-', '_');
-            if (period.ToUpper() != "ONEMIN")
+            if (period.ToUpper() != "ONEMIN" && history.result.Count > 0)
                 history.result.Remove(history.result.Last());
 
             return history;

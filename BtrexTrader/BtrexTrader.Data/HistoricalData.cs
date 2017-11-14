@@ -127,12 +127,17 @@ namespace BtrexTrader.Data
 
         private static void CreateNewDataTable(HistDataResponse data, SQLiteCommand cmd)
         {
-            cmd.CommandText = string.Format("CREATE TABLE IF NOT EXISTS {0} (DateTime TEXT, Open TEXT, Close TEXT, Low TEXT, High TEXT, Volume TEXT, BaseVolume TEXT)", data.MarketDelta);
-            cmd.ExecuteNonQuery();
+            if (data != null)
+            {
 
-            foreach (HistDataLine line in data.result)
-                EnterSQLiteRow(line, cmd, data.MarketDelta);
+                cmd.CommandText = string.Format("CREATE TABLE IF NOT EXISTS {0} (DateTime TEXT, Open TEXT, Close TEXT, Low TEXT, High TEXT, Volume TEXT, BaseVolume TEXT)", data.MarketDelta);
+                cmd.ExecuteNonQuery();
 
+                foreach (HistDataLine line in data.result)
+                {
+                    EnterSQLiteRow(line, cmd, data.MarketDelta);
+                }
+            }
             saved++;
             Console.Write("\rDownloading Candle Data: {0}/{1}", saved, totalCount);
         }
@@ -140,25 +145,29 @@ namespace BtrexTrader.Data
 
         private static void UpdateDataTable(HistDataResponse data, SQLiteCommand cmd)
         {
-            //look for market. if !exist then CreateNewDataTable()
-            cmd.CommandText = string.Format("SELECT CASE WHEN tbl_name = '{0}' THEN 1 ELSE 0 END FROM sqlite_master "
-                                            + "WHERE tbl_name = '{0}' AND type = 'table'", data.MarketDelta);
+            if (data != null)
+            { 
+                //look for market. if !exist then CreateNewDataTable()
+                cmd.CommandText = string.Format("SELECT CASE WHEN tbl_name = '{0}' THEN 1 ELSE 0 END FROM sqlite_master "
+                                                + "WHERE tbl_name = '{0}' AND type = 'table'", data.MarketDelta);
 
-            if (!Convert.ToBoolean(cmd.ExecuteScalar()))
-            {
-                CreateNewDataTable(data, cmd);
-                return;
-            }
-            
-            cmd.CommandText = string.Format("SELECT * FROM {0} ORDER BY datetime(DateTime) DESC Limit 1", data.MarketDelta);
-            DateTime dateTime = Convert.ToDateTime(cmd.ExecuteScalar());
+                if (!Convert.ToBoolean(cmd.ExecuteScalar()))
+                {
+                    CreateNewDataTable(data, cmd);
+                    return;
+                }
 
-            foreach (HistDataLine line in data.result)
-            {
-                if (line.T <= dateTime)
-                    continue;
-                else
-                    EnterSQLiteRow(line, cmd, data.MarketDelta);
+                cmd.CommandText = string.Format("SELECT * FROM {0} ORDER BY datetime(DateTime) DESC Limit 1", data.MarketDelta);
+                DateTime dateTime = Convert.ToDateTime(cmd.ExecuteScalar());
+
+                foreach (HistDataLine line in data.result)
+                {
+                    if (line.T <= dateTime)
+                        continue;
+                    else
+                        EnterSQLiteRow(line, cmd, data.MarketDelta);
+                }
+
             }
             saved++;
             Console.Write("\rDownloading Candle Data: {0}/{1}", saved, totalCount);
