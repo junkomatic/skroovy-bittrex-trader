@@ -69,8 +69,8 @@ namespace BtrexTrader.Interface
                 }
 
                 orderComplete = !order.result.IsOpen;
-                if (Stopwatch.Elapsed > TimeSpan.FromSeconds(30) && order.result.IsOpen)
-                {
+                if (Stopwatch.Elapsed > TimeSpan.FromSeconds(20) && order.result.IsOpen)
+                {                    
                     //RECALC RATE and (BUY)QTY AND REPOST ORDER AT DATA PRICE
                     if (ord.BUYorSELL.ToUpper() == "BUY" && BtrexData.Markets[ord.MarketDelta].OrderBook.Bids.ToList().OrderByDescending(k => k.Key).First().Value > orderRate)
                     {
@@ -82,9 +82,25 @@ namespace BtrexTrader.Interface
                             return;
                         }
 
+                        //GET ORDER ONCE AGAIN TO CHECK PARTIALLY COMPLETED
+                        order = await BtrexREST.GetOrder(orderResp.result.uuid);
+                        if (!order.success)
+                        {
+                            Console.WriteLine("    !!!!ERR ExecuteNewOrder-GET-ORDER: " + order.message);
+                        }
+
+                        //FINAL CHECK FOR ORDER COMPLETE HERE:
+                        if (order.result.QuantityRemaining == 0)
+                        {
+                            orderComplete = true;
+                            break;
+                        }
+
+                        //SEE AMT COMPLETED(KEEP TRACK OF UNITS AND AVG PRICE), RECALC UNITS AT NEW PRICE
                         orderRate = BtrexData.Markets[ord.MarketDelta].OrderBook.Bids.ToList().OrderByDescending(k => k.Key).First().Value;
 
-                        //TODO: GET ORDER AND SEE AMT COMPLETED (KEEP TRACK OF UNITS AND AVG PRICE)
+
+
 
 
 
@@ -102,9 +118,23 @@ namespace BtrexTrader.Interface
                             return;
                         }
 
+                        //GET ORDER ONCE AGAIN TO CHECK PARTIALLY COMPLETED
+                        order = await BtrexREST.GetOrder(orderResp.result.uuid);
+                        if (!order.success)
+                        {
+                            Console.WriteLine("    !!!!ERR ExecuteNewOrder-GET-ORDER: " + order.message);
+                        }
+
+                        //FINAL CHECK FOR ORDER COMPLETE HERE:
+                        if (order.result.QuantityRemaining == 0)
+                        {
+                            orderComplete = true;
+                            break;
+                        }
+
+                        //SEE AMT COMPLETED(KEEP TRACK OF UNITS AND AVG PRICE), SAME UNITS(REMAINING) AT NEW PRICE
                         orderRate = BtrexData.Markets[ord.MarketDelta].OrderBook.Asks.ToList().OrderBy(k => k.Key).First().Value;
 
-                        //TODO: GET ORDER AND SEE AMT COMPLETED (KEEP TRACK OF UNITS AND AVG PRICE)
 
 
 
