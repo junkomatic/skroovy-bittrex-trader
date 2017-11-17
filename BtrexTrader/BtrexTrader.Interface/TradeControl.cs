@@ -21,6 +21,7 @@ namespace BtrexTrader.Interface
                 Console.WriteLine("    !!!!ERR ExecuteStopLoss-PLACE-ORDER1>> " + orderResp.message);
                 Console.WriteLine(" QTY: {1} ... STOP-LOSS RATE: {2}", stopLoss.Quantity, stopLoss.StopRate);
 
+                //REDUNTANT (FAILSAFE) CALL ON INITIAL CALL FAILURE 
                 orderResp = await BtrexREST.PlaceLimitOrder(stopLoss.MarketDelta, "sell", stopLoss.Quantity, lowestRate * 2M);
                 if (!orderResp.success)
                 {
@@ -69,7 +70,8 @@ namespace BtrexTrader.Interface
                 }
 
                 orderComplete = !order.result.IsOpen;
-                if (Stopwatch.Elapsed > TimeSpan.FromSeconds(20) && order.result.IsOpen)
+
+                if (Stopwatch.Elapsed > TimeSpan.FromSeconds(30) && !orderComplete)
                 {                    
                     //RECALC RATE and (BUY)QTY AND REPOST ORDER AT DATA PRICE
                     if (ord.BUYorSELL.ToUpper() == "BUY" && BtrexData.Markets[ord.MarketDelta].OrderBook.Bids.ToList().OrderByDescending(k => k.Key).First().Value > orderRate)
@@ -96,7 +98,7 @@ namespace BtrexTrader.Interface
                             break;
                         }
 
-                        //SEE AMT COMPLETED(KEEP TRACK OF UNITS AND AVG PRICE), RECALC UNITS AT NEW PRICE
+                        //TODO: SEE AMT COMPLETED(KEEP TRACK OF UNITS AND AVG PRICE), RECALC UNITS AT NEW PRICE
                         orderRate = BtrexData.Markets[ord.MarketDelta].OrderBook.Bids.ToList().OrderByDescending(k => k.Key).First().Value;
 
 
@@ -132,7 +134,7 @@ namespace BtrexTrader.Interface
                             break;
                         }
 
-                        //SEE AMT COMPLETED(KEEP TRACK OF UNITS AND AVG PRICE), SAME UNITS(REMAINING) AT NEW PRICE
+                        //TODO: SEE AMT COMPLETED(KEEP TRACK OF UNITS AND AVG PRICE), UNITS(REMAINING) AT NEW PRICE
                         orderRate = BtrexData.Markets[ord.MarketDelta].OrderBook.Asks.ToList().OrderBy(k => k.Key).First().Value;
 
 

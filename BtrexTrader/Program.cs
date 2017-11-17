@@ -25,16 +25,16 @@ namespace BtrexTrader
             //UNCOMMENT 'WHILE' TO RESTART ON FAILURE
             //while (true)
             {
-                try
+                //try
                 {
                     RunAsync().Wait();
                 }
-                catch (Exception e)
-                {
-                    Console.Write("\r\n\r\n!!!!TOP LVL ERR>> " + e.InnerException.Message);
-                    Console.ReadLine();
-                    //    //Thread.Sleep(5000);
-                }
+                //catch (Exception e)
+                //{
+                //    Console.Write("\r\n\r\n!!!!TOP LVL ERR>> " + e.InnerException.Message);
+                //    Console.ReadLine();
+                //    //    //Thread.Sleep(5000);
+                //}
             }
             
         }
@@ -71,7 +71,8 @@ namespace BtrexTrader
             Console.WriteLine("\r\n");
             Console.ForegroundColor = ConsoleColor.White;
             Console.BackgroundColor = ConsoleColor.DarkCyan;
-            Console.WriteLine(@"-----------------------------------------------------------------------------------------------------------------------
+            Console.WriteLine(
+@"-----------------------------------------------------------------------------------------------------------------------
   oooooooooo.      .                                  ooooooooooooo                          .o8                       
   `888'   `Y8b   .o8                                  8'   888   `8                         ""888                       
    888     888 .o888oo oooo d8b  .ooooo.  oooo    ooo      888      oooo d8b  .oooo.    .oooo888   .ooooo.  oooo d8b   
