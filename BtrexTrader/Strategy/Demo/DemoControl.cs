@@ -26,8 +26,8 @@ namespace BtrexTrader.Strategy.Demo
 
         public async Task Initialize()
         {
-            await SubTopMarketsByVol(50);
-            //await SubSpecificMarkets();
+            //await SubTopMarketsByVol(50);
+            await SubSpecificMarkets();
         }
 
         public async Task StartMarketsDemo()

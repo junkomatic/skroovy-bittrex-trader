@@ -54,7 +54,7 @@ namespace BtrexTrader
             await BtrexData.StartDataUpdates();
 
             //START CALCS/STRATEGY WORK:
-            //BtrexController.StartWork();
+            BtrexController.StartWork();
             
 
             Console.WriteLine("\r\n\r\n-PRESS ENTER 3 TIMES TO EXIT-\r\n\r\n");

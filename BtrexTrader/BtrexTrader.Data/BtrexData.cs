@@ -81,7 +81,7 @@ namespace BtrexTrader.Data
                             } while (!removed);
                             
                             //Request MarketQuery from websocket, and OpenBook() with new snapshot
-                            MarketQueryResponse marketQuery = BtrexWS.btrexHubProxy.Invoke<MarketQueryResponse>("QueryExchangeState", mdUpdate.MarketName).Result;
+                            MarketQueryResponse marketQuery = BtrexWS.WSSharpTransport.HubProxy.Invoke<MarketQueryResponse>("QueryExchangeState", mdUpdate.MarketName).Result;
                             marketQuery.MarketName = mdUpdate.MarketName;
                             OpenMarket(marketQuery).Wait();
                             Console.WriteLine("    [BOOK RE-SYNCED]");
