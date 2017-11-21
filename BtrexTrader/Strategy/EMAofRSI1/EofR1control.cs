@@ -155,8 +155,8 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     {
                         //Add BUY order on period
                         var rate = BtrexData.Markets[delta].TradeHistory.RecentFills.Last().Rate;
-                        var amt = WagerAmt / rate * 1.0025M;
-                        NewOrders.Add(new NewOrder(delta, "BUY", amt, rate, (a, b) => OrderExecutedCallback(a, b), periodName));
+                        var amt = WagerAmt / (rate * 1.0025M);
+                        NewOrders.Add(new NewOrder(delta, "BUY", amt, rate, (a) => OrderExecutedCallback(a), periodName));
                     }
                     else if (call == false && owned)
                     {
@@ -164,7 +164,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                         var rate = BtrexData.Markets[delta].TradeHistory.RecentFills.Last().Rate;
                         var amt = (decimal)Holdings.Tables[periodName].AsEnumerable().Where(o => (string)o["MarketDelta"] == delta).First()["Qty"];
 
-                        NewOrders.Add(new NewOrder(delta, "SELL", amt, rate, (a, b) => OrderExecutedCallback(a, b), periodName));
+                        NewOrders.Add(new NewOrder(delta, "SELL", amt, rate, (a) => OrderExecutedCallback(a), periodName));
                     }
                 }
             }
@@ -252,7 +252,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
 
         //TODO: CALLBACK FUNCTIONS FOR STOPLOSS EXE/MOVE AND ORDER EXECUTION
-        public void OrderExecutedCallback(GetOrderResponse OrderResponse, string period)
+        public void OrderExecutedCallback(NewOrder OrderResponse)
         {
             //Pull from pending orders, enter into holdings, drop/save table, create stoploss and reg
 

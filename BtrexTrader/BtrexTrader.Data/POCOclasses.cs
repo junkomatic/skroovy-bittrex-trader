@@ -257,7 +257,7 @@ namespace BtrexTrader
         public decimal CommissionReserveRemaining { get; set; }
         public decimal CommissionPaid { get; set; }
         public decimal Price { get; set; }
-        public object PricePerUnit { get; set; }
+        public decimal PricePerUnit { get; set; }
         public string Opened { get; set; }
         public object Closed { get; set; }
         public bool IsOpen { get; set; }
