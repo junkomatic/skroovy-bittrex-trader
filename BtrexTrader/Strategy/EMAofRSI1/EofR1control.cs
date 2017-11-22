@@ -244,7 +244,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             AddHoldingsTable("4h");
             AddHoldingsTable("12h");
 
-            //TODO: EXECUTE/REGISTER NEW STOP-LOSSES FOR EACH HOLDING
+            //TODO: EVALUATE/EXECUTE/REGISTER NEW STOP-LOSSES FOR EACH HOLDING
 
 
 
@@ -256,9 +256,9 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         { 
             var TimeCompleted = DateTime.UtcNow;
 
-            //TODO: Create/register stoploss
-            //CalcStoplossMargin(OrderData.MarketDelta, OrderData.CandlePeriod);
-
+            //Create and register stoploss
+            decimal stoplossRate = OrderData.Rate - CalcStoplossMargin(OrderData.MarketDelta, OrderData.CandlePeriod);
+            StopLossController.RegisterStopLoss(new StopLoss(OrderData.MarketDelta, OrderData.Rate, OrderData.Qty, (a, b, c) => StopLossMovedCallback(a, b, c), (a, b) => StopLossExecutedCallback(a, b), OrderData.CandlePeriod), string.Format("{0}_{1}", OrderData.CandlePeriod, OrderData.MarketDelta));
 
             //Pull from pending orders
             PendingOrders.RemoveAll(o => o.MarketDelta == OrderData.MarketDelta && o.CandlePeriod == OrderData.CandlePeriod);
@@ -273,12 +273,12 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 newHoldingsRow["BoughtRate"] = OrderData.Rate;
                 newHoldingsRow["DateTimeSELL"] = "OWNED";
                 newHoldingsRow["SoldRate"] = "OWNED";
-                //newHoldingsRow["StopLossRate"] = "";
+                newHoldingsRow["StopLossRate"] = stoplossRate;
                 newHoldingsRow["SL_Executed"] = 0;
                 Holdings.Tables[OrderData.CandlePeriod].Rows.Add(newHoldingsRow);
 
                 //CREATE/ADD SQL UPDATE:
-                var update = new SaveDataUpdate(OrderData.CandlePeriod, OrderData.MarketDelta, "BUY", TimeCompleted, OrderData.Qty, OrderData.Rate); //, stoplossRateM);
+                var update = new SaveDataUpdate(OrderData.CandlePeriod, OrderData.MarketDelta, "BUY", TimeCompleted, OrderData.Qty, OrderData.Rate, stoplossRate);
                 SQLDataWrites.Enqueue(update);
             }
             else if (OrderData.BUYorSELL == "SELL")
@@ -313,13 +313,33 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
         }
 
-        //TODO: LOGIC FOR CALCLULATING STOPLOSS MARGIN
+        //LOGIC FOR CALCLULATING STOPLOSS MARGIN
         private decimal CalcStoplossMargin(string delta, string cPeriod)
         {
+            int ATRparameter = 7;
+            decimal ATRmultiple = 2;
+            decimal ATR = new decimal();
 
-
-
-            return 0;
+            switch (cPeriod)
+            {
+                case "5m":
+                    ATR = StratData.Candles5m[delta].Skip(Math.Max(0, StratData.Candles5m[delta].Count - 10)).Atr(ATRparameter).Last().Tick.Value;
+                    break;
+                case "20m":
+                    ATR = StratData.Candles20m[delta].Skip(Math.Max(0, StratData.Candles20m[delta].Count - 10)).Atr(ATRparameter).Last().Tick.Value;
+                    break;
+                case "1h":
+                    ATR = StratData.Candles1h[delta].Skip(Math.Max(0, StratData.Candles1h[delta].Count - 10)).Atr(ATRparameter).Last().Tick.Value;
+                    break;
+                case "4h":
+                    ATR = StratData.Candles4h[delta].Skip(Math.Max(0, StratData.Candles4h[delta].Count - 10)).Atr(ATRparameter).Last().Tick.Value;
+                    break;
+                case "12h":
+                    ATR = StratData.Candles12h[delta].Skip(Math.Max(0, StratData.Candles12h[delta].Count - 10)).Atr(ATRparameter).Last().Tick.Value;
+                    break;
+            }
+            
+            return ATR * ATRmultiple;
         }
 
         private void SaveSQLData(SQLiteCommand cmd)

@@ -33,7 +33,7 @@ namespace BtrexTrader.Strategy.Core
         }
 
 
-        public static void WatchMarkets()
+        private static void WatchMarkets()
         {
             while (true)
             {
