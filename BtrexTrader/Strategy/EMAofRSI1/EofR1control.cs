@@ -37,6 +37,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
         private decimal WagerAmt = 0.001M;
 
+        private bool VirtualOnOff = true;
         
 
         public async Task Initialize()
@@ -107,7 +108,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                         PendingOrders.AddRange(NewOrders);
                         var ords = new List<NewOrder>(NewOrders);
                         NewOrders.Clear();
-                        BtrexREST.TradeController.ExecuteNewOrderList(ords);
+                        BtrexREST.TradeController.ExecuteNewOrderList(ords, VirtualOnOff).Start();
                     }
 
 
@@ -243,7 +244,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             AddHoldingsTable("4h");
             AddHoldingsTable("12h");
 
-            //TODO: REGISTER NEW STOP-LOSSES
+            //TODO: EXECUTE/REGISTER NEW STOP-LOSSES FOR EACH HOLDING
 
 
 
@@ -252,12 +253,47 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
 
         //TODO: CALLBACK FUNCTIONS FOR STOPLOSS EXE/MOVE AND ORDER EXECUTION
-        public void OrderExecutedCallback(NewOrder OrderResponse)
-        {
-            //Pull from pending orders, enter into holdings, drop/save table, create stoploss and reg
+        public void OrderExecutedCallback(NewOrder OrderData)
+        { 
+            var TimeCompleted = DateTime.UtcNow;
+
+            //TODO: Create/register stoploss
+            //CalcStoplossMargin(OrderData.MarketDelta, OrderData.CandlePeriod);
 
 
+            //Pull from pending orders
+            PendingOrders.RemoveAll(o => o.MarketDelta == OrderData.MarketDelta && o.CandlePeriod == OrderData.CandlePeriod);
 
+            if (OrderData.BUYorSELL == "BUY")
+            { 
+                //ENTER INTO HOLDINGS:
+                var newHoldingsRow = Holdings.Tables[OrderData.CandlePeriod].NewRow();
+                newHoldingsRow["MarketDelta"] = OrderData.MarketDelta;
+                newHoldingsRow["DateTimeBUY"] = TimeCompleted;
+                newHoldingsRow["Qty"] = OrderData.Qty;
+                newHoldingsRow["BoughtRate"] = OrderData.Rate;
+                newHoldingsRow["DateTimeSELL"] = "OWNED";
+                newHoldingsRow["SoldRate"] = "OWNED";
+                //newHoldingsRow["StopLossRate"] = "";
+                newHoldingsRow["SL_Executed"] = 0;
+                Holdings.Tables[OrderData.CandlePeriod].Rows.Add(newHoldingsRow);
+
+                //CREATE/ADD SQL UPDATE:
+                var update = new SaveDataUpdate(OrderData.CandlePeriod, OrderData.MarketDelta, "BUY", TimeCompleted, OrderData.Qty, OrderData.Rate); //, stoplossRateM);
+                SQLDataWrites.Enqueue(update);
+            }
+            else if (OrderData.BUYorSELL == "SELL")
+            {
+                //REMOVE FROM HOLDINGS TABLE:
+                var holdingRows = Holdings.Tables[OrderData.CandlePeriod].Select(string.Format("MarketDelta = '{0}'", OrderData.MarketDelta));
+                foreach (var row in holdingRows)
+                    Holdings.Tables[OrderData.CandlePeriod].Rows.Remove(row);
+
+                //CREATE/ADD SQL UPDATE:             
+                var update = new SaveDataUpdate(OrderData.CandlePeriod, OrderData.MarketDelta, "SELL", TimeCompleted, OrderData.Qty, OrderData.Rate);
+                SQLDataWrites.Enqueue(update);
+            }
+            
         }
 
 
@@ -277,6 +313,13 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
         }
 
+        private decimal CalcStoplossMargin(string delta, string cPeriod)
+        {
+
+
+
+            return 0;
+        }
 
         private void SaveSQLData(SQLiteCommand cmd)
         {
@@ -337,11 +380,11 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         public decimal? StopLossRate { get; set; }
         public bool StopLossExecuted { get; set; }
 
-        public SaveDataUpdate(string period, string market, string buyORsell, DateTime time, decimal qty, decimal price, decimal? SL_rate = null, bool stoplossExe = false)
+        public SaveDataUpdate(string period, string market, string buyORsellORsl_move, DateTime time, decimal qty, decimal price, decimal? SL_rate = null, bool stoplossExe = false)
         {
             PeriodName = period;
             MarketName = market;
-            BUYorSELLorSL_MOVE = buyORsell;
+            BUYorSELLorSL_MOVE = buyORsellORsl_move.ToUpper();
             TimeStamp = time;
             Quantity = qty;
             Rate = price;
