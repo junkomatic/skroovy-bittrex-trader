@@ -14,7 +14,7 @@ namespace BtrexTrader.Interface
     {
         public async Task ExecuteStopLoss(StopLoss stopLoss)
         {
-            var lowestRate = 0.0007M / stopLoss.Quantity;
+            var lowestRate = 0.00065M / stopLoss.Quantity;
             LimitOrderResponse orderResp = await BtrexREST.PlaceLimitOrder(stopLoss.MarketDelta, "sell", stopLoss.Quantity, lowestRate);
             if (!orderResp.success)
             {
@@ -36,7 +36,7 @@ namespace BtrexTrader.Interface
             GetOrderResponse order = await BtrexREST.GetOrder(orderResp.result.uuid);
             if (!order.success)
             {
-                Console.WriteLine("    !!!!ERR STOPLOSS.X-GET-ORDER: " + order.message);
+                Console.WriteLine("    !!!!ERR ExecuteStopLoss-GET-ORDER: " + order.message);
             }
 
             stopLoss.ExecutionCallback(order, stopLoss.CandlePeriod);
@@ -103,7 +103,7 @@ namespace BtrexTrader.Interface
                     //IF THE REMAINING AMT IS UNDER DUST ORDER, JUST WAIT FOR COMPLETION
                     if (getOrder1.result.QuantityRemaining * getOrder1.result.Price < 0.00055M)
                         continue;
-                    //ELSE, IF THE AMT REMAINS AFTER (30) SECONDS, CANCEL & REPLACE AT NEW RATE:
+                    //ELSE, IF THE ORDER REMAINS AFTER (30) SECONDS, CANCEL & REPLACE AT NEW RATE:
                     else if (stopwatch.Elapsed > TimeSpan.FromSeconds(30))
                     {                    
                         //RECALC RATE and (BUY)QTY AND REPOST ORDER AT DATA PRICE
@@ -159,6 +159,7 @@ namespace BtrexTrader.Interface
                         
 
                         }
+                        //REPLACE "SELL" ORDER TO SELL REAMINING QTY AT NEW RATE:
                         else if (ord.BUYorSELL == "SELL" && BtrexData.Markets[ord.MarketDelta].OrderBook.Asks.ToList().OrderBy(k => k.Key).First().Key < orderRate)
                         {
                             //CANCEL TRADE ORDER IF NOT IMMEDIATE EXE
@@ -234,7 +235,15 @@ namespace BtrexTrader.Interface
 
 
 
-        //LEGACY METHODS (TRIPLET TRADER):
+
+
+
+
+
+
+
+
+        //***LEGACY METHODS (TRIPLET TRADER):
 
 
         public async Task<bool> MatchBottomAskUntilFilled(string orderID, string qtyORamt)
