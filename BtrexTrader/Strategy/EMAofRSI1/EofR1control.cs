@@ -252,7 +252,6 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         }
 
 
-        //TODO: CALLBACK FUNCTIONS FOR STOPLOSS EXE/MOVE AND ORDER EXECUTION
         public void OrderExecutedCallback(NewOrder OrderData)
         { 
             var TimeCompleted = DateTime.UtcNow;
@@ -297,6 +296,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         }
 
 
+        //TODO: CALLBACK FUNCTIONS FOR STOPLOSS EXE AND MOVE
         public void StopLossExecutedCallback(GetOrderResponse OrderResponse, string period)
         {
 
@@ -313,6 +313,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
         }
 
+        //TODO: LOGIC FOR CALCLULATING STOPLOSS MARGIN
         private decimal CalcStoplossMargin(string delta, string cPeriod)
         {
 
