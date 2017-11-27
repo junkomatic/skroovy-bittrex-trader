@@ -12,9 +12,11 @@ namespace BtrexTrader.Interface
 {
     public class TradeControl
     {
+        public const decimal minimumTradeSatoshis = 0.00055M;
+
         public async Task ExecuteStopLoss(StopLoss stopLoss)
         {
-            var lowestRate = 0.00065M / stopLoss.Quantity;
+            var lowestRate = minimumTradeSatoshis / stopLoss.Quantity;
             LimitOrderResponse orderResp = await BtrexREST.PlaceLimitOrder(stopLoss.MarketDelta, "sell", stopLoss.Quantity, lowestRate);
             if (!orderResp.success)
             {
@@ -22,7 +24,7 @@ namespace BtrexTrader.Interface
                 Console.WriteLine(" QTY: {1} ... STOP-LOSS RATE: {2}", stopLoss.Quantity, stopLoss.StopRate);
 
                 //REDUNTANT (FAILSAFE) CALL ON INITIAL CALL FAILURE 
-                orderResp = await BtrexREST.PlaceLimitOrder(stopLoss.MarketDelta, "sell", stopLoss.Quantity, lowestRate * 2M);
+                orderResp = await BtrexREST.PlaceLimitOrder(stopLoss.MarketDelta, "sell", stopLoss.Quantity, lowestRate);
                 if (!orderResp.success)
                 {
                     Console.WriteLine("    !!!!ERR ExecuteStopLoss-PLACE-ORDER1.2ndTry>> " + orderResp.message);
@@ -101,7 +103,7 @@ namespace BtrexTrader.Interface
                 else
                 {
                     //IF THE REMAINING AMT IS UNDER DUST ORDER, JUST WAIT FOR COMPLETION
-                    if (getOrder1.result.QuantityRemaining * getOrder1.result.Price < 0.00055M)
+                    if (getOrder1.result.QuantityRemaining * getOrder1.result.Price < minimumTradeSatoshis)
                         continue;
                     //ELSE, IF THE ORDER REMAINS AFTER (30) SECONDS, CANCEL & REPLACE AT NEW RATE:
                     else if (stopwatch.Elapsed > TimeSpan.FromSeconds(30))
@@ -138,7 +140,7 @@ namespace BtrexTrader.Interface
                             }
 
                             //FINAL CHECK FOR ORDER COMPLETE:
-                            if (getOrder2.result.QuantityRemaining == 0M || wagerRemains > 0.00055M)
+                            if (getOrder2.result.QuantityRemaining == 0M || wagerRemains > minimumTradeSatoshis)
                             {
                                 orderComplete = true;
                                 break;
@@ -190,7 +192,7 @@ namespace BtrexTrader.Interface
                             orderRate = BtrexData.Markets[ord.MarketDelta].OrderBook.Asks.ToList().OrderBy(k => k.Key).First().Key;
 
                             //FINAL CHECK FOR ORDER COMPLETE, OR REMAINING AMOUNT == LESS THAN DUST:
-                            if (getOrder2.result.QuantityRemaining == 0 || getOrder2.result.QuantityRemaining * orderRate < 0.00055M)  
+                            if (getOrder2.result.QuantityRemaining == 0 || getOrder2.result.QuantityRemaining * orderRate < minimumTradeSatoshis)  
                             {
                                 orderComplete = true;
                                 break;

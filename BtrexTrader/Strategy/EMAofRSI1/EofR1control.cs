@@ -258,7 +258,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
             //Create and register stoploss
             decimal stoplossRate = OrderData.Rate - CalcStoplossMargin(OrderData.MarketDelta, OrderData.CandlePeriod);
-            StopLossController.RegisterStopLoss(new StopLoss(OrderData.MarketDelta, OrderData.Rate, OrderData.Qty, (a, b, c) => StopLossMovedCallback(a, b, c), (a, b) => StopLossExecutedCallback(a, b), OrderData.CandlePeriod), string.Format("{0}_{1}", OrderData.CandlePeriod, OrderData.MarketDelta));
+            StopLossController.RegisterStoploss(new StopLoss(OrderData.MarketDelta, OrderData.Rate, OrderData.Qty, (a, b, c) => ReCalcStoploss(a, b, c), (a, b) => StopLossExecutedCallback(a, b), OrderData.CandlePeriod), string.Format("{0}_{1}", OrderData.CandlePeriod, OrderData.MarketDelta));
 
             //Pull from pending orders
             PendingOrders.RemoveAll(o => o.MarketDelta == OrderData.MarketDelta && o.CandlePeriod == OrderData.CandlePeriod);
@@ -305,12 +305,14 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
         }
 
-        public void StopLossMovedCallback(string market, decimal newRate, string period)
+        public void ReCalcStoploss(string market, decimal oldRate, string period)
         {
+            //RECALC NEW STOPLOSSRATE, THEN RAISE REGISTERED RATE IF HIGHER NOW:
+            var stoplossRate = BtrexData.Markets[market].TradeHistory.RecentFills.Last().Rate - CalcStoplossMargin(market, period);
 
-
-
-
+            if (stoplossRate > oldRate)            
+                StopLossController.RaiseStoploss(string.Format("{0}_{1}", period, market), stoplossRate);
+           
         }
 
         //LOGIC FOR CALCLULATING STOPLOSS MARGIN
