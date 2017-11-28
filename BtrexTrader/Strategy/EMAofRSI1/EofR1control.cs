@@ -296,10 +296,10 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         }
 
 
-        //TODO: CALLBACK FUNCTIONS FOR STOPLOSS EXE AND MOVE
+        //CALLBACK FUNCTIONS FOR STOPLOSS EXE AND CALC-MOVE:
         public void StopLossExecutedCallback(GetOrderResponse OrderResponse, string period)
         {
-
+            //TODO: REMOVE FROM HOLDINGS, CREATE/ENQUEUE SQLDatawrite obj
 
 
 
@@ -312,7 +312,13 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
             if (stoplossRate > oldRate)            
                 StopLossController.RaiseStoploss(string.Format("{0}_{1}", period, market), stoplossRate);
-           
+
+            //TODO: CHANGE IN HOLDINGS AND CREATE/ENQUEUE SQLDataWrite:
+
+
+
+
+
         }
 
         //LOGIC FOR CALCLULATING STOPLOSS MARGIN
