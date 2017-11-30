@@ -19,7 +19,7 @@ namespace BtrexTrader.Strategy.Demo
 
         private IReadOnlyList<string> SpecificDeltas = new List<string>()
         {
-            "BTC-XLM", "BTC-ADA"//, "BTC-ETH", "BTC-QTUM", "BTC-OMG"
+            "BTC-XLM", "BTC-ADA", "BTC-ETH", "BTC-QTUM", "BTC-OMG"
         };
 
         int showPastPeriods = 36;
@@ -32,7 +32,7 @@ namespace BtrexTrader.Strategy.Demo
 
         public async Task StartMarketsDemo()
         {
-            Console.WindowHeight = 100;
+            Console.WindowHeight = Console.LargestWindowHeight;
             //Display All Data, switch between markets with spacebar:
             while (true)
             {
