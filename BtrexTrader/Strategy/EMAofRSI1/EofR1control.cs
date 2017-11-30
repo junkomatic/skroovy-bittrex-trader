@@ -32,7 +32,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
         private IReadOnlyList<string> SpecificDeltas = new List<string>()
         {
-            "BTC-XLM"//, "BTC-ADA", "BTC-ETH", "BTC-QTUM", "BTC-OMG"
+            "BTC-ADA", "BTC-XLM", "BTC-ETH", "BTC-QTUM", "BTC-OMG"
         };
 
         private decimal WagerAmt = 0.001M;
@@ -72,28 +72,28 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                             var Importer = new TradyCandleImporter();
                             var newCandles = await Importer.ImportAsync(m.MarketDelta, StratData.Candles5m[m.MarketDelta].Last().DateTime.AddMinutes(5));
                             StratData.Candles5m[m.MarketDelta].AddRange(newCandles);
-                            CheckStrategy(StratData.Candles5m[m.MarketDelta], m.MarketDelta, "5m");
+                            CheckStrategy(StratData.Candles5m[m.MarketDelta], m.MarketDelta, "period5m");
 
                             //Build new 20m candles + Check strategy for buy/sell signals:
                             var CandleCurrentTime = m.TradeHistory.LastStoredCandle.AddMinutes(5);
                             if (CandleCurrentTime > StratData.Candles20m[m.MarketDelta].Last().DateTime.AddMinutes(40))
                             {
                                 if (StratData.BuildNew20mCndls(m.MarketDelta))
-                                    CheckStrategy(StratData.Candles20m[m.MarketDelta], m.MarketDelta, "20m");
+                                    CheckStrategy(StratData.Candles20m[m.MarketDelta], m.MarketDelta, "period20m");
 
                                 //Build new 1h candles + Check strategy for buy/sell signals:
                                 if (CandleCurrentTime > StratData.Candles1h[m.MarketDelta].Last().DateTime.AddHours(2))
                                 {
                                     if (StratData.BuildNew1hCndls(m.MarketDelta))
-                                        CheckStrategy(StratData.Candles1h[m.MarketDelta], m.MarketDelta, "1h");
+                                        CheckStrategy(StratData.Candles1h[m.MarketDelta], m.MarketDelta, "period1h");
 
                                     //Build new 4h candles + Check strategy for buy/sell signals:
                                     if (CandleCurrentTime > StratData.Candles4h[m.MarketDelta].Last().DateTime.AddHours(8) && StratData.BuildNew4hCndls(m.MarketDelta))
-                                        CheckStrategy(StratData.Candles4h[m.MarketDelta], m.MarketDelta, "4h");
+                                        CheckStrategy(StratData.Candles4h[m.MarketDelta], m.MarketDelta, "period4h");
 
                                     //Build new 12h candles + Check strategy for buy/sell signals:
                                     if (CandleCurrentTime > StratData.Candles12h[m.MarketDelta].Last().DateTime.AddHours(24) && StratData.BuildNew12hCndls(m.MarketDelta))
-                                        CheckStrategy(StratData.Candles12h[m.MarketDelta], m.MarketDelta, "12h");
+                                        CheckStrategy(StratData.Candles12h[m.MarketDelta], m.MarketDelta, "period12h");
                                 }
                             }
                         }
@@ -152,6 +152,13 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 {
                     bool owned = Holdings.Tables[periodName].AsEnumerable().Any(row => delta == row.Field<string>("MarketDelta"));
 
+                    //OUTPUT SIGNAL:
+                    if (call == true)
+                        Console.WriteLine("***BUY SIGNAL: {0}", delta);
+                    else
+                        Console.WriteLine("***SELL SIGNAL: {0}", delta);
+                    
+
                     if (call == true && !owned)
                     {
                         //Add BUY order on period
@@ -200,15 +207,15 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 {
                     using (var tx = conn.BeginTransaction())
                     {
-                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS 5m (MarketDelta TEXT, DateTimeBUY TEXT, Qty TEXT, BoughtRate TEXT, DateTimeSELL TEXT, SoldRate TEXT, StopLossRate TEXT, SL_Executed INTEGER)";
+                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS period5m (MarketDelta TEXT, DateTimeBUY TEXT, Qty TEXT, BoughtRate TEXT, DateTimeSELL TEXT, SoldRate TEXT, StopLossRate TEXT, SL_Executed INTEGER)";
                         cmd.ExecuteNonQuery();
-                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS 20m (MarketDelta TEXT, DateTimeBUY TEXT, Qty TEXT, BoughtRate TEXT, DateTimeSELL TEXT, SoldRate TEXT, StopLossRate TEXT, SL_Executed INTEGER)";
+                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS period20m (MarketDelta TEXT, DateTimeBUY TEXT, Qty TEXT, BoughtRate TEXT, DateTimeSELL TEXT, SoldRate TEXT, StopLossRate TEXT, SL_Executed INTEGER)";
                         cmd.ExecuteNonQuery();
-                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS 1h (MarketDelta TEXT, DateTimeBUY TEXT, Qty TEXT, BoughtRate TEXT, DateTimeSELL TEXT, SoldRate TEXT, StopLossRate TEXT, SL_Executed INTEGER)";
+                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS period1h (MarketDelta TEXT, DateTimeBUY TEXT, Qty TEXT, BoughtRate TEXT, DateTimeSELL TEXT, SoldRate TEXT, StopLossRate TEXT, SL_Executed INTEGER)";
                         cmd.ExecuteNonQuery();
-                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS 4h (MarketDelta TEXT, DateTimeBUY TEXT, Qty TEXT, BoughtRate TEXT, DateTimeSELL TEXT, SoldRate TEXT, StopLossRate TEXT, SL_Executed INTEGER)";
+                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS period4h (MarketDelta TEXT, DateTimeBUY TEXT, Qty TEXT, BoughtRate TEXT, DateTimeSELL TEXT, SoldRate TEXT, StopLossRate TEXT, SL_Executed INTEGER)";
                         cmd.ExecuteNonQuery();
-                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS 12h (MarketDelta TEXT, DateTimeBUY TEXT, Qty TEXT, BoughtRate TEXT, DateTimeSELL TEXT, SoldRate TEXT, StopLossRate TEXT, SL_Executed INTEGER)";
+                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS period12h (MarketDelta TEXT, DateTimeBUY TEXT, Qty TEXT, BoughtRate TEXT, DateTimeSELL TEXT, SoldRate TEXT, StopLossRate TEXT, SL_Executed INTEGER)";
                         cmd.ExecuteNonQuery();
 
                         tx.Commit();
@@ -238,11 +245,11 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         private void LoadHoldings()
         {
             //Load held assets, stoploss amts, from SQLite for each period:
-            AddHoldingsTable("5m");
-            AddHoldingsTable("20m");
-            AddHoldingsTable("1h");
-            AddHoldingsTable("4h");
-            AddHoldingsTable("12h");
+            AddHoldingsTable("period5m");
+            AddHoldingsTable("period20m");
+            AddHoldingsTable("period1h");
+            AddHoldingsTable("period4h");
+            AddHoldingsTable("period12h");
 
             //REGISTER EXISTING STOPLOSS RATES FOR EACH HOLDING
             foreach (DataTable dt in Holdings.Tables)
@@ -395,19 +402,19 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
             switch (cPeriod)
             {
-                case "5m":
+                case "period5m":
                     ATR = StratData.Candles5m[delta].Skip(Math.Max(0, StratData.Candles5m[delta].Count - 10)).Atr(ATRparameter).Last().Tick.Value;
                     break;
-                case "20m":
+                case "period20m":
                     ATR = StratData.Candles20m[delta].Skip(Math.Max(0, StratData.Candles20m[delta].Count - 10)).Atr(ATRparameter).Last().Tick.Value;
                     break;
-                case "1h":
+                case "period1h":
                     ATR = StratData.Candles1h[delta].Skip(Math.Max(0, StratData.Candles1h[delta].Count - 10)).Atr(ATRparameter).Last().Tick.Value;
                     break;
-                case "4h":
+                case "period4h":
                     ATR = StratData.Candles4h[delta].Skip(Math.Max(0, StratData.Candles4h[delta].Count - 10)).Atr(ATRparameter).Last().Tick.Value;
                     break;
-                case "12h":
+                case "period12h":
                     ATR = StratData.Candles12h[delta].Skip(Math.Max(0, StratData.Candles12h[delta].Count - 10)).Atr(ATRparameter).Last().Tick.Value;
                     break;
             }
