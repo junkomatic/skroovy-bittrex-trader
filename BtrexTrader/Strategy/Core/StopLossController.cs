@@ -105,6 +105,14 @@ namespace BtrexTrader.Strategy.Core
         {
             SL_Book[uniqueID].StopRate = newRate;
         }
+
+        public static void Stop()
+        {
+            if (isStarted)
+                StopLossThread.Abort();
+
+            isStarted = false;
+        }
     }
 
 
@@ -119,14 +127,14 @@ namespace BtrexTrader.Strategy.Core
         public Action<GetOrderResponse, string> ExecutionCallback { get; set; }
         public string CandlePeriod { get; set; }
 
-        public StopLoss(string mDelta, decimal rate, decimal qty, Action<string, decimal, string> MOVEDcBack = null, Action<GetOrderResponse, string> EXEcBack = null, string period = null)
+        public StopLoss(string mDelta, decimal rate, decimal qty, Action<string, decimal, string> RECALCcBack = null, Action<GetOrderResponse, string> EXEcBack = null, string period = null)
         {
             MarketDelta = mDelta;
             StopRate = rate;
             Quantity = qty;
 
-            if (MOVEDcBack != null)
-                ReCalcCallback = MOVEDcBack;
+            if (RECALCcBack != null)
+                ReCalcCallback = RECALCcBack;
 
             if (EXEcBack != null)
                 ExecutionCallback = EXEcBack;

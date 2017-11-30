@@ -61,8 +61,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 {
                     //WRITE/SAVE SQL DATA CHANGES:
                     SaveSQLData(cmd);
-
-
+                    
                     //BEGIN CANDLES ASSESSMENTS:
                     foreach (Market m in BtrexData.Markets.Values)
                     {
@@ -115,6 +114,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     Thread.Sleep(TimeSpan.FromSeconds(5));
 
                 }
+                StopLossController.Stop();
             }
             conn.Close();
 
@@ -244,11 +244,16 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             AddHoldingsTable("4h");
             AddHoldingsTable("12h");
 
-            //TODO: EVALUATE/EXECUTE/REGISTER NEW STOP-LOSSES FOR EACH HOLDING
-
-
-
-
+            //REGISTER EXISTING STOPLOSS RATES FOR EACH HOLDING
+            foreach (DataTable dt in Holdings.Tables)
+            {
+                foreach (DataRow row in dt.Rows)
+                {
+                    var stopLoss = new StopLoss((string)row["MarketDelta"], Convert.ToDecimal(row["StopLossRate"]), Convert.ToDecimal(row["Qty"]), (a, b, c) => ReCalcStoploss(a, b, c), (a, b) => StopLossExecutedCallback(a, b), dt.TableName);
+                    StopLossController.RegisterStoploss(stopLoss, string.Format("{0}_{1}", stopLoss.CandlePeriod, stopLoss.MarketDelta));
+                }
+            }
+            
         }
 
 
@@ -256,15 +261,15 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         { 
             var TimeCompleted = DateTime.UtcNow;
 
-            //Create and register stoploss
-            decimal stoplossRate = OrderData.Rate - CalcStoplossMargin(OrderData.MarketDelta, OrderData.CandlePeriod);
-            StopLossController.RegisterStoploss(new StopLoss(OrderData.MarketDelta, OrderData.Rate, OrderData.Qty, (a, b, c) => ReCalcStoploss(a, b, c), (a, b) => StopLossExecutedCallback(a, b), OrderData.CandlePeriod), string.Format("{0}_{1}", OrderData.CandlePeriod, OrderData.MarketDelta));
-
             //Pull from pending orders
             PendingOrders.RemoveAll(o => o.MarketDelta == OrderData.MarketDelta && o.CandlePeriod == OrderData.CandlePeriod);
 
             if (OrderData.BUYorSELL == "BUY")
-            { 
+            {
+                //Create and register stoploss
+                decimal stoplossRate = OrderData.Rate - CalcStoplossMargin(OrderData.MarketDelta, OrderData.CandlePeriod);
+                StopLossController.RegisterStoploss(new StopLoss(OrderData.MarketDelta, OrderData.Rate, OrderData.Qty, (a, b, c) => ReCalcStoploss(a, b, c), (a, b) => StopLossExecutedCallback(a, b), OrderData.CandlePeriod), string.Format("{0}_{1}", OrderData.CandlePeriod, OrderData.MarketDelta));
+                
                 //ENTER INTO HOLDINGS:
                 var newHoldingsRow = Holdings.Tables[OrderData.CandlePeriod].NewRow();
                 newHoldingsRow["MarketDelta"] = OrderData.MarketDelta;
@@ -283,6 +288,9 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             }
             else if (OrderData.BUYorSELL == "SELL")
             {
+                //CANCEL STOPLOSS
+                StopLossController.CancelStoploss(string.Format("{0}_{1}", OrderData.CandlePeriod, OrderData.MarketDelta));
+                
                 //REMOVE FROM HOLDINGS TABLE:
                 var holdingRows = Holdings.Tables[OrderData.CandlePeriod].Select(string.Format("MarketDelta = '{0}'", OrderData.MarketDelta));
                 foreach (var row in holdingRows)
@@ -305,9 +313,9 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 Holdings.Tables[period].Rows.Remove(row);
 
             //CREATE & ENQUEUE SQLDatawrite obj:
-
-
-
+            var update = new SaveDataUpdate(period, OrderResponse.result.Exchange, "SELL", DateTime.UtcNow, OrderResponse.result.Quantity, OrderResponse.result.PricePerUnit, null, true);
+            SQLDataWrites.Enqueue(update);
+            
         }
 
         public void ReCalcStoploss(string market, decimal oldRate, string period)
@@ -315,19 +323,21 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             //RECALC NEW STOPLOSSRATE, THEN RAISE REGISTERED RATE IF HIGHER NOW:
             var stoplossRate = BtrexData.Markets[market].TradeHistory.RecentFills.Last().Rate - CalcStoplossMargin(market, period);
 
-            if (stoplossRate > oldRate)            
+            if (stoplossRate > oldRate)
+            {
+                //RAISE SL:
                 StopLossController.RaiseStoploss(string.Format("{0}_{1}", period, market), stoplossRate);
 
-            //TODO: CHANGE IN HOLDINGS:
+                //CHANGE IN HOLDINGS:
+                var row = Holdings.Tables[period].Select(string.Format("MarketDelta = '{0}'", market));
+                row[0]["StopLossRate"] = stoplossRate;
 
+                //CREATE & ENQUEUE SQLDataWrite:
+                var update = new SaveDataUpdate(period, market, "SL_MOVE", DateTime.UtcNow, 0, 0, stoplossRate);
+                SQLDataWrites.Enqueue(update);
 
-
-            //CREATE & ENQUEUE SQLDataWrite:
-
-
-
-
-
+            }
+            
         }
 
         //LOGIC FOR CALCLULATING STOPLOSS MARGIN
