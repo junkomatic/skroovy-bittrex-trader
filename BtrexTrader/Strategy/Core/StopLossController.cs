@@ -124,10 +124,11 @@ namespace BtrexTrader.Strategy.Core
         public decimal Quantity { get; set; }
         //Callbacks to Strategy, containing CandlePeriod parameter(optional):
         public Action<string, decimal, string> ReCalcCallback { get; set; }
-        public Action<GetOrderResponse, string> ExecutionCallback { get; set; }
+        public Action<GetOrderResult, string> ExecutionCallback { get; set; }
         public string CandlePeriod { get; set; }
+        public bool virtualSL { get; set; }
 
-        public StopLoss(string mDelta, decimal rate, decimal qty, Action<string, decimal, string> RECALCcBack = null, Action<GetOrderResponse, string> EXEcBack = null, string period = null)
+        public StopLoss(string mDelta, decimal rate, decimal qty, Action<string, decimal, string> RECALCcBack = null, Action<GetOrderResult, string> EXEcBack = null, string period = null, bool isVirtual = false)
         {
             MarketDelta = mDelta;
             StopRate = rate;
@@ -141,6 +142,8 @@ namespace BtrexTrader.Strategy.Core
 
             if (period != null)
                 CandlePeriod = period;
+
+            virtualSL = isVirtual; 
         }
     }
 

@@ -16,32 +16,45 @@ namespace BtrexTrader.Interface
 
         public async Task ExecuteStopLoss(StopLoss stopLoss)
         {
-            var lowestRate = minimumTradeSatoshis / stopLoss.Quantity;
-            LimitOrderResponse orderResp = await BtrexREST.PlaceLimitOrder(stopLoss.MarketDelta, "sell", stopLoss.Quantity, lowestRate);
-            if (!orderResp.success)
+            if (!stopLoss.virtualSL)
             {
-                Console.WriteLine("    !!!!ERR ExecuteStopLoss-PLACE-ORDER1>> " + orderResp.message);
-                Console.WriteLine(" QTY: {1} ... STOP-LOSS RATE: {2}", stopLoss.Quantity, stopLoss.StopRate);
-
-                //REDUNTANT (FAILSAFE) CALL ON INITIAL CALL FAILURE 
-                orderResp = await BtrexREST.PlaceLimitOrder(stopLoss.MarketDelta, "sell", stopLoss.Quantity, lowestRate);
+                var lowestRate = minimumTradeSatoshis / stopLoss.Quantity;
+                LimitOrderResponse orderResp = await BtrexREST.PlaceLimitOrder(stopLoss.MarketDelta, "sell", stopLoss.Quantity, lowestRate);
                 if (!orderResp.success)
                 {
-                    Console.WriteLine("    !!!!ERR ExecuteStopLoss-PLACE-ORDER1.2ndTry>> " + orderResp.message);
+                    Console.WriteLine("    !!!!ERR ExecuteStopLoss-PLACE-ORDER1>> " + orderResp.message);
                     Console.WriteLine(" QTY: {1} ... STOP-LOSS RATE: {2}", stopLoss.Quantity, stopLoss.StopRate);
-                    return;
+
+                    //REDUNTANT (FAILSAFE) CALL ON INITIAL CALL FAILURE 
+                    orderResp = await BtrexREST.PlaceLimitOrder(stopLoss.MarketDelta, "sell", stopLoss.Quantity, lowestRate);
+                    if (!orderResp.success)
+                    {
+                        Console.WriteLine("    !!!!ERR ExecuteStopLoss-PLACE-ORDER1.2ndTry>> " + orderResp.message);
+                        Console.WriteLine(" QTY: {1} ... STOP-LOSS RATE: {2}", stopLoss.Quantity, stopLoss.StopRate);
+                        return;
+                    }
                 }
+
+                Thread.Sleep(1500);
+
+                var order = await BtrexREST.GetOrder(orderResp.result.uuid);
+                if (!order.success)
+                {
+                    Console.WriteLine("    !!!!ERR ExecuteStopLoss-GET-ORDER: " + order.message);
+                }
+                
+                stopLoss.ExecutionCallback(order.result, stopLoss.CandlePeriod);
             }
-
-            Thread.Sleep(1500);
-
-            GetOrderResponse order = await BtrexREST.GetOrder(orderResp.result.uuid);
-            if (!order.success)
+            else
             {
-                Console.WriteLine("    !!!!ERR ExecuteStopLoss-GET-ORDER: " + order.message);
-            }
+                var vSell = new GetOrderResult();
+                vSell.Exchange = stopLoss.MarketDelta;
+                vSell.Quantity = stopLoss.Quantity;
+                vSell.PricePerUnit = stopLoss.StopRate * 0.9975M;
 
-            stopLoss.ExecutionCallback(order, stopLoss.CandlePeriod);
+                stopLoss.ExecutionCallback(vSell, stopLoss.CandlePeriod);
+            }
+            
         }
 
         

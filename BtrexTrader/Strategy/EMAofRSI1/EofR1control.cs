@@ -249,7 +249,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             {
                 foreach (DataRow row in dt.Rows)
                 {
-                    var stopLoss = new StopLoss((string)row["MarketDelta"], Convert.ToDecimal(row["StopLossRate"]), Convert.ToDecimal(row["Qty"]), (a, b, c) => ReCalcStoploss(a, b, c), (a, b) => StopLossExecutedCallback(a, b), dt.TableName);
+                    var stopLoss = new StopLoss((string)row["MarketDelta"], Convert.ToDecimal(row["StopLossRate"]), Convert.ToDecimal(row["Qty"]), (a, b, c) => ReCalcStoploss(a, b, c), (a, b) => StopLossExecutedCallback(a, b), dt.TableName, VirtualOnOff);
                     StopLossController.RegisterStoploss(stopLoss, string.Format("{0}_{1}", stopLoss.CandlePeriod, stopLoss.MarketDelta));
                 }
             }
@@ -268,7 +268,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             {
                 //Create and register stoploss
                 decimal stoplossRate = OrderData.Rate - CalcStoplossMargin(OrderData.MarketDelta, OrderData.CandlePeriod);
-                StopLossController.RegisterStoploss(new StopLoss(OrderData.MarketDelta, OrderData.Rate, OrderData.Qty, (a, b, c) => ReCalcStoploss(a, b, c), (a, b) => StopLossExecutedCallback(a, b), OrderData.CandlePeriod), string.Format("{0}_{1}", OrderData.CandlePeriod, OrderData.MarketDelta));
+                StopLossController.RegisterStoploss(new StopLoss(OrderData.MarketDelta, OrderData.Rate, OrderData.Qty, (a, b, c) => ReCalcStoploss(a, b, c), (a, b) => StopLossExecutedCallback(a, b), OrderData.CandlePeriod, VirtualOnOff), string.Format("{0}_{1}", OrderData.CandlePeriod, OrderData.MarketDelta));
                 
                 //ENTER INTO HOLDINGS:
                 var newHoldingsRow = Holdings.Tables[OrderData.CandlePeriod].NewRow();
@@ -305,15 +305,15 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
 
         //CALLBACK FUNCTIONS FOR STOPLOSS EXE AND CALC-MOVE:
-        public void StopLossExecutedCallback(GetOrderResponse OrderResponse, string period)
+        public void StopLossExecutedCallback(GetOrderResult OrderResponse, string period)
         {
             //REMOVE FROM HOLDINGS:
-            var holdingRows = Holdings.Tables[period].Select(string.Format("MarketDelta = '{0}'", OrderResponse.result.Exchange));
+            var holdingRows = Holdings.Tables[period].Select(string.Format("MarketDelta = '{0}'", OrderResponse.Exchange));
             foreach (var row in holdingRows)
                 Holdings.Tables[period].Rows.Remove(row);
 
             //CREATE & ENQUEUE SQLDatawrite obj:
-            var update = new SaveDataUpdate(period, OrderResponse.result.Exchange, "SELL", DateTime.UtcNow, OrderResponse.result.Quantity, OrderResponse.result.PricePerUnit, null, true);
+            var update = new SaveDataUpdate(period, OrderResponse.Exchange, "SELL", DateTime.UtcNow, OrderResponse.Quantity, OrderResponse.PricePerUnit, null, true);
             SQLDataWrites.Enqueue(update);
             
         }
