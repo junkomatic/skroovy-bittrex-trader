@@ -64,8 +64,7 @@ namespace BtrexTrader.Strategy.Core
                             continue;
                         }                        
                     }
-
-
+                    
                     //CHECK TO RAISE SL USING CALLBACK FOR NEW RATE CALC:
                     stop.Value.ReCalcCallback(stop.Value.MarketDelta, stop.Value.StopRate, stop.Value.CandlePeriod);
                     

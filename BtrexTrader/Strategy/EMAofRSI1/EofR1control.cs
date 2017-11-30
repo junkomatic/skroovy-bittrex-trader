@@ -299,7 +299,12 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         //CALLBACK FUNCTIONS FOR STOPLOSS EXE AND CALC-MOVE:
         public void StopLossExecutedCallback(GetOrderResponse OrderResponse, string period)
         {
-            //TODO: REMOVE FROM HOLDINGS, CREATE/ENQUEUE SQLDatawrite obj
+            //REMOVE FROM HOLDINGS:
+            var holdingRows = Holdings.Tables[period].Select(string.Format("MarketDelta = '{0}'", OrderResponse.result.Exchange));
+            foreach (var row in holdingRows)
+                Holdings.Tables[period].Rows.Remove(row);
+
+            //CREATE & ENQUEUE SQLDatawrite obj:
 
 
 
@@ -313,7 +318,11 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             if (stoplossRate > oldRate)            
                 StopLossController.RaiseStoploss(string.Format("{0}_{1}", period, market), stoplossRate);
 
-            //TODO: CHANGE IN HOLDINGS AND CREATE/ENQUEUE SQLDataWrite:
+            //TODO: CHANGE IN HOLDINGS:
+
+
+
+            //CREATE & ENQUEUE SQLDataWrite:
 
 
 
