@@ -285,20 +285,41 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 //CREATE/ADD SQL UPDATE:
                 var update = new SaveDataUpdate(OrderData.CandlePeriod, OrderData.MarketDelta, "BUY", TimeCompleted, OrderData.Qty, OrderData.Rate, stoplossRate);
                 SQLDataWrites.Enqueue(update);
+
+                //OUTPUT BOUGHT ON BUYSIGNAL:
+                Console.WriteLine("{0}{1} Bought {2} at {3}",
+                    VirtualOnOff ? "[VIRTUAL|" + TimeCompleted + "] ::: " : "["+ TimeCompleted +"] ::: ", 
+                    OrderData.CandlePeriod,
+                    OrderData.MarketDelta.Split('-')[1],
+                    OrderData.Rate);
             }
             else if (OrderData.BUYorSELL == "SELL")
             {
                 //CANCEL STOPLOSS
                 StopLossController.CancelStoploss(string.Format("{0}_{1}", OrderData.CandlePeriod, OrderData.MarketDelta));
                 
-                //REMOVE FROM HOLDINGS TABLE:
+                //FIND + REMOVE FROM HOLDINGS TABLE:
                 var holdingRows = Holdings.Tables[OrderData.CandlePeriod].Select(string.Format("MarketDelta = '{0}'", OrderData.MarketDelta));
+
+                //OUTPUT SOLD ON SELLSIGNAL:
+                Console.WriteLine("{0}{1} Sold {2} at {3}\r\n     =PROFIT: {4:+0.###%; -0.###%; 0}\r\n    =Time-Held: {5}",
+                    VirtualOnOff ? "[VIRTUAL|" + TimeCompleted + "] ::: " : "[" + TimeCompleted + "] ::: ",
+                    OrderData.CandlePeriod,
+                    OrderData.MarketDelta.Split('-')[1],
+                    OrderData.Rate,
+                    //CALC PROFIT WITH BOUGHT RATE AND FEES INCLUDED:
+                    ((((OrderData.Rate * 0.9975M) / (Convert.ToDecimal(holdingRows[0]["BoughtRate"]) * 1.0025M)) - 1M) * 100M),
+                    //CALC HELD TIME:
+                    TimeCompleted - Convert.ToDateTime(holdingRows[0]["DateTimeBUY"])
+                    );
+
                 foreach (var row in holdingRows)
                     Holdings.Tables[OrderData.CandlePeriod].Rows.Remove(row);
 
                 //CREATE/ADD SQL UPDATE:             
                 var update = new SaveDataUpdate(OrderData.CandlePeriod, OrderData.MarketDelta, "SELL", TimeCompleted, OrderData.Qty, OrderData.Rate);
                 SQLDataWrites.Enqueue(update);
+                                
             }
             
         }
@@ -307,15 +328,30 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         //CALLBACK FUNCTIONS FOR STOPLOSS EXE AND CALC-MOVE:
         public void StopLossExecutedCallback(GetOrderResult OrderResponse, string period)
         {
-            //REMOVE FROM HOLDINGS:
+            var TimeExecuted = DateTime.UtcNow;
+            
+            //FIND + REMOVE FROM HOLDINGS:
             var holdingRows = Holdings.Tables[period].Select(string.Format("MarketDelta = '{0}'", OrderResponse.Exchange));
+
+            //OUTPUT STOPLOSS EXECUTED:
+            Console.WriteLine("{0}{1} STOPLOSS-Sold {2} at {3}\r\n     =PROFIT: {4:+0.###%; -0.###%; 0}\r\n    =Time-Held: {5}",
+                    VirtualOnOff ? "[VIRTUAL|" + TimeExecuted + "] ::: " : "[" + TimeExecuted + "] ::: ",
+                    period,
+                    OrderResponse.Exchange.Split('-')[1],
+                    OrderResponse.PricePerUnit,
+                    //CALC PROFIT WITH BOUGHT RATE AND FEES INCLUDED:
+                    (((OrderResponse.PricePerUnit / (Convert.ToDecimal(holdingRows[0]["BoughtRate"]) * 1.0025M)) - 1M) * 100M),
+                    //CALC HELD TIME:
+                    TimeExecuted - Convert.ToDateTime(holdingRows[0]["DateTimeBUY"])
+                    );
+
             foreach (var row in holdingRows)
                 Holdings.Tables[period].Rows.Remove(row);
 
             //CREATE & ENQUEUE SQLDatawrite obj:
-            var update = new SaveDataUpdate(period, OrderResponse.Exchange, "SELL", DateTime.UtcNow, OrderResponse.Quantity, OrderResponse.PricePerUnit, null, true);
+            var update = new SaveDataUpdate(period, OrderResponse.Exchange, "SELL", TimeExecuted, OrderResponse.Quantity, OrderResponse.PricePerUnit, null, true);
             SQLDataWrites.Enqueue(update);
-            
+                        
         }
 
         public void ReCalcStoploss(string market, decimal oldRate, string period)
@@ -325,6 +361,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
             if (stoplossRate > oldRate)
             {
+                var SLmovedTime = DateTime.UtcNow;
                 //RAISE SL:
                 StopLossController.RaiseStoploss(string.Format("{0}_{1}", period, market), stoplossRate);
 
@@ -333,11 +370,20 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 row[0]["StopLossRate"] = stoplossRate;
 
                 //CREATE & ENQUEUE SQLDataWrite:
-                var update = new SaveDataUpdate(period, market, "SL_MOVE", DateTime.UtcNow, 0, 0, stoplossRate);
+                var update = new SaveDataUpdate(period, market, "SL_MOVE", SLmovedTime, 0, 0, stoplossRate);
                 SQLDataWrites.Enqueue(update);
 
+                //OUTPUT STOPLOSS MOVED:
+                Console.WriteLine("{0}{1} STOPLOSS-RAISED from {2} to {3}",
+                VirtualOnOff ? "[VIRTUAL|" + SLmovedTime + "] ::: " : "[" + SLmovedTime + "] ::: ", 
+                    period,
+                    market,
+                    oldRate,
+                    stoplossRate
+                    );
+
             }
-            
+
         }
 
         //LOGIC FOR CALCLULATING STOPLOSS MARGIN
