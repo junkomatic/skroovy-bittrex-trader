@@ -26,13 +26,15 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         private List<NewOrder> NewOrders = new List<NewOrder>();
         private List<NewOrder> PendingOrders = new List<NewOrder>();
         private ConcurrentQueue<SaveDataUpdate> SQLDataWrites = new ConcurrentQueue<SaveDataUpdate>();
+        private Thread EofR1ExeThread;
+        private bool isStarted = false;
 
         private const string dataFile = "EMAofRSI1trades.data";
         private SQLiteConnection conn;
 
         private IReadOnlyList<string> SpecificDeltas = new List<string>()
         {
-            "BTC-ADA", "BTC-XLM", "BTC-ETH", "BTC-QTUM", "BTC-OMG"
+            "BTC-OMG", "BTC-XLM", "BTC-ETH", "BTC-BCC", "BTC-ADA"
         };
 
         private decimal WagerAmt = 0.001M;
@@ -42,26 +44,102 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
         public async Task Initialize()
         {
-            //await SubTopMarketsByVol(50);
-            await SubSpecificMarkets();
+            await SubTopMarketsByVol(10);
+            //await SubSpecificMarkets();
 
             OpenSQLiteConn();
             LoadHoldings();
 
-            await StratData.PreloadCandleDicts(26);
+            await StratData.PreloadCandleDicts(40);                       
         }
 
         public async Task Start()
         {
             StopLossController.StartWatching();
 
+            if (!isStarted)
+            {
+                EofR1ExeThread = new Thread(() => WatchMarkets());
+                EofR1ExeThread.IsBackground = true;
+                EofR1ExeThread.Name = "EMAofRSI1-ExecutionLoop-Thread";
+                EofR1ExeThread.Start();
+                isStarted = true;
+            }
+
+            //using (var cmd = new SQLiteCommand(conn))
+            //{
+            //    while (true) // !(Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Backspace))
+            //    {
+            //        //WRITE/SAVE SQL DATA CHANGES:
+            //        SaveSQLData(cmd);
+
+            //        //BEGIN CANDLES ASSESSMENTS:
+            //        foreach (Market m in BtrexData.Markets.Values)
+            //        {
+            //            //CHECK FOR NEW CANDLES:
+            //            if (m.TradeHistory.LastStoredCandle > StratData.Candles5m[m.MarketDelta].Last().DateTime)
+            //            {
+            //                //Get new 5m candles:
+            //                var Importer = new TradyCandleImporter();
+            //                var newCandles = await Importer.ImportAsync(m.MarketDelta, StratData.Candles5m[m.MarketDelta].Last().DateTime.AddMinutes(5));
+            //                StratData.Candles5m[m.MarketDelta].AddRange(newCandles);
+            //                CheckStrategy(StratData.Candles5m[m.MarketDelta], m.MarketDelta, "period5m");
+
+            //                //Build new 20m candles + Check strategy for buy/sell signals:
+            //                var CandleCurrentTime = m.TradeHistory.LastStoredCandle.AddMinutes(5);
+            //                if (CandleCurrentTime > StratData.Candles20m[m.MarketDelta].Last().DateTime.AddMinutes(40))
+            //                {
+            //                    if (StratData.BuildNew20mCndls(m.MarketDelta))
+            //                        CheckStrategy(StratData.Candles20m[m.MarketDelta], m.MarketDelta, "period20m");
+
+            //                    //Build new 1h candles + Check strategy for buy/sell signals:
+            //                    if (CandleCurrentTime > StratData.Candles1h[m.MarketDelta].Last().DateTime.AddHours(2))
+            //                    {
+            //                        if (StratData.BuildNew1hCndls(m.MarketDelta))
+            //                            CheckStrategy(StratData.Candles1h[m.MarketDelta], m.MarketDelta, "period1h");
+
+            //                        //Build new 4h candles + Check strategy for buy/sell signals:
+            //                        if (CandleCurrentTime > StratData.Candles4h[m.MarketDelta].Last().DateTime.AddHours(8) && StratData.BuildNew4hCndls(m.MarketDelta))
+            //                            CheckStrategy(StratData.Candles4h[m.MarketDelta], m.MarketDelta, "period4h");
+
+            //                        //Build new 12h candles + Check strategy for buy/sell signals:
+            //                        if (CandleCurrentTime > StratData.Candles12h[m.MarketDelta].Last().DateTime.AddHours(24) && StratData.BuildNew12hCndls(m.MarketDelta))
+            //                            CheckStrategy(StratData.Candles12h[m.MarketDelta], m.MarketDelta, "period12h");
+            //                    }
+            //                }
+            //            }
+
+            //        }
+
+
+            //        //EXECUTE ALL List<NewOrders>:
+            //        if (NewOrders.Count > 0)
+            //        {
+            //            PendingOrders.AddRange(NewOrders);
+            //            var ords = new List<NewOrder>(NewOrders);
+            //            NewOrders = new List<NewOrder>();
+            //            BtrexREST.TradeController.ExecuteNewOrderList(ords, VirtualOnOff).Start();
+            //        }
+
+
+            //        Thread.Sleep(TimeSpan.FromSeconds(5));
+
+            //    }
+            //    StopLossController.Stop();
+            //}
+            //conn.Close();
+
+        }
+
+        private void WatchMarkets()
+        {
             using (var cmd = new SQLiteCommand(conn))
             {
-                while (!(Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Backspace))
+                while (true) // !(Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Backspace))
                 {
                     //WRITE/SAVE SQL DATA CHANGES:
                     SaveSQLData(cmd);
-                    
+
                     //BEGIN CANDLES ASSESSMENTS:
                     foreach (Market m in BtrexData.Markets.Values)
                     {
@@ -70,7 +148,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                         {
                             //Get new 5m candles:
                             var Importer = new TradyCandleImporter();
-                            var newCandles = await Importer.ImportAsync(m.MarketDelta, StratData.Candles5m[m.MarketDelta].Last().DateTime.AddMinutes(5));
+                            var newCandles = Importer.ImportAsync(m.MarketDelta, StratData.Candles5m[m.MarketDelta].Last().DateTime.AddMinutes(5)).Result;
                             StratData.Candles5m[m.MarketDelta].AddRange(newCandles);
                             CheckStrategy(StratData.Candles5m[m.MarketDelta], m.MarketDelta, "period5m");
 
@@ -106,8 +184,8 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     {
                         PendingOrders.AddRange(NewOrders);
                         var ords = new List<NewOrder>(NewOrders);
-                        NewOrders.Clear();
-                        BtrexREST.TradeController.ExecuteNewOrderList(ords, VirtualOnOff).Start();
+                        NewOrders = new List<NewOrder>();
+                        BtrexREST.TradeController.ExecuteNewOrderList(ords, VirtualOnOff);
                     }
 
 
@@ -117,14 +195,29 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 StopLossController.Stop();
             }
             conn.Close();
-
         }
 
 
         private bool? EMAofRSI1_STRATEGY(List<decimal> closes)
         {
             var closesRSI = closes.Rsi(21);
-            var EMAofRSI = closesRSI.Ema(14);
+            var RSIs = new List<decimal>();
+            foreach (decimal? d in closesRSI)
+            {
+                if (d != null)
+                {
+                    RSIs.Add(Convert.ToDecimal(d));
+                    //Console.WriteLine("RSIexists");
+                }
+                //else
+                    //Console.WriteLine("RSInull");
+            }
+            var EMAofRSI = RSIs.Ema(14);
+
+
+            //OUTPUT RSI AND ITS EMA:
+            //Console.WriteLine("    PREV RSI: {0} ... PREV EMAofRSI: {1}\r\n    CURRENT RSI: {2} ... CURRENT EMAofRSI: {3}", closesRSI[closesRSI.Count - 2], EMAofRSI[EMAofRSI.Count - 2], closesRSI.Last(), EMAofRSI.Last());
+
 
             if (closesRSI.Last() > EMAofRSI.Last() && closesRSI[closesRSI.Count - 2] <= EMAofRSI[EMAofRSI.Count - 2])
             {
@@ -148,16 +241,23 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 var closes = new List<decimal>(candles.Select(c => c.Close));
                 bool? call = EMAofRSI1_STRATEGY(closes);
 
+                //OUTPUT CANDLE:
+                //var cndl = candles.Last();
+                //Console.WriteLine("[NEW CANDLE|{0}|{1}] ::: T:{2} ... O:{3} ... H:{4} ... L:{5} ... C:{6} ... V:{7}", delta, periodName, cndl.DateTime, cndl.Open, cndl.High, cndl.Low, cndl.Close, cndl.Volume);
+
+
                 if (call != null)
                 {
-                    bool owned = Holdings.Tables[periodName].AsEnumerable().Any(row => delta == row.Field<string>("MarketDelta"));
-
                     //OUTPUT SIGNAL:
                     if (call == true)
-                        Console.WriteLine("***BUY SIGNAL: {0}", delta);
+                        Console.WriteLine("***BUY SIGNAL: {0} on {1} candles", delta, periodName);
                     else
-                        Console.WriteLine("***SELL SIGNAL: {0}", delta);
+                        Console.WriteLine("***SELL SIGNAL: {0} on {1} candles", delta, periodName);
                     
+                    var held = Holdings.Tables[periodName].Select("MarketDelta = '"+ delta +"'");          //.AsEnumerable().Any(row => delta == (string)row["MarketDelta"]);
+                    bool owned = false;
+                    if (held.Length > 0)
+                        owned = true;
 
                     if (call == true && !owned)
                     {
@@ -184,7 +284,11 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         {
             List<string> topMarkets = await BtrexREST.GetTopMarketsByBVbtcOnly(n);
             foreach (string mk in topMarkets)
+            {
+                if (mk == "BTG" || mk == "POWR")
+                    continue;
                 await BtrexWS.subscribeMarket("BTC-" + mk);
+            }
         }
 
 
@@ -239,6 +343,8 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             var dt = new DataTable();
             using (var sqlAdapter = new SQLiteDataAdapter("SELECT * from " + periodName + " WHERE DateTimeSELL = 'OWNED'", conn))
                 sqlAdapter.Fill(dt);
+
+            dt.TableName = periodName;
             Holdings.Tables.Add(dt);
         }
 
@@ -251,6 +357,8 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             AddHoldingsTable("period4h");
             AddHoldingsTable("period12h");
 
+            Console.WriteLine("..." + Holdings.Tables["period5m"].Rows.Count);
+
             //REGISTER EXISTING STOPLOSS RATES FOR EACH HOLDING
             foreach (DataTable dt in Holdings.Tables)
             {
@@ -258,6 +366,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 {
                     var stopLoss = new StopLoss((string)row["MarketDelta"], Convert.ToDecimal(row["StopLossRate"]), Convert.ToDecimal(row["Qty"]), (a, b, c) => ReCalcStoploss(a, b, c), (a, b) => StopLossExecutedCallback(a, b), dt.TableName, VirtualOnOff);
                     StopLossController.RegisterStoploss(stopLoss, string.Format("{0}_{1}", stopLoss.CandlePeriod, stopLoss.MarketDelta));
+                    Console.WriteLine("SL RE-REGISTERED");
                 }
             }
             
@@ -275,7 +384,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             {
                 //Create and register stoploss
                 decimal stoplossRate = OrderData.Rate - CalcStoplossMargin(OrderData.MarketDelta, OrderData.CandlePeriod);
-                StopLossController.RegisterStoploss(new StopLoss(OrderData.MarketDelta, OrderData.Rate, OrderData.Qty, (a, b, c) => ReCalcStoploss(a, b, c), (a, b) => StopLossExecutedCallback(a, b), OrderData.CandlePeriod, VirtualOnOff), string.Format("{0}_{1}", OrderData.CandlePeriod, OrderData.MarketDelta));
+                StopLossController.RegisterStoploss(new StopLoss(OrderData.MarketDelta, stoplossRate, OrderData.Qty, (a, b, c) => ReCalcStoploss(a, b, c), (a, b) => StopLossExecutedCallback(a, b), OrderData.CandlePeriod, VirtualOnOff), string.Format("{0}_{1}", OrderData.CandlePeriod, OrderData.MarketDelta));
                 
                 //ENTER INTO HOLDINGS:
                 var newHoldingsRow = Holdings.Tables[OrderData.CandlePeriod].NewRow();
@@ -294,11 +403,12 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 SQLDataWrites.Enqueue(update);
 
                 //OUTPUT BOUGHT ON BUYSIGNAL:
-                Console.WriteLine("{0}{1} Bought {2} at {3}",
+                Console.WriteLine("{0}{1} Bought {2} at {3}, SL_Rate: {4}",
                     VirtualOnOff ? "[VIRTUAL|" + TimeCompleted + "] ::: " : "["+ TimeCompleted +"] ::: ", 
                     OrderData.CandlePeriod,
                     OrderData.MarketDelta.Split('-')[1],
-                    OrderData.Rate);
+                    OrderData.Rate,
+                    stoplossRate);
             }
             else if (OrderData.BUYorSELL == "SELL")
             {
@@ -425,7 +535,8 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         private void SaveSQLData(SQLiteCommand cmd)
         {
             if (!SQLDataWrites.IsEmpty)
-            { 
+            {
+                Console.WriteLine("HERE");
                 using (var tx = conn.BeginTransaction())
                 {
                     //SAVE DATA EVENT CHANGES
@@ -460,6 +571,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     }
 
                     tx.Commit();
+                    Console.WriteLine("THERE");
                 }
             }
         }

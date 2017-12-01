@@ -131,13 +131,18 @@ namespace BtrexTrader.Data.Market
                 }
                 else
                 {
-                    //TODO: Replace DEBUG with Text output:
-                    Console.WriteLine("    !!!!ERR CANT_RECTIFY_CANDLES\r\nLast1mCandleCurrent: {0} < LastFill: {1} :: [{2}]", last1mCandleCurrTime, firstFillTime, MarketDelta);
-                    Console.Beep();
-                    Console.Beep();
-
+                    //Console.WriteLine("    !!!!ERR RESOLVE_CANDLES>>Current: {0} < LastFill: {1} :: [{2}]", last1mCandleCurrTime, firstFillTime, MarketDelta);
+                    //Console.Beep();
+                    //Console.Beep();
                     //CANT RECTIFY WITH 1m CANDLES, WAIT FOR NEXT 1m CANDLE-PULL AND RETRY
-                    Thread.Sleep(TimeSpan.FromSeconds(10));
+                    //Thread.Sleep(TimeSpan.FromSeconds(30));
+
+                    for (int s = 30; s > 0; s--)
+                    {
+                        Console.Write("\r    Resolving [{0}] TradeHist->Candles time gap. Retry in {1} seconds...");
+                        Thread.Sleep(1000);
+                    }
+                    Console.Write("\r                                                                                 \r");
                 }
             }
         }

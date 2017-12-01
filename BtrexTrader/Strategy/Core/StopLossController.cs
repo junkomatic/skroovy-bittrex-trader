@@ -59,7 +59,7 @@ namespace BtrexTrader.Strategy.Core
                         if (BtrexData.Markets[stop.Value.MarketDelta].TradeHistory.RecentFills.Last().Rate <= stop.Value.StopRate)
                         {
                             //EXECUTE STOPLOSS, CALL CALLBACK
-                            BtrexREST.TradeController.ExecuteStopLoss(stop.Value).Start();
+                            BtrexREST.TradeController.ExecuteStopLoss(stop.Value);
                             CancelStoploss(stop.Key);
                             continue;
                         }                        
