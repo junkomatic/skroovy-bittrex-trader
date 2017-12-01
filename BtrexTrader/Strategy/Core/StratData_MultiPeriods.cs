@@ -83,7 +83,7 @@ namespace BtrexTrader.Strategy.Core
                                      .AddMinutes((int)(5M * Math.Floor(DateTime.UtcNow.Minute / 5M)))
                                      .Subtract(TimeSpan.FromMinutes(5 * numPeriods));
 
-                Console.WriteLine("PRELOADING {0}", marketDelta);
+                Console.WriteLine("PRELOADING MULTI-PERIOD CANDLES: {0}", marketDelta);
 
                 //FORM ALL CANDLES:
                 for (int i = 0; i < numPeriods; i++)

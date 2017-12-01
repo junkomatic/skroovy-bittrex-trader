@@ -88,6 +88,7 @@ namespace BtrexTrader.Interface
             {
                 Console.WriteLine("    !!!!ERR ExecuteNewOrder-PLACE-ORDER1>> " + orderResp.message);
                 Console.WriteLine("{0} {3} QTY: {1} ...  RATE: {2}", ord.MarketDelta, ord.Qty, ord.Rate, ord.BUYorSELL);
+                return;
             }
             
             string OrderID = orderResp.result.uuid;
