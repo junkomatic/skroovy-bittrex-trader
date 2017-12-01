@@ -38,13 +38,13 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         };
 
         private decimal WagerAmt = 0.001M;
-
+        private const int MaxMarketsEnteredPerPeriod = 10;
         private bool VirtualOnOff = true;
         
 
         public async Task Initialize()
         {
-            await SubTopMarketsByVol(20);
+            await SubTopMarketsByVol(25);
             //await SubSpecificMarkets();
 
             OpenSQLiteConn();
@@ -191,7 +191,8 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     if (held.Length > 0)
                         owned = true;
 
-                    if (call == true && !owned)
+
+                    if (call == true && !owned && (Holdings.Tables[periodName].Rows.Count < MaxMarketsEnteredPerPeriod))
                     {
                         //Add BUY order on period
                         var rate = BtrexData.Markets[delta].TradeHistory.RecentFills.Last().Rate;
@@ -202,9 +203,12 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     {
                         //ADD SELL ORDER on period
                         var rate = BtrexData.Markets[delta].TradeHistory.RecentFills.Last().Rate;
-                        var amt = Convert.ToDecimal(Holdings.Tables[periodName].AsEnumerable().Where(o => (string)o["MarketDelta"] == delta).First()["Qty"]);
-
-                        NewOrders.Add(new NewOrder(delta, "SELL", amt, rate, (a) => OrderExecutedCallback(a), periodName));
+                        //EXECUTE SELL ON SIGNAL IF RATE IS PROFITABLE (OTHERWISE BAG HOLD/STOPLOSS SELL)
+                        if ((rate * 1.0025M) - Convert.ToDecimal(held[0]["BoughtRate"]) > 0)
+                        {
+                            var amt = Convert.ToDecimal(Holdings.Tables[periodName].AsEnumerable().Where(o => (string)o["MarketDelta"] == delta).First()["Qty"]);
+                            NewOrders.Add(new NewOrder(delta, "SELL", amt, rate, (a) => OrderExecutedCallback(a), periodName));
+                        }                        
                     }
                 }
             }
@@ -336,7 +340,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 //OUTPUT BOUGHT ON BUYSIGNAL:
                 Console.WriteLine("{0}{1} Bought {2} at {3}, SL_Rate: {4:0.00000000}",
                     VirtualOnOff ? "[VIRTUAL|" + TimeCompleted + "] ::: " : "["+ TimeCompleted +"] ::: ", 
-                    OrderData.CandlePeriod,
+                    OrderData.CandlePeriod.Remove(0, 6),
                     OrderData.MarketDelta.Split('-')[1],
                     OrderData.Rate,
                     stoplossRate);
@@ -352,7 +356,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 //OUTPUT SOLD ON SELLSIGNAL:
                 Console.Write("{0}{1} Sold {2} at {3}\r\n    =PROFIT: ", 
                     VirtualOnOff ? "[VIRTUAL|" + TimeCompleted + "] ::: " : "[" + TimeCompleted + "] ::: ",
-                    OrderData.CandlePeriod,
+                    OrderData.CandlePeriod.Remove(0, 6),
                     OrderData.MarketDelta.Split('-')[1],
                     OrderData.Rate);
                 //CALC PROFIT WITH BOUGHT RATE AND FEES INCLUDED, OUTPUT:
@@ -361,7 +365,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     Console.ForegroundColor = ConsoleColor.Red;
                 else if (profit > 0)
                     Console.ForegroundColor = ConsoleColor.Green;
-                Console.Write("{0:+0.###%; -0.###%; 0}", profit);
+                Console.Write("{0:+0.###%;-0.###%;0}", profit);
                 Console.ForegroundColor = ConsoleColor.DarkCyan;
                 Console.WriteLine(" ..... =Time-Held: {0}",                    
                     //CALC HELD TIME:
@@ -388,9 +392,9 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             var holdingRows = Holdings.Tables[period].Select(string.Format("MarketDelta = '{0}'", OrderResponse.Exchange));
 
             //OUTPUT STOPLOSS EXECUTED:
-            Console.Write("{0}{1} STOPLOSS-Sold {2} at {3}\r\n    =PROFIT: ",
+            Console.Write("{0}{1} STOPLOSS-Sold {2} at {3:0.00000000}\r\n    =PROFIT: ",
                     VirtualOnOff ? "[VIRTUAL|" + TimeExecuted + "] ::: " : "[" + TimeExecuted + "] ::: ",
-                    period,
+                    period.Remove(0, 6),
                     OrderResponse.Exchange.Split('-')[1],
                     OrderResponse.PricePerUnit);
             //CALC PROFIT WITH BOUGHT RATE AND FEES INCLUDED, OUTPUT:
@@ -399,7 +403,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 Console.ForegroundColor = ConsoleColor.Red;
             else if (profit > 0)
                 Console.ForegroundColor = ConsoleColor.Green;
-            Console.Write("{0:+0.###%; -0.###%; 0}", profit);
+            Console.Write("{0:+0.###%;-0.###%;0}", profit);
             Console.ForegroundColor = ConsoleColor.DarkCyan;
             Console.WriteLine(" ..... =Time-Held: {0}",
                 //CALC HELD TIME, OUTPUT:
@@ -435,8 +439,8 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
                 //OUTPUT STOPLOSS MOVED:
                 Console.WriteLine("{0}{1}_{2} STOPLOSS-RAISED from {3:0.00000000} to {4:0.00000000}",
-                VirtualOnOff ? "[VIRTUAL|" + SLmovedTime + "] ::: " : "[" + SLmovedTime + "] ::: ", 
-                    period,
+                    "[" + SLmovedTime + "] ::: ",
+                    period.Remove(0, 6),
                     market,
                     oldRate,
                     stoplossRate
