@@ -44,7 +44,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
         public async Task Initialize()
         {
-            await SubTopMarketsByVol(10);
+            await SubTopMarketsByVol(20);
             //await SubSpecificMarkets();
 
             OpenSQLiteConn();
@@ -350,16 +350,22 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 var holdingRows = Holdings.Tables[OrderData.CandlePeriod].Select(string.Format("MarketDelta = '{0}'", OrderData.MarketDelta));
 
                 //OUTPUT SOLD ON SELLSIGNAL:
-                Console.WriteLine("{0}{1} Sold {2} at {3}\r\n    =PROFIT: {4:+0.###%; -0.###%; 0} ..... =Time-Held: {5}",
+                Console.Write("{0}{1} Sold {2} at {3}\r\n    =PROFIT: ", 
                     VirtualOnOff ? "[VIRTUAL|" + TimeCompleted + "] ::: " : "[" + TimeCompleted + "] ::: ",
                     OrderData.CandlePeriod,
                     OrderData.MarketDelta.Split('-')[1],
-                    OrderData.Rate,
-                    //CALC PROFIT WITH BOUGHT RATE AND FEES INCLUDED:
-                    ((OrderData.Rate / Convert.ToDecimal(holdingRows[0]["BoughtRate"])) - 1M),
+                    OrderData.Rate);
+                //CALC PROFIT WITH BOUGHT RATE AND FEES INCLUDED, OUTPUT:
+                var profit = ((OrderData.Rate / Convert.ToDecimal(holdingRows[0]["BoughtRate"])) - 1M);
+                if (profit < 0)
+                    Console.ForegroundColor = ConsoleColor.Red;
+                else if (profit > 0)
+                    Console.ForegroundColor = ConsoleColor.Green;
+                Console.Write("{0:+0.###%; -0.###%; 0}", profit);
+                Console.ForegroundColor = ConsoleColor.DarkCyan;
+                Console.WriteLine(" ..... =Time-Held: {0}",                    
                     //CALC HELD TIME:
-                    TimeCompleted - Convert.ToDateTime(holdingRows[0]["DateTimeBUY"])
-                    );
+                    TimeCompleted - Convert.ToDateTime(holdingRows[0]["DateTimeBUY"]));
 
                 foreach (var row in holdingRows)
                     Holdings.Tables[OrderData.CandlePeriod].Rows.Remove(row);
@@ -382,16 +388,22 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             var holdingRows = Holdings.Tables[period].Select(string.Format("MarketDelta = '{0}'", OrderResponse.Exchange));
 
             //OUTPUT STOPLOSS EXECUTED:
-            Console.WriteLine("{0}{1} STOPLOSS-Sold {2} at {3}\r\n    =PROFIT: {4:+0.###%; -0.###%; 0} ..... =Time-Held: {5}",
+            Console.Write("{0}{1} STOPLOSS-Sold {2} at {3}\r\n    =PROFIT: ",
                     VirtualOnOff ? "[VIRTUAL|" + TimeExecuted + "] ::: " : "[" + TimeExecuted + "] ::: ",
                     period,
                     OrderResponse.Exchange.Split('-')[1],
-                    OrderResponse.PricePerUnit,
-                    //CALC PROFIT WITH BOUGHT RATE AND FEES INCLUDED:
-                    ((OrderResponse.PricePerUnit / (Convert.ToDecimal(holdingRows[0]["BoughtRate"]) * 1.0025M)) - 1M),
-                    //CALC HELD TIME:
-                    TimeExecuted - Convert.ToDateTime(holdingRows[0]["DateTimeBUY"])
-                    );
+                    OrderResponse.PricePerUnit);
+            //CALC PROFIT WITH BOUGHT RATE AND FEES INCLUDED, OUTPUT:
+            var profit = ((OrderResponse.PricePerUnit / Convert.ToDecimal(holdingRows[0]["BoughtRate"])) - 1M);
+            if (profit < 0)
+                Console.ForegroundColor = ConsoleColor.Red;
+            else if (profit > 0)
+                Console.ForegroundColor = ConsoleColor.Green;
+            Console.Write("{0:+0.###%; -0.###%; 0}", profit);
+            Console.ForegroundColor = ConsoleColor.DarkCyan;
+            Console.WriteLine(" ..... =Time-Held: {0}",
+                //CALC HELD TIME, OUTPUT:
+                TimeExecuted - Convert.ToDateTime(holdingRows[0]["DateTimeBUY"]));
 
             foreach (var row in holdingRows)
                 Holdings.Tables[period].Rows.Remove(row);
@@ -438,7 +450,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         private decimal CalcStoplossMargin(string delta, string cPeriod)
         {
             int ATRparameter = 7;
-            decimal ATRmultiple = 2;
+            decimal ATRmultiple = 2.5M;
             decimal ATR = new decimal();
 
             switch (cPeriod)
