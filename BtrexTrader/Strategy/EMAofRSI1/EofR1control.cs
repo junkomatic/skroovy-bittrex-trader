@@ -183,9 +183,9 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 {
                     //OUTPUT SIGNAL:
                     if (call == true)
-                        Console.WriteLine("*BUY SIGNAL: {0} on {1} candles*", delta, periodName);
+                        Console.WriteLine("*BUY SIGNAL: {0} on {1} candles*", delta, periodName.Remove(0, 6));
                     else
-                        Console.WriteLine("*SELL SIGNAL: {0} on {1} candles*", delta, periodName);
+                        Console.WriteLine("*SELL SIGNAL: {0} on {1} candles*", delta, periodName.Remove(0, 6));
                     
                     var held = Holdings.Tables[periodName].Select("MarketDelta = '"+ delta +"'");          //.AsEnumerable().Any(row => delta == (string)row["MarketDelta"]);
                     bool owned = false;
@@ -205,7 +205,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                         //ADD SELL ORDER on period
                         var rate = BtrexData.Markets[delta].TradeHistory.RecentFills.Last().Rate;
                         //EXECUTE SELL ON SIGNAL IF RATE IS PROFITABLE (OTHERWISE BAG HOLD/STOPLOSS SELL)
-                        if ((rate * 1.0025M) - Convert.ToDecimal(held[0]["BoughtRate"]) > 0)
+                        if ((rate * 0.9975M) - Convert.ToDecimal(held[0]["BoughtRate"]) > 0)
                         {
                             var amt = Convert.ToDecimal(Holdings.Tables[periodName].AsEnumerable().Where(o => (string)o["MarketDelta"] == delta).First()["Qty"]);
                             NewOrders.Add(new NewOrder(delta, "SELL", amt, rate, (a) => OrderExecutedCallback(a), periodName));

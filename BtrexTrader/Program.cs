@@ -61,6 +61,7 @@ namespace BtrexTrader
             Console.ReadLine();
             Console.ReadLine();
             Console.ReadLine();
+            Environment.Exit(0);
         }
 
 
