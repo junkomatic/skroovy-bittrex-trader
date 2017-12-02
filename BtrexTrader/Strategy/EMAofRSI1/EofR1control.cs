@@ -38,6 +38,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         };
 
         private decimal WagerAmt = 0.001M;
+        private decimal RunningTotal = 0.0M;
         private const int MaxMarketsEnteredPerPeriod = 10;
         private bool VirtualOnOff = true;
         
@@ -361,15 +362,22 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     OrderData.Rate);
                 //CALC PROFIT WITH BOUGHT RATE AND FEES INCLUDED, OUTPUT:
                 var profit = ((OrderData.Rate / Convert.ToDecimal(holdingRows[0]["BoughtRate"])) - 1M);
+                RunningTotal += profit;
                 if (profit < 0)
                     Console.ForegroundColor = ConsoleColor.Red;
                 else if (profit > 0)
                     Console.ForegroundColor = ConsoleColor.Green;
                 Console.Write("{0:+0.###%;-0.###%;0}", profit);
                 Console.ForegroundColor = ConsoleColor.DarkCyan;
-                Console.WriteLine(" ..... =Time-Held: {0}",                    
+                Console.Write(" ..... =Time-Held: {0} ..... ",                    
                     //CALC HELD TIME:
                     TimeCompleted - Convert.ToDateTime(holdingRows[0]["DateTimeBUY"]));
+                if (RunningTotal < 0)
+                    Console.ForegroundColor = ConsoleColor.Red;
+                else if (RunningTotal > 0)
+                    Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine("=RunningTotal: {0:+0.###%;-0.###%;0}", RunningTotal);
+                Console.ForegroundColor = ConsoleColor.DarkCyan;
 
                 foreach (var row in holdingRows)
                     Holdings.Tables[OrderData.CandlePeriod].Rows.Remove(row);
@@ -399,15 +407,23 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     OrderResponse.PricePerUnit);
             //CALC PROFIT WITH BOUGHT RATE AND FEES INCLUDED, OUTPUT:
             var profit = ((OrderResponse.PricePerUnit / Convert.ToDecimal(holdingRows[0]["BoughtRate"])) - 1M);
+            RunningTotal += profit;
             if (profit < 0)
                 Console.ForegroundColor = ConsoleColor.Red;
             else if (profit > 0)
                 Console.ForegroundColor = ConsoleColor.Green;
             Console.Write("{0:+0.###%;-0.###%;0}", profit);
             Console.ForegroundColor = ConsoleColor.DarkCyan;
-            Console.WriteLine(" ..... =Time-Held: {0}",
+            Console.Write(" ..... =Time-Held: {0} ..... ",
                 //CALC HELD TIME, OUTPUT:
                 TimeExecuted - Convert.ToDateTime(holdingRows[0]["DateTimeBUY"]));
+            if (RunningTotal < 0)
+                Console.ForegroundColor = ConsoleColor.Red;
+            else if (RunningTotal > 0)
+                Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("=RunningTotal: {0:+0.###%;-0.###%;0}", RunningTotal);
+            Console.ForegroundColor = ConsoleColor.DarkCyan;
+
 
             foreach (var row in holdingRows)
                 Holdings.Tables[period].Rows.Remove(row);
