@@ -45,7 +45,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
         public async Task Initialize()
         {
-            await SubTopMarketsByVol(25);
+            await SubTopMarketsByVol(40);
             //await SubSpecificMarkets();
 
             OpenSQLiteConn();
@@ -469,8 +469,8 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         //LOGIC FOR CALCLULATING STOPLOSS MARGIN
         private decimal CalcStoplossMargin(string delta, string cPeriod)
         {
-            int ATRparameter = 7;
-            decimal ATRmultiple = 2.5M;
+            int ATRparameter = 5;
+            decimal ATRmultiple = 3M;
             decimal ATR = new decimal();
 
             switch (cPeriod)
