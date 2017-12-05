@@ -18,7 +18,7 @@ namespace BtrexTrader.Strategy.Core
         private static bool isStarted = false;
 
         private static readonly TimeSpan WatchFrequency = TimeSpan.FromSeconds(2);
-        private static readonly int CheckExeEveryCycles = 4; 
+        private static readonly int CheckExeEveryCycles = 5; 
 
             
         public static void StartWatching()

@@ -40,16 +40,20 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         private decimal WagerAmt = 0.001M;
         private decimal RunningTotal = 0.0M;
         private const int MaxMarketsEnteredPerPeriod = 10;
+        private const decimal ATRmultipleT1 = 3M;
+        private const decimal ATRmultipleT2 = 2M;
+        private const decimal ATRmultipleT3 = 1.5M;
         private bool VirtualOnOff = true;
         
 
         public async Task Initialize()
         {
-            await SubTopMarketsByVol(40);
-            //await SubSpecificMarkets();
-
             OpenSQLiteConn();
             LoadHoldings();
+
+            await SubTopMarketsByVol(50);
+            //await SubSpecificMarkets();
+                       
 
             await StratData.PreloadCandleDicts(40);                       
         }
@@ -197,8 +201,12 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     {
                         //Add BUY order on period
                         var rate = BtrexData.Markets[delta].TradeHistory.RecentFills.Last().Rate;
-                        var amt = WagerAmt / (rate * 1.0025M);
-                        NewOrders.Add(new NewOrder(delta, "BUY", amt, rate, (a) => OrderExecutedCallback(a), periodName));
+                        if (rate >= 0.000001M)
+                        {
+                            var amt = WagerAmt / (rate * 1.0025M);
+                            NewOrders.Add(new NewOrder(delta, "BUY", amt, rate, (a) => OrderExecutedCallback(a), periodName));
+                        }
+                        
                     }
                     else if (call == false && owned)
                     {
@@ -220,9 +228,21 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         private async Task SubTopMarketsByVol(int n)
         {
             List<string> topMarkets = await BtrexREST.GetTopMarketsByBVbtcOnly(n);
+
+            foreach (DataTable dt in Holdings.Tables)
+            {
+                foreach (DataRow row in dt.Rows)
+                {
+                    if (!topMarkets.Exists(o => o == row["MarketDelta"].ToString().Split('-')[1]))
+                    {
+                        topMarkets.Add((string)row["MarketDelta"].ToString().Split('-')[1]);
+                    }
+                }
+            }
+
             foreach (string mk in topMarkets)
             {
-                if (mk == "BTG" || mk == "POWR")
+                if (mk == "BTG" || mk == "POWR" || mk == "GUP" || mk == "ENG")
                     continue;
                 await BtrexWS.subscribeMarket("BTC-" + mk);
             }
@@ -319,7 +339,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             if (OrderData.BUYorSELL == "BUY")
             {
                 //Create and register stoploss
-                decimal stoplossRate = OrderData.Rate - CalcStoplossMargin(OrderData.MarketDelta, OrderData.CandlePeriod);
+                decimal stoplossRate = OrderData.Rate - (CalcStoplossMargin(OrderData.MarketDelta, OrderData.CandlePeriod) * ATRmultipleT1);
                 StopLossController.RegisterStoploss(new StopLoss(OrderData.MarketDelta, stoplossRate, OrderData.Qty, (a, b, c) => ReCalcStoploss(a, b, c), (a, b) => StopLossExecutedCallback(a, b), OrderData.CandlePeriod, VirtualOnOff), string.Format("{0}_{1}", OrderData.CandlePeriod, OrderData.MarketDelta));
                 
                 //ENTER INTO HOLDINGS:
@@ -437,7 +457,21 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         public void ReCalcStoploss(string market, decimal oldRate, string period)
         {
             //RECALC NEW STOPLOSSRATE, THEN RAISE REGISTERED RATE IF HIGHER NOW:
-            var stoplossRate = BtrexData.Markets[market].TradeHistory.RecentFills.Last().Rate - CalcStoplossMargin(market, period);
+            var ATR = CalcStoplossMargin(market, period);
+            decimal boughtRate = Convert.ToDecimal(Holdings.Tables[period].Select(string.Format("MarketDelta = '{0}'", market))[0]["BoughtRate"]);
+
+            //TIERED TRAILING STOPLOSS:
+            //Teir 2 (calculate):
+            var stoplossRate = BtrexData.Markets[market].TradeHistory.RecentFills.Last().Rate - (ATR * ATRmultipleT2);
+            
+            //Use Teir 1, if T2 is below profit line:
+            if (stoplossRate < boughtRate * 1.0025M)
+                stoplossRate = BtrexData.Markets[market].TradeHistory.RecentFills.Last().Rate - (ATR * ATRmultipleT1);
+
+            //Use Teir 3, if current rate is above 8% profit:
+            if (BtrexData.Markets[market].TradeHistory.RecentFills.Last().Rate > boughtRate * 1.08M)
+                stoplossRate = BtrexData.Markets[market].TradeHistory.RecentFills.Last().Rate - (ATR * ATRmultipleT3);
+
 
             if (Math.Round(stoplossRate, 8) > Math.Round(oldRate, 8))
             {
@@ -470,7 +504,6 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         private decimal CalcStoplossMargin(string delta, string cPeriod)
         {
             int ATRparameter = 5;
-            decimal ATRmultiple = 3M;
             decimal ATR = new decimal();
 
             switch (cPeriod)
@@ -492,7 +525,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     break;
             }
             
-            return ATR * ATRmultiple;
+            return ATR;
         }
 
         private void SaveSQLData(SQLiteCommand cmd)

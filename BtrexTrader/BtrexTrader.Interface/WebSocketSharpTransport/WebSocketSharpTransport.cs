@@ -126,6 +126,7 @@ namespace BtrexTrader.Interface.WebSocketSharpTransport
 
         private void _webSocket_OnError(object sender, ErrorEventArgs e)
         {
+            Console.WriteLine(" !!!!ERR>> WS ERROR.........");
             this.OnError(e.ToException());
         }
 
@@ -242,6 +243,15 @@ namespace BtrexTrader.Interface.WebSocketSharpTransport
         // fire and forget
         private async void DoReconnect()
         {
+
+            Console.WriteLine(" !!!!ERR>> DO-RECONNECT.........");
+            //// Starts a new instance of the program itself
+            //System.Diagnostics.Process.Start(System.Reflection.Assembly.GetEntryAssembly().Location);
+
+            //// Closes the current process
+            //Environment.Exit(0);
+
+
             var reconnectUrl = UrlBuilder.BuildReconnect(_connection, Name, _connectionData);
 
             while (TransportHelper.VerifyLastActive(_connection) && _connection.EnsureReconnecting())
@@ -272,6 +282,8 @@ namespace BtrexTrader.Interface.WebSocketSharpTransport
         // virtual for testing
         internal virtual void OnError(Exception error)
         {
+
+            Console.WriteLine(" !!!!ERR>> WS ERROR2222.........");
             _connection.OnError(error);
         }
 
