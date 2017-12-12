@@ -93,7 +93,7 @@ namespace BtrexTrader.Interface
             HttpResponseMessage response = await client.SendAsync(mesg);
             if (response.IsSuccessStatusCode)
                 history = await response.Content.ReadAsAsync<HistDataResponse>();
-            else if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
+            else if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable || history == null)
             {
                 do
                 {
@@ -109,6 +109,9 @@ namespace BtrexTrader.Interface
             }
             else
                 Console.WriteLine("FAIL:  " + response.ReasonPhrase);
+
+            if (history == null)
+                Console.WriteLine("HIST NULL " + delta);
 
             history.MarketDelta = delta.Replace('-', '_');
             if (period.ToUpper() != "ONEMIN" && history.result.Count > 0)

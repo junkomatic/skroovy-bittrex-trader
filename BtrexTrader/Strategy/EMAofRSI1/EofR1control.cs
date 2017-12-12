@@ -41,7 +41,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         {
             //EXLUDE MARKETS THAT WERE RELEASED LESS THAN A MONTH AGO,
             //(CANT PRELOAD ADEQUATE CANDLE DATA FOR CALCS -> SequenceContainsNoElements err)
-            "BTG", "POWR", "GUP", "ENG", "NAV", "MER"
+            "BTG", "POWR", "GUP", "ENG", "NAV", "MER", "SWT"
         };
 
         private decimal WagerAmt = 0.001M;
@@ -329,12 +329,12 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             if (TradingTotal > 0)
             {
                 Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine("TradingTotal = {0:+0.###}%", TradingTotal);
+                Console.WriteLine("TradingTotal = {0:+0.###%}", TradingTotal);
             }
             else if (TradingTotal < 0)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("TradingTotal = {0:-0.###}%", TradingTotal);
+                Console.WriteLine("TradingTotal = {0:0.###%}", TradingTotal);
             }
             else
             {
