@@ -324,6 +324,23 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 cmd.CommandText = "SELECT PercentageTotal FROM totals LIMIT 1";
                 TradingTotal = Convert.ToDecimal(cmd.ExecuteScalar());
             }
+
+
+            if (TradingTotal > 0)
+            {
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine("TradingTotal = {0:+0.###}%", TradingTotal);
+            }
+            else if (TradingTotal < 0)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("TradingTotal = {0:-0.###}%", TradingTotal);
+            }
+            else
+            {
+                Console.WriteLine("TradingTotal = {0}%", TradingTotal);
+            }
+            Console.ForegroundColor = ConsoleColor.DarkCyan;
         }
 
         private void LoadHoldings()
@@ -334,8 +351,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             AddHoldingsTable("period1h");
             AddHoldingsTable("period4h");
             AddHoldingsTable("period12h");
-
-            LoadTradingTotal();
+                        
 
             //REGISTER EXISTING STOPLOSS RATES FOR EACH HOLDING
             foreach (DataTable dt in Holdings.Tables)
@@ -347,8 +363,9 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     Console.WriteLine(">>>STOPLOSS-LOADED: {0}_{1}, SL_RATE: {2:0.00000000}", dt.TableName, row["MarketDelta"], Convert.ToDecimal(row["StopLossRate"]));
                 }
             }
-            
-            
+
+            //Load Total From SQLite data:
+            LoadTradingTotal();
 
         }
 
@@ -494,7 +511,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 Console.ForegroundColor = ConsoleColor.Red;
             else if (TradingTotal > 0)
                 Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("=RunningTotal: {0:+0.###%;-0.###%;0}", TradingTotal);
+            Console.WriteLine("=TradingTotal: {0:+0.###%;-0.###%;0}", TradingTotal);
             Console.ForegroundColor = ConsoleColor.DarkCyan;
 
 
@@ -659,7 +676,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                         cmd.ExecuteNonQuery();
                         cmd.CommandText = "CREATE TABLE IF NOT EXISTS period12h (MarketDelta TEXT, DateTimeBUY TEXT, Qty TEXT, BoughtRate TEXT, DateTimeSELL TEXT, SoldRate TEXT, StopLossRate TEXT, SL_Executed INTEGER)";
                         cmd.ExecuteNonQuery();
-                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS totals (TimeCreatedUTC TEXT, PercentageTotal REAL)";
+                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS totals (TimeCreatedUTC TEXT, PercentageTotal TEXT)";
                         cmd.ExecuteNonQuery();
                         cmd.CommandText = string.Format("INSERT INTO totals(TimeCreatedUTC, PercentageTotal) VALUES ('{0}', '{1}')", DateTime.UtcNow, "0.0");
                         cmd.ExecuteNonQuery();

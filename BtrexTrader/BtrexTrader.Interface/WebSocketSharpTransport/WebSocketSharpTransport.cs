@@ -251,7 +251,7 @@ namespace BtrexTrader.Interface.WebSocketSharpTransport
             Console.Beep();
 
             Directory.CreateDirectory("LogFiles");
-            string path = @"LogFiles\" + DateTime.Now.ToString("u") + ".log";
+            string path = @"LogFiles\" + DateTime.Now.ToString("yyyy-dd-M HH.mm.ss") + ".log";
 
             //Create LogFile: 
             using (StreamWriter sw = new StreamWriter(new FileStream(path, FileMode.OpenOrCreate, FileAccess.Write)))
