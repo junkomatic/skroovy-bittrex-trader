@@ -8,6 +8,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using WebSocketSharp;
+using System.IO;
 
 namespace BtrexTrader.Interface.WebSocketSharpTransport
 {
@@ -78,7 +79,7 @@ namespace BtrexTrader.Interface.WebSocketSharpTransport
             Uri uri = UrlBuilder.ConvertToWebSocketUri(url);
             string wsUrl = uri.OriginalString;
 
-            EventHandler<ErrorEventArgs> onError = null;
+            EventHandler<WebSocketSharp.ErrorEventArgs> onError = null;
             EventHandler onOpen = null;
 
             _connection.Trace(TraceLevels.Events, "WS Connecting to: {0}", uri);
@@ -124,7 +125,7 @@ namespace BtrexTrader.Interface.WebSocketSharpTransport
             return tcs.Task;
         }
 
-        private void _webSocket_OnError(object sender, ErrorEventArgs e)
+        private void _webSocket_OnError(object sender, WebSocketSharp.ErrorEventArgs e)
         {
             Console.WriteLine(" !!!!ERR>> WS ERROR.........");
             this.OnError(e.ToException());
@@ -166,7 +167,7 @@ namespace BtrexTrader.Interface.WebSocketSharpTransport
             }
 
             TaskCompletionSource<object> tcs = new TaskCompletionSource<object>();
-            EventHandler<ErrorEventArgs> onError = null;
+            EventHandler<WebSocketSharp.ErrorEventArgs> onError = null;
             Action<bool> onSent = null;
 
             // If we don't throw here when the WebSocket isn't open, WebSocketHander.SendAsync will noop.
@@ -244,46 +245,65 @@ namespace BtrexTrader.Interface.WebSocketSharpTransport
         private async void DoReconnect()
         {
 
-            Console.WriteLine(" !!!!ERR>> DO-RECONNECT.........");
-            //// Starts a new instance of the program itself
-            //System.Diagnostics.Process.Start(System.Reflection.Assembly.GetEntryAssembly().Location);
+            Console.WriteLine(" !!!!ERR>> SAVE-LOG-AND-RECONNECT.........");
+            Console.Beep();
+            Console.Beep();
+            Console.Beep();
 
-            //// Closes the current process
-            //Environment.Exit(0);
+            Directory.CreateDirectory("LogFiles");
+            string path = @"LogFiles\" + DateTime.Now.ToString("u") + ".log";
 
-
-            var reconnectUrl = UrlBuilder.BuildReconnect(_connection, Name, _connectionData);
-
-            while (TransportHelper.VerifyLastActive(_connection) && _connection.EnsureReconnecting())
+            //Create LogFile: 
+            using (StreamWriter sw = new StreamWriter(new FileStream(path, FileMode.OpenOrCreate, FileAccess.Write)))
             {
-                try
-                {
-                    await PerformConnect(reconnectUrl);
-                    break;
-                }
-                catch (OperationCanceledException)
-                {
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    if (ExceptionHelper.IsRequestAborted(ex))
-                    {
-                        break;
-                    }
-
-                    _connection.OnError(ex);
-                }
-
-                await Task.Delay(ReconnectDelay);
+                sw.BaseStream.Seek(0, SeekOrigin.End);
+                sw.Flush();
+                sw.Close();
             }
+                
+            //// Starts a new instance of the program itself
+            System.Diagnostics.Process.Start(System.Reflection.Assembly.GetEntryAssembly().Location);
+
+            // Closes the current process
+            Environment.Exit(0);
+
+
+            
+
+
+
+            //ORIGINAL TEST CODE (NOT WORKING):
+
+            //var reconnectUrl = UrlBuilder.BuildReconnect(_connection, Name, _connectionData);
+
+            //while (TransportHelper.VerifyLastActive(_connection) && _connection.EnsureReconnecting())
+            //{
+            //    try
+            //    {
+            //        await PerformConnect(reconnectUrl);
+            //        break;
+            //    }
+            //    catch (OperationCanceledException)
+            //    {
+            //        break;
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //        if (ExceptionHelper.IsRequestAborted(ex))
+            //        {
+            //            break;
+            //        }
+
+            //        _connection.OnError(ex);
+            //    }
+
+            //    await Task.Delay(ReconnectDelay);
+            //}
         }
 
         // virtual for testing
         internal virtual void OnError(Exception error)
-        {
-
-            Console.WriteLine(" !!!!ERR>> WS ERROR2222.........");
+        {             
             _connection.OnError(error);
         }
 

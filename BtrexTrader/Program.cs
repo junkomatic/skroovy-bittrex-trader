@@ -20,23 +20,9 @@ namespace BtrexTrader
             PrintTitle();
             Console.ForegroundColor = ConsoleColor.DarkCyan;
             Console.BackgroundColor = ConsoleColor.Black;
-            
-
-            //UNCOMMENT 'WHILE' TO RESTART ON FAILURE
-            //while (true)
-            {
-                //try
-                {
-                    RunAsync().Wait();
-                }
-                //catch (Exception e)
-                //{
-                //    Console.Write("\r\n\r\n!!!!TOP LVL ERR>> " + e.InnerException.Message);
-                //    Console.ReadLine();
-                //    //    //Thread.Sleep(5000);
-                //}
-            }
-            
+                        
+            RunAsync().Wait(); 
+                        
         }
 
 

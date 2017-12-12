@@ -22,7 +22,7 @@ namespace BtrexTrader.Interface
         //public readonly static HubConnection hubConnection = new HubConnection("https://socket.bittrex.com/");
         //public static IHubProxy btrexHubProxy;
 
-        public static async Task subscribeMarket(string delta)
+        public static async Task SubscribeMarket(string delta)
         {
             await WSSharpTransport.HubProxy.Invoke("SubscribeToExchangeDeltas", delta);
             MarketQueryResponse marketQuery = WSSharpTransport.HubProxy.Invoke<MarketQueryResponse>("QueryExchangeState", delta).Result;
@@ -30,6 +30,32 @@ namespace BtrexTrader.Interface
             marketQuery.MarketName = delta;
             await BtrexData.OpenMarket(marketQuery);
         }
+
+        public static async Task<List<MarketQueryResponse>> SubscribeMarketsList(List<string> deltas)
+        {
+            List<MarketQueryResponse> failedList = new List<MarketQueryResponse>();
+            var subList = deltas.Select(d => WSSharpTransport.HubProxy.Invoke("SubscribeToExchangeDeltas", d)).ToArray();
+            await Task.WhenAll(subList);
+
+            foreach (string d in deltas)
+            {
+                var delta = "BTC-" + d;
+                await WSSharpTransport.HubProxy.Invoke("SubscribeToExchangeDeltas", delta);
+                
+                MarketQueryResponse marketQuery = WSSharpTransport.HubProxy.Invoke<MarketQueryResponse>("QueryExchangeState", delta).Result;
+
+                marketQuery.MarketName = delta;
+                bool opened = await BtrexData.TryOpenMarket(marketQuery);
+
+                if (!opened)
+                    failedList.Add(marketQuery);
+
+            }
+
+            return failedList;
+        }
+
+
 
         public static async Task Connect()
         {

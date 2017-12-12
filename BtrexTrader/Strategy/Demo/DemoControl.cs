@@ -154,7 +154,7 @@ namespace BtrexTrader.Strategy.Demo
         {
             List<string> topMarkets = await BtrexREST.GetTopMarketsByBVbtcOnly(n);
             foreach (string mk in topMarkets)
-                await BtrexWS.subscribeMarket("BTC-" + mk);
+                await BtrexWS.SubscribeMarket("BTC-" + mk);
 
             await PreloadCandlesDict(6);
         }
@@ -163,7 +163,7 @@ namespace BtrexTrader.Strategy.Demo
         private async Task SubSpecificMarkets()
         {
             foreach (string mk in SpecificDeltas)
-                await BtrexWS.subscribeMarket(mk);
+                await BtrexWS.SubscribeMarket(mk);
 
             await PreloadCandlesDict(6);
         }

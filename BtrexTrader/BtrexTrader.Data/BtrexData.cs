@@ -107,6 +107,28 @@ namespace BtrexTrader.Data
             } while (!added);
         }
 
+
+        public static async Task<bool> TryOpenMarket(MarketQueryResponse snapshot)
+        {
+            Market.Market market = new Market.Market(snapshot);
+            bool resolved = await market.TradeHistory.Resolve5mCandles(false);
+
+            if (!resolved)
+            {
+                return false;
+            }
+            else
+            {
+                bool added;
+                do
+                {
+                    added = Markets.TryAdd(market.MarketDelta, market);
+                } while (!added);
+            }
+            
+            return true;
+        }
+
         
         private static void BuildAll5mCandles()
         {

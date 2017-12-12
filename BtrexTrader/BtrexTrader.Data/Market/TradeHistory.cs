@@ -44,10 +44,10 @@ namespace BtrexTrader.Data.Market
                 }
                 conn.Close();
             }
-
+            
             //Candle Time is the START time of the 5m period. This means it is current to +5min from that time.
             DateTime NextCandleTime = LastStoredCandle.AddMinutes(5);
-
+            
             if (NextCandleTime > RecentFills.Last().TimeStamp)
             {
                 //NO TRADES MADE IN THIS CANDLE PERIOD.
@@ -63,18 +63,18 @@ namespace BtrexTrader.Data.Market
                 
                 CandlesResolved = true;
             }
-                              
+            
         }
 
 
-        public async Task Resolve5mCandles()
+        public async Task<bool> Resolve5mCandles(bool retryOnFail = true)
         {
             DateTime NextCandleTime = LastStoredCandle.AddMinutes(5);
             DateTime NextCandleCurrTime = LastStoredCandle.AddMinutes(10);
             if (CandlesResolved)
             {
                 Console.WriteLine("[{1}] CANDLES RESOLVED - LastCandleStart: {0}", LastStoredCandle, MarketDelta);
-                return;
+                return true;
             }
             
             while (!CandlesResolved)
@@ -83,7 +83,7 @@ namespace BtrexTrader.Data.Market
                 if (!response.success)
                 {
                     Console.WriteLine("    !!!!ERR GET-1m-CANDLES: [{0}]", MarketDelta);
-                    return;
+                    return false;
                 }
 
                 DateTime last1mCandleCurrTime = response.result.Last().T.AddMinutes(1);
@@ -132,6 +132,8 @@ namespace BtrexTrader.Data.Market
                 else
                 {
                     //Console.WriteLine("    !!!!ERR RESOLVE_CANDLES>>Current: {0} < LastFill: {1} :: [{2}]", last1mCandleCurrTime, firstFillTime, MarketDelta);
+                    if (!retryOnFail)
+                        return false;
 
                     for (int s = 15; s > 0; s--)
                     {
@@ -141,6 +143,8 @@ namespace BtrexTrader.Data.Market
                     Console.Write("\r                                                                                  \r");
                 }
             }
+
+            return true;
         }
 
 
