@@ -51,6 +51,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         private const decimal ATRmultipleT1 = 2.5M;
         private const decimal ATRmultipleT2 = 2M;
         private const decimal ATRmultipleT3 = 1.5M;
+        private const bool SAFEMODE = true;
 
         private const bool LogStoplossRaised = true;
         private const bool LogSignals = true;
@@ -411,8 +412,8 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                         break;
                 }
 
-                //TESTING123:
-                stoplossRate = 0.00056M / OrderData.Qty;
+                if (SAFEMODE)
+                    stoplossRate = 0.00056M / OrderData.Qty;
                 
                 StopLossController.RegisterStoploss(new StopLoss(OrderData.MarketDelta, stoplossRate, OrderData.Qty, (a, b, c) => ReCalcStoploss(a, b, c), (a, b) => StopLossExecutedCallback(a, b), OrderData.CandlePeriod, VirtualOnOff), string.Format("{0}_{1}", OrderData.CandlePeriod, OrderData.MarketDelta));
                 
@@ -566,9 +567,10 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             //Use Teir 1, if T2 is below profit line:
             if (stoplossRate < boughtRate * 1.0025M)
             {
-                //stoplossRate = BtrexData.Markets[market].TradeHistory.RecentFills.Last().Rate - (ATR * ATRmultipleT1);
-                //TESTING123
-                stoplossRate = 0.0M;
+                stoplossRate = BtrexData.Markets[market].TradeHistory.RecentFills.Last().Rate - (ATR * ATRmultipleT1);
+                if (SAFEMODE)
+                    stoplossRate = 0.0M;
+
                 tier = "*";
             }
 

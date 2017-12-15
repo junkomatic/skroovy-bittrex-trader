@@ -120,7 +120,7 @@ namespace BtrexTrader.Interface
                     if (getOrder1.result.QuantityRemaining * getOrder1.result.Price < minimumTradeSatoshis)
                         continue;
                     //ELSE, IF THE ORDER REMAINS AFTER (30) SECONDS, CANCEL & REPLACE AT NEW RATE:
-                    else if (stopwatch.Elapsed > TimeSpan.FromSeconds(30))
+                    else if (stopwatch.Elapsed > TimeSpan.FromSeconds(12))
                     {                    
                         //RECALC RATE and (BUY)QTY AND REPOST ORDER AT DATA PRICE
                         if (ord.BUYorSELL == "BUY" && BtrexData.Markets[ord.MarketDelta].OrderBook.Bids.ToList().OrderByDescending(k => k.Key).First().Key > orderRate)
