@@ -32,7 +32,7 @@ namespace BtrexTrader.Data.Market
                 foreach (Fill fill in snap.Fills)
                     RecentFills.Add(new mdFill(Convert.ToDateTime(fill.TimeStamp), fill.Price, fill.Quantity, fill.OrderType));
             }
-            Console.Write("\rResolving Candle Data: [{0}]", MarketDelta);
+            Console.Write("\rResolving Candle Data: [{0}]         ", MarketDelta);
             //Compare last-time from .data, and first-time from snap:
             using (SQLiteConnection conn = new SQLiteConnection("Data Source=" + HistoricalData.dbName + ";Version=3;"))
             {
