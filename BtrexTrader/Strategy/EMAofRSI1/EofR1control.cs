@@ -457,7 +457,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     OrderData.Rate);
                 //CALC PROFIT WITH BOUGHT RATE AND FEES INCLUDED, OUTPUT:
                 var profit = ((OrderData.Rate / Convert.ToDecimal(holdingRows[0]["BoughtRate"])) - 1M);
-                var compoundMultiple = (Convert.ToDecimal(holdingRows[0]["BoughtRate"]) * Convert.ToDecimal(holdingRows[0]["Qty"]) - WagerAmt) / WagerAmt;
+                var compoundMultiple = ((Convert.ToDecimal(holdingRows[0]["BoughtRate"]) * Convert.ToDecimal(holdingRows[0]["Qty"])) / WagerAmt);
 
                 TradingTotal += (profit * compoundMultiple);
 
@@ -515,7 +515,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     OrderResponse.PricePerUnit);
             //CALC PROFIT WITH BOUGHT RATE AND FEES INCLUDED, OUTPUT:
             var profit = ((OrderResponse.PricePerUnit / Convert.ToDecimal(holdingRows[0]["BoughtRate"])) - 1M);
-            var compoundMultiple = (Convert.ToDecimal(holdingRows[0]["BoughtRate"]) * Convert.ToDecimal(holdingRows[0]["Qty"]) - WagerAmt) / WagerAmt;
+            var compoundMultiple = (Convert.ToDecimal(holdingRows[0]["BoughtRate"]) * Convert.ToDecimal(holdingRows[0]["Qty"])) / WagerAmt;
 
             TradingTotal += (profit * compoundMultiple);
             if (profit < 0)
