@@ -457,7 +457,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     OrderData.Rate);
                 //CALC PROFIT WITH BOUGHT RATE AND FEES INCLUDED, OUTPUT:
                 var profit = ((OrderData.Rate / Convert.ToDecimal(holdingRows[0]["BoughtRate"])) - 1M);
-                var compoundMultiple = (TradingTotal / MAXTOTALENTRANCES) + 1;
+                var compoundMultiple = (Convert.ToDecimal(holdingRows[0]["BoughtRate"]) * Convert.ToDecimal(holdingRows[0]["Qty"]) - WagerAmt) / WagerAmt;
 
                 TradingTotal += (profit * compoundMultiple);
 
@@ -515,7 +515,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     OrderResponse.PricePerUnit);
             //CALC PROFIT WITH BOUGHT RATE AND FEES INCLUDED, OUTPUT:
             var profit = ((OrderResponse.PricePerUnit / Convert.ToDecimal(holdingRows[0]["BoughtRate"])) - 1M);
-            var compoundMultiple = (TradingTotal / MAXTOTALENTRANCES) + 1;
+            var compoundMultiple = (Convert.ToDecimal(holdingRows[0]["BoughtRate"]) * Convert.ToDecimal(holdingRows[0]["Qty"]) - WagerAmt) / WagerAmt;
 
             TradingTotal += (profit * compoundMultiple);
             if (profit < 0)
@@ -532,6 +532,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.Write("=TradingTotal: {0:+0.###%;-0.###%;0}", TradingTotal);
                 Console.ForegroundColor = ConsoleColor.DarkRed;
+                var net = 0 - (Math.Abs(TradingTotal) / MAXTOTALENTRANCES);
                 Console.WriteLine("({:+0.###%;-0.###%;0} net)", (TradingTotal / MAXTOTALENTRANCES));
             }
             else if (TradingTotal > 0)
@@ -539,7 +540,6 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.Write("=TradingTotal: {0:+0.###%;-0.###%;0}", TradingTotal);
                 Console.ForegroundColor = ConsoleColor.DarkGreen;
-                var net = 0 - (Math.Abs(TradingTotal) / MAXTOTALENTRANCES);
                 Console.WriteLine("({0:+0.###%;-0.###%;0} net)", (TradingTotal / MAXTOTALENTRANCES));
             }
 
