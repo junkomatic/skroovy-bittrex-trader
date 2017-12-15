@@ -482,7 +482,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     Console.ForegroundColor = ConsoleColor.Green;
                     Console.Write("=TradingTotal: {0:+0.###%;-0.###%;0}", TradingTotal);
                     Console.ForegroundColor = ConsoleColor.DarkGreen;
-                    Console.WriteLine("({0:+0.###%;-0.###%;0} net)", (TradingTotal / MAXTOTALENTRANCES));
+                    Console.WriteLine("({0:+0.###%;-0.###%;0} net)", net);
                 }
                     
                 Console.ForegroundColor = ConsoleColor.DarkCyan;
@@ -533,7 +533,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 Console.Write("=TradingTotal: {0:+0.###%;-0.###%;0}", TradingTotal);
                 Console.ForegroundColor = ConsoleColor.DarkRed;
                 var net = 0 - (Math.Abs(TradingTotal) / MAXTOTALENTRANCES);
-                Console.WriteLine("({:+0.###%;-0.###%;0} net)", (TradingTotal / MAXTOTALENTRANCES));
+                Console.WriteLine("({:+0.###%;-0.###%;0} net)", net);
             }
             else if (TradingTotal > 0)
             {
