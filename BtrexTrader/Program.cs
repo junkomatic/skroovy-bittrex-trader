@@ -17,6 +17,9 @@ namespace BtrexTrader
 
         static void Main(string[] args)
         {
+            Console.BufferHeight = 9999;
+
+
             PrintTitle();
             Console.ForegroundColor = ConsoleColor.DarkCyan;
             Console.BackgroundColor = ConsoleColor.Black;

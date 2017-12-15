@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using WebSocketSharp;
 using System.IO;
+using System.Diagnostics;
 
 namespace BtrexTrader.Interface.WebSocketSharpTransport
 {
@@ -266,7 +267,7 @@ namespace BtrexTrader.Interface.WebSocketSharpTransport
 
             // Closes the current process
             Environment.Exit(0);
-
+            Trace.WriteLine("");
 
             
 

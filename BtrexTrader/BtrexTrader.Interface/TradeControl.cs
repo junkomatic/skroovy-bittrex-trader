@@ -50,7 +50,7 @@ namespace BtrexTrader.Interface
                 var vSell = new GetOrderResult();
                 vSell.Exchange = stopLoss.MarketDelta;
                 vSell.Quantity = stopLoss.Quantity;
-                vSell.PricePerUnit = stopLoss.StopRate * 0.9975M;
+                vSell.PricePerUnit = BtrexData.Markets[stopLoss.MarketDelta].TradeHistory.RecentFills.Last().Rate * 0.9975M;
 
                 stopLoss.ExecutionCallback(vSell, stopLoss.CandlePeriod);
             }

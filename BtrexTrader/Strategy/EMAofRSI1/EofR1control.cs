@@ -41,12 +41,13 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         {
             //EXLUDE MARKETS THAT WERE RELEASED LESS THAN A MONTH AGO,
             //(CANT PRELOAD ADEQUATE CANDLE DATA FOR CALCS -> SequenceContainsNoElements err)
-            "BTG", "POWR", "GUP", "ENG", "NAV", "MER", "SWT"
+            "1ST", "NAV", "XVG", "VIB"
         };
 
         private decimal WagerAmt = 0.001M;
         private decimal TradingTotal = 0.0M;
-        private const int MaxMarketsEnteredPerPeriod = 10;
+        private const int MaxMarketsEnteredPerPeriod = 8;
+        private const int MAXTOTALENTRANCES = 40;
         private const decimal ATRmultipleT1 = 2.5M;
         private const decimal ATRmultipleT2 = 2M;
         private const decimal ATRmultipleT3 = 1.5M;
@@ -62,7 +63,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             OpenSQLiteConn();
             LoadHoldings();
 
-            await SubTopMarketsByVol(50);
+            await SubTopMarketsByVol(60);
             //await SubSpecificMarkets();
                        
 
@@ -137,6 +138,8 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                         PendingOrders.AddRange(NewOrders);
                         var ords = new List<NewOrder>(NewOrders);
                         NewOrders = new List<NewOrder>();
+                        
+                        //This is not awaited because NewOrder objects reference their own callback
                         BtrexREST.TradeController.ExecuteNewOrderList(ords, VirtualOnOff);
                     }
                     
@@ -184,11 +187,11 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 var closes = new List<decimal>(candles.Select(c => c.Close));
                 bool? call = EMAofRSI1_STRATEGY(closes);
 
-                //OUTPUT CANDLE:
+                //DEBUG OUTPUT LAST CANDLE:
                 //var cndl = candles.Last();
-                //Console.WriteLine("[NEW CANDLE|{0}|{1}] ::: T:{2} ... O:{3} ... H:{4} ... L:{5} ... C:{6} ... V:{7}", delta, periodName, cndl.DateTime, cndl.Open, cndl.High, cndl.Low, cndl.Close, cndl.Volume);
-
-
+                //Console.WriteLine("[NEW CANDLE|{0}|{1}] ::: T:{2} ... O:{3} ... H:{4} ... L:{5} ... C:{6} ... V:{7}", 
+                    //delta, periodName, cndl.DateTime, cndl.Open, cndl.High, cndl.Low, cndl.Close, cndl.Volume);
+                
                 if (call != null)
                 {
                     //OUTPUT SIGNAL:
@@ -200,19 +203,21 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                             Console.WriteLine("*SELL SIGNAL: {0} on {1} candles*", delta, periodName.Remove(0, 6));
                     }
 
-                    var held = Holdings.Tables[periodName].Select("MarketDelta = '"+ delta +"'");          //.AsEnumerable().Any(row => delta == (string)row["MarketDelta"]);
+                    var held = Holdings.Tables[periodName].Select("MarketDelta = '"+ delta +"'");
                     bool owned = false;
                     if (held.Length > 0)
                         owned = true;
 
 
-                    if (call == true && !owned && (Holdings.Tables[periodName].Rows.Count < MaxMarketsEnteredPerPeriod))
+                    if (call == true && !owned && (Holdings.Tables[periodName].Rows.Count + NewOrders.Where(o => o.CandlePeriod == periodName).Count() < MaxMarketsEnteredPerPeriod))
                     {
                         //Add BUY order on period
                         var rate = BtrexData.Markets[delta].TradeHistory.RecentFills.Last().Rate;
                         if (rate >= 0.000001M)
                         {
-                            var amt = WagerAmt / (rate * 1.0025M);
+                            var wagerMultiple = (TradingTotal / MAXTOTALENTRANCES) + 1;
+                            var amt = (WagerAmt * wagerMultiple) / (rate * 1.0025M);
+
                             NewOrders.Add(new NewOrder(delta, "BUY", amt, rate, (a) => OrderExecutedCallback(a), periodName));
                         }
                         
@@ -253,16 +258,6 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             //TODO: CHECK SQLITE FOR ADEQUATE HISTORY-TIME FOR CANDLE PRELOAD
 
 
-            //SUBSCRIBE ONE AT A TIME
-            //foreach (string mk in topMarkets)
-            //{
-
-            //    if (ExcludeTheseDeltas.Any(m => m == mk))
-            //        continue;
-            //    await BtrexWS.SubscribeMarket("BTC-" + mk);
-            //}
-
-
             //SUBSCRIBE ALL MARKETS, RETRY FAILED AT END:
             List<MarketQueryResponse> timeGapMarkets = await BtrexWS.SubscribeMarketsList(topMarkets.Except(ExcludeTheseDeltas).ToList());
 
@@ -289,7 +284,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
                 for (int i = 10; i > 0; i--)
                 {
-                    Console.Write("    ({0}) TimeGapped Markets (TradeFills->Candles), Retry in {1} seconds...\r", markets.Count, i);
+                    Console.Write("\r    ({0}) TimeGapped Markets (TradeFills->Candles), Retry in {1} seconds...\r", markets.Count, i);
                     Thread.Sleep(1000);
 
                 }
@@ -319,28 +314,37 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
         private void LoadTradingTotal()
         {
+            DateTime TimeCreated = new DateTime();
             using (var cmd = new SQLiteCommand(conn))
             {
                 cmd.CommandText = "SELECT PercentageTotal FROM totals LIMIT 1";
                 TradingTotal = Convert.ToDecimal(cmd.ExecuteScalar());
+
+                cmd.CommandText = "SELECT TimeCreatedUTC FROM totals LIMIT 1";
+                TimeCreated = Convert.ToDateTime(cmd.ExecuteScalar());
             }
 
-
+     
             if (TradingTotal > 0)
             {
                 Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine("TradingTotal = {0:+0.###%}", TradingTotal);
+                Console.Write("=TradingTotal: {0:+0.###%}", TradingTotal);
+                Console.ForegroundColor = ConsoleColor.DarkGreen;
+                Console.Write("({0:+0.###%} net)", (TradingTotal / MAXTOTALENTRANCES));
             }
             else if (TradingTotal < 0)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("TradingTotal = {0:0.###%}", TradingTotal);
+                Console.Write("=TradingTotal: {0:0.###%}", TradingTotal);
+                Console.ForegroundColor = ConsoleColor.DarkRed;
+                Console.Write("({0:0.###%} net)", (TradingTotal / MAXTOTALENTRANCES));
             }
             else
             {
-                Console.WriteLine("TradingTotal = {0}%", TradingTotal);
+                Console.Write("TradingTotal = {0}%", TradingTotal);
             }
             Console.ForegroundColor = ConsoleColor.DarkCyan;
+            Console.WriteLine(" ... StartTimeUTC: {0}\r\n", TimeCreated);
         }
 
         private void LoadHoldings()
@@ -351,8 +355,9 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             AddHoldingsTable("period1h");
             AddHoldingsTable("period4h");
             AddHoldingsTable("period12h");
-                        
 
+            Console.WriteLine("\r\n>>>ASSETS HELD:");
+;
             //REGISTER EXISTING STOPLOSS RATES FOR EACH HOLDING
             foreach (DataTable dt in Holdings.Tables)
             {
@@ -360,7 +365,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 {
                     var stopLoss = new StopLoss((string)row["MarketDelta"], Convert.ToDecimal(row["StopLossRate"]), Convert.ToDecimal(row["Qty"]), (a, b, c) => ReCalcStoploss(a, b, c), (a, b) => StopLossExecutedCallback(a, b), dt.TableName, VirtualOnOff);
                     StopLossController.RegisterStoploss(stopLoss, string.Format("{0}_{1}", stopLoss.CandlePeriod, stopLoss.MarketDelta));
-                    Console.WriteLine(">>>STOPLOSS-LOADED: {0}_{1}, SL_RATE: {2:0.00000000}", dt.TableName, row["MarketDelta"], Convert.ToDecimal(row["StopLossRate"]));
+                    Console.WriteLine("    {0}_{1}, SL_RATE: {2:0.00000000}", dt.TableName.Remove(0, 6), row["MarketDelta"], Convert.ToDecimal(row["StopLossRate"]));
                 }
             }
 
@@ -406,7 +411,8 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                         break;
                 }
 
-
+                //TESTING123:
+                stoplossRate = 0.00056M / OrderData.Qty;
                 
                 StopLossController.RegisterStoploss(new StopLoss(OrderData.MarketDelta, stoplossRate, OrderData.Qty, (a, b, c) => ReCalcStoploss(a, b, c), (a, b) => StopLossExecutedCallback(a, b), OrderData.CandlePeriod, VirtualOnOff), string.Format("{0}_{1}", OrderData.CandlePeriod, OrderData.MarketDelta));
                 
@@ -450,21 +456,34 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     OrderData.Rate);
                 //CALC PROFIT WITH BOUGHT RATE AND FEES INCLUDED, OUTPUT:
                 var profit = ((OrderData.Rate / Convert.ToDecimal(holdingRows[0]["BoughtRate"])) - 1M);
-                TradingTotal += profit;
+                var compoundMultiple = (TradingTotal / MAXTOTALENTRANCES) + 1;
+
+                TradingTotal += (profit * compoundMultiple);
+
                 if (profit < 0)
                     Console.ForegroundColor = ConsoleColor.Red;
                 else if (profit > 0)
                     Console.ForegroundColor = ConsoleColor.Green;
                 Console.Write("{0:+0.###%;-0.###%;0}", profit);
                 Console.ForegroundColor = ConsoleColor.DarkCyan;
-                Console.Write(" ..... =Time-Held: {0} ..... ",                    
+                Console.Write(" ..... =Time-Held: {0:hh\\:mm\\:ss} ..... ",                    
                     //CALC HELD TIME:
-                    TimeCompleted - Convert.ToDateTime(holdingRows[0]["DateTimeBUY"]));
+                    (TimeCompleted - Convert.ToDateTime(holdingRows[0]["DateTimeBUY"])));
                 if (TradingTotal < 0)
+                {
                     Console.ForegroundColor = ConsoleColor.Red;
+                    Console.Write("=TradingTotal: {0:+0.###%;-0.###%;0}", TradingTotal);
+                    Console.ForegroundColor = ConsoleColor.DarkRed;
+                    Console.WriteLine("({:+0.###%;-0.###%;0} net)", (TradingTotal / MAXTOTALENTRANCES));
+                }
                 else if (TradingTotal > 0)
+                {
                     Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine("=TradingTotal: {0:+0.###%;-0.###%;0}", TradingTotal);
+                    Console.Write("=TradingTotal: {0:+0.###%;-0.###%;0}", TradingTotal);
+                    Console.ForegroundColor = ConsoleColor.DarkGreen;
+                    Console.WriteLine("({0:+0.###%;-0.###%;0} net)", (TradingTotal / MAXTOTALENTRANCES));
+                }
+                    
                 Console.ForegroundColor = ConsoleColor.DarkCyan;
 
                 foreach (var row in holdingRows)
@@ -495,25 +514,34 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     OrderResponse.PricePerUnit);
             //CALC PROFIT WITH BOUGHT RATE AND FEES INCLUDED, OUTPUT:
             var profit = ((OrderResponse.PricePerUnit / Convert.ToDecimal(holdingRows[0]["BoughtRate"])) - 1M);
+            var compoundMultiple = (TradingTotal / MAXTOTALENTRANCES) + 1;
 
-
-            TradingTotal += profit;
+            TradingTotal += (profit * compoundMultiple);
             if (profit < 0)
                 Console.ForegroundColor = ConsoleColor.Red;
             else if (profit > 0)
                 Console.ForegroundColor = ConsoleColor.Green;
             Console.Write("{0:+0.###%;-0.###%;0}", profit);
             Console.ForegroundColor = ConsoleColor.DarkCyan;
-            Console.Write(" ..... =Time-Held: {0} ..... ",
+            Console.Write(" ..... =Time-Held: {0:hh\\:mm\\:ss} ..... ",
                 //CALC HELD TIME, OUTPUT:
-                TimeExecuted - Convert.ToDateTime(holdingRows[0]["DateTimeBUY"]));
+                (TimeExecuted - Convert.ToDateTime(holdingRows[0]["DateTimeBUY"])));
             if (TradingTotal < 0)
+            {
                 Console.ForegroundColor = ConsoleColor.Red;
+                Console.Write("=TradingTotal: {0:+0.###%;-0.###%;0}", TradingTotal);
+                Console.ForegroundColor = ConsoleColor.DarkRed;
+                Console.WriteLine("({:+0.###%;-0.###%;0} net)", (TradingTotal / MAXTOTALENTRANCES));
+            }
             else if (TradingTotal > 0)
+            {
                 Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("=TradingTotal: {0:+0.###%;-0.###%;0}", TradingTotal);
+                Console.Write("=TradingTotal: {0:+0.###%;-0.###%;0}", TradingTotal);
+                Console.ForegroundColor = ConsoleColor.DarkGreen;
+                Console.WriteLine("({0:+0.###%;-0.###%;0} net)", (TradingTotal / MAXTOTALENTRANCES));
+            }
+            
             Console.ForegroundColor = ConsoleColor.DarkCyan;
-
 
             foreach (var row in holdingRows)
                 Holdings.Tables[period].Rows.Remove(row);
@@ -538,7 +566,9 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             //Use Teir 1, if T2 is below profit line:
             if (stoplossRate < boughtRate * 1.0025M)
             {
-                stoplossRate = BtrexData.Markets[market].TradeHistory.RecentFills.Last().Rate - (ATR * ATRmultipleT1);
+                //stoplossRate = BtrexData.Markets[market].TradeHistory.RecentFills.Last().Rate - (ATR * ATRmultipleT1);
+                //TESTING123
+                stoplossRate = 0.0M;
                 tier = "*";
             }
 

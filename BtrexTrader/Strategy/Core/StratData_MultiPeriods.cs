@@ -38,7 +38,7 @@ namespace BtrexTrader.Strategy.Core
             foreach (string marketDelta in BtrexData.Markets.Keys)
             {
                 
-                Console.WriteLine("PRELOADING MULTI-PERIOD CANDLES: {0}", marketDelta);
+                Console.Write("\rPRELOADING MULTI-PERIOD CANDLES: {0}        ", marketDelta);
 
                 Candles12h.Add(marketDelta, new List<Candle>());
                 Candles4h.Add(marketDelta, new List<Candle>());
@@ -171,6 +171,9 @@ namespace BtrexTrader.Strategy.Core
                                     where Candles.DateTime >= candleTime5m
                                     select Candles);
             }
+
+
+            Console.Write("\rPRELOADING MULTI-PERIOD CANDLES: [COMPLETE]");
         }
 
 

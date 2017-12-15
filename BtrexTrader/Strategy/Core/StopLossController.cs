@@ -17,9 +17,7 @@ namespace BtrexTrader.Strategy.Core
         private static Thread StopLossThread;
         private static bool isStarted = false;
 
-        private static readonly TimeSpan WatchFrequency = TimeSpan.FromSeconds(2);
-        private static readonly int CheckExeEveryCycles = 5; 
-
+        private static readonly TimeSpan WatchFrequency = TimeSpan.FromSeconds(1.5);
             
         public static void StartWatching()
         {
@@ -37,8 +35,7 @@ namespace BtrexTrader.Strategy.Core
 
         private static void WatchMarkets()
         {
-            bool checkExe = false;
-            int cycles = 0;
+            var ExecutionPoints = new Dictionary<string, int>();
 
             while (true)
             {                
@@ -48,33 +45,44 @@ namespace BtrexTrader.Strategy.Core
                     continue;
                 }
 
-                cycles++;
-                if (cycles >= CheckExeEveryCycles)
-                    checkExe = true;
+               
+                
 
                 foreach (var stop in SL_Book)
                 {
-                    if (checkExe)
+                    if (BtrexData.Markets[stop.Value.MarketDelta].TradeHistory.RecentFills.Last().Rate <= stop.Value.StopRate)
                     {
-                        if (BtrexData.Markets[stop.Value.MarketDelta].TradeHistory.RecentFills.Last().Rate <= stop.Value.StopRate)
+                        if (ExecutionPoints.ContainsKey(stop.Value.MarketDelta))
                         {
-                            //EXECUTE STOPLOSS, CALL CALLBACK
-                            BtrexREST.TradeController.ExecuteStopLoss(stop.Value);
-                            CancelStoploss(stop.Key);
+                            if (ExecutionPoints[stop.Value.MarketDelta] >= 5)
+                            {
+                                //EXECUTE STOPLOSS, CALL CALLBACK
+                                CancelStoploss(stop.Key);
+                                ExecutionPoints.Remove(stop.Value.MarketDelta);
+                                BtrexREST.TradeController.ExecuteStopLoss(stop.Value);
+                                continue;
+                            }
+                            else
+                            {
+                                ExecutionPoints[stop.Value.MarketDelta]++;
+                                continue;
+                            }                            
+                        }
+                        else
+                        {
+                            ExecutionPoints.Add(stop.Value.MarketDelta, 0);
                             continue;
-                        }                        
+                        }
+
                     }
+                    else
+                    {
+                        //CHECK TO RAISE SL USING CALLBACK FOR NEW RATE CALC:
+                        ExecutionPoints[stop.Value.MarketDelta] = 0;
+                        stop.Value.ReCalcCallback(stop.Value.MarketDelta, stop.Value.StopRate, stop.Value.CandlePeriod);
+                    }
+                   
                     
-                    //CHECK TO RAISE SL USING CALLBACK FOR NEW RATE CALC:
-                    stop.Value.ReCalcCallback(stop.Value.MarketDelta, stop.Value.StopRate, stop.Value.CandlePeriod);
-                    
-                }
-
-
-                if (checkExe)
-                {
-                    cycles = 0;
-                    checkExe = false;
                 }
                 
                 Thread.Sleep(WatchFrequency);

@@ -97,21 +97,29 @@ namespace BtrexTrader.Interface
             {
                 do
                 {
-                    Thread.Sleep(50);
+
+                    Thread.Sleep(500);
                     HttpRequestMessage mesgClone = new HttpRequestMessage()
                     {
                         RequestUri = new Uri("https://bittrex.com/Api/v2.0/pub/market/GetTicks?marketName=" + delta + "&tickInterval=" + period + "", UriKind.Absolute),
                         Method = HttpMethod.Get
                     };
 
-                    response = await client.SendAsync(mesgClone);
-                } while (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable);
+                    response = await client.SendAsync(mesgClone);           
+                    history = await response.Content.ReadAsAsync<HistDataResponse>();
+
+                } while (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable || history == null);
+
             }
             else
                 Console.WriteLine("FAIL:  " + response.ReasonPhrase);
 
-            if (history == null)
-                Console.WriteLine("HIST NULL " + delta);
+
+            history.MarketDelta = string.Empty;
+
+            if (history == null || history.MarketDelta == null || delta.Replace('-', '_') == null)
+                Console.WriteLine("\r\nHIST NULL " + delta + " RESPONSE CODE: " + response.StatusCode + "\r\n\r\n");
+
 
             history.MarketDelta = delta.Replace('-', '_');
             if (period.ToUpper() != "ONEMIN" && history.result.Count > 0)

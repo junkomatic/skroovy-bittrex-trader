@@ -7,6 +7,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Data.SQLite;
+using System.Diagnostics;
 using BtrexTrader.Interface;
 
 
@@ -49,7 +50,6 @@ namespace BtrexTrader.Data
                 if (market.MarketName.Split('-')[0] == "BTC")
                     BTCmarketDeltas.Add(market.MarketName);
             }
-
             totalCount = BTCmarketDeltas.Count;
 
             //Download all histories, enqueue responses:
@@ -76,7 +76,7 @@ namespace BtrexTrader.Data
 
 
         private static async Task EnqueueData(string delta)
-        {
+        { 
             HistDataResponse histData = await BtrexREST.GetMarketHistoryV2(delta, "fiveMin");
             if (histData.success != true)
             {
