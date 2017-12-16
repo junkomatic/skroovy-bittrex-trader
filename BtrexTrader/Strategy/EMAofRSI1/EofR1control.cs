@@ -47,7 +47,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             //ENTER MARKETS HERE FOR USE IN SubSpecificDeltas() METHOD:
             public static IReadOnlyList<string> SubSpecificDeltas = new List<string>()
             {
-            "BTC-OMG", "BTC-XLM", "BTC-NEO", "BTC-BCC", "BTC-ADA"
+                "BTC-OMG", "BTC-XLM", "BTC-NEO", "BTC-BCC", "BTC-ADA"
             };
         }
 
