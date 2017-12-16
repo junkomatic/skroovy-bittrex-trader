@@ -23,7 +23,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         //SET OPTIONS HERE PRIOR TO USE: 
         internal static class OPTIONS
         {
-            public const decimal WagerAmt = 0.001M;
+            public const decimal BTCwagerAmt = 0.001M;
             public const int MaxMarketsEnteredPerPeriod = 8;
             public const int MAXTOTALENTRANCES = 40;
             public const decimal ATRmultipleT1 = 2.5M;
@@ -98,7 +98,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         {
             using (var cmd = new SQLiteCommand(conn))
             {
-                while (true) // !(Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Backspace))
+                while (!(Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Backspace))
                 {
                     //WRITE/SAVE SQL DATA CHANGES:
                     SaveSQLData(cmd);
@@ -157,7 +157,10 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 }
                 StopLossController.Stop();
             }
+            
             conn.Close();
+            isStarted = false;
+            Console.WriteLine("\r\n\r\n    @@@ EMAofRSI1 Strategy STOPPED @@@\r\n\r\n");
         }
 
 
@@ -228,7 +231,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                             if (OPTIONS.COMPOUND_WAGER)
                                 wagerMultiple = (TradingTotal / OPTIONS.MAXTOTALENTRANCES) + 1;
 
-                            var amt = (OPTIONS.WagerAmt * wagerMultiple) / (rate * 1.0025M);
+                            var amt = (OPTIONS.BTCwagerAmt * wagerMultiple) / (rate * 1.0025M);
 
                             NewOrders.Add(new NewOrder(delta, "BUY", amt, rate, (a) => OrderExecutedCallback(a), periodName));
                         }
@@ -468,7 +471,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     OrderData.Rate);
                 //CALC PROFIT WITH BOUGHT RATE AND FEES INCLUDED, OUTPUT:
                 var profit = ((OrderData.Rate / Convert.ToDecimal(holdingRows[0]["BoughtRate"])) - 1M);
-                var compoundMultiple = ((Convert.ToDecimal(holdingRows[0]["BoughtRate"]) * Convert.ToDecimal(holdingRows[0]["Qty"])) / OPTIONS.WagerAmt);
+                var compoundMultiple = ((Convert.ToDecimal(holdingRows[0]["BoughtRate"]) * Convert.ToDecimal(holdingRows[0]["Qty"])) / OPTIONS.BTCwagerAmt);
 
                 TradingTotal += (profit * compoundMultiple);
 
@@ -526,7 +529,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     OrderResponse.PricePerUnit);
             //CALC PROFIT WITH BOUGHT RATE AND FEES INCLUDED, OUTPUT:
             var profit = ((OrderResponse.PricePerUnit / Convert.ToDecimal(holdingRows[0]["BoughtRate"])) - 1M);
-            var compoundMultiple = (Convert.ToDecimal(holdingRows[0]["BoughtRate"]) * Convert.ToDecimal(holdingRows[0]["Qty"])) / OPTIONS.WagerAmt;
+            var compoundMultiple = (Convert.ToDecimal(holdingRows[0]["BoughtRate"]) * Convert.ToDecimal(holdingRows[0]["Qty"])) / OPTIONS.BTCwagerAmt;
 
             TradingTotal += (profit * compoundMultiple);
             if (profit < 0)
