@@ -91,7 +91,7 @@ namespace BtrexTrader.Interface
                     Method = HttpMethod.Get
                 };
 
-                HistDataResponse history = null;
+                HistDataResponse history = new HistDataResponse();
                 HttpResponseMessage response = await client.SendAsync(mesg);
             while (true)
             {
@@ -101,7 +101,7 @@ namespace BtrexTrader.Interface
                 {
                     if (response.IsSuccessStatusCode)
                         history = await response.Content.ReadAsAsync<HistDataResponse>();
-                    else if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable || history == null)
+                    else if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable || history.result == null)
                     {
                         do
                         {
@@ -116,7 +116,7 @@ namespace BtrexTrader.Interface
                             response = await client.SendAsync(mesgClone);
                             history = await response.Content.ReadAsAsync<HistDataResponse>();
 
-                        } while (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable || history == null);
+                        } while (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable || history.result == null);
 
                     }
                     else
@@ -125,7 +125,7 @@ namespace BtrexTrader.Interface
 
                     history.MarketDelta = string.Empty;
 
-                    if (history == null || history.MarketDelta == null || delta.Replace('-', '_') == null)
+                    if (history.result == null || history.MarketDelta == null || delta.Replace('-', '_') == null)
                         Trace.WriteLine("\r\nHIST NULL " + delta + " RESPONSE CODE: " + response.StatusCode + "\r\n\r\n");
 
 
