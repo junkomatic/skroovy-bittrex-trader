@@ -60,7 +60,7 @@ namespace BtrexTrader.Interface
 
         public static async Task Connect()
         {
-            Trace.Write("Connecting Websocket...");
+            Console.Write("Connecting Websocket...");
             const string userAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36 OPR/48.0.2685.52";
 
             var bittrexUri = new Uri("https://bittrex.com");
@@ -109,7 +109,7 @@ namespace BtrexTrader.Interface
             WSSharpTransport.Connection.CookieContainer = cookieContainer;
 
             WSSharpTransport.Connect(config).Wait();
-            Trace.WriteLine("\rWebsocket Connected.      ");
+            Console.WriteLine("\rWebsocket Connected.      ");
 
             
 

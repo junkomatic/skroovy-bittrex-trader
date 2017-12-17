@@ -50,6 +50,8 @@ namespace BtrexTrader.Strategy.Core
 
                 foreach (var stop in SL_Book)
                 {
+                    if (!BtrexData.Markets.ContainsKey(stop.Value.MarketDelta))
+                        continue;
                     if (BtrexData.Markets[stop.Value.MarketDelta].TradeHistory.RecentFills.Last().Rate <= stop.Value.StopRate)
                     {
                         if (ExecutionPoints.ContainsKey(stop.Value.MarketDelta))

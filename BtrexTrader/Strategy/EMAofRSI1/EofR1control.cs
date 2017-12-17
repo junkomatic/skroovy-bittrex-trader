@@ -41,7 +41,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             //(CANT PRELOAD ADEQUATE CANDLE DATA FOR CALCS -> SequenceContainsNoElements err)
             public static IReadOnlyList<string> ExcludeTheseDeltas = new List<string>()
             {            
-                "1ST", "NAV", "XVG", "VIB", "SAFEX", "BCY"
+                "1ST", "NAV", "XVG", "VIB", "SAFEX", "BCY", "QRL", "CFI", "EDG", "MYST"
             };
 
             //ENTER MARKETS HERE FOR USE IN SubSpecificDeltas() METHOD:
