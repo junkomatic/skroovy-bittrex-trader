@@ -503,13 +503,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 StopLossController.CancelStoploss(string.Format("{0}_{1}", OrderData.CandlePeriod, OrderData.MarketDelta));
                 
                 //FIND + REMOVE FROM HOLDINGS TABLE:
-                var holdingRows = Holdings.Tables[OrderData.CandlePeriod].Select(string.Format("MarketDelta = '{0}'", OrderData.MarketDelta));
-                foreach (var row in holdingRows)
-                    Holdings.Tables[OrderData.CandlePeriod].Rows.Remove(row);
-
-                //CREATE/ADD SQL DATA UPDATE:             
-                var update = new SaveDataUpdate(OrderData.CandlePeriod, OrderData.MarketDelta, "SELL", TimeCompleted, OrderData.Qty, OrderData.Rate, null, false, TradingTotal);
-                SQLDataWrites.Enqueue(update);
+                var holdingRows = Holdings.Tables[OrderData.CandlePeriod].Select(string.Format("MarketDelta = '{0}'", OrderData.MarketDelta));                                              
 
                 //CALC PROFIT WITH BOUGHT RATE AND FEES INCLUDED, OUTPUT:
                 var profit = ((OrderData.Rate / Convert.ToDecimal(holdingRows[0]["BoughtRate"])) - 1M);
@@ -517,6 +511,14 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
                 TradingTotal += (profit * compoundMultiple);
                 var netWorth = GetNetPercentage();
+
+                //REMOVE
+                foreach (var row in holdingRows)
+                    Holdings.Tables[OrderData.CandlePeriod].Rows.Remove(row);
+
+                //CREATE/ADD SQL DATA UPDATE:             
+                var update = new SaveDataUpdate(OrderData.CandlePeriod, OrderData.MarketDelta, "SELL", TimeCompleted, OrderData.Qty, OrderData.Rate, null, false, TradingTotal);
+                SQLDataWrites.Enqueue(update);
 
                 //OUTPUT SOLD ON SELLSIGNAL:
                 Trace.Write(string.Format("{0}{1} Sold {2} at {3}\r\n    =TradeProfit: ",
@@ -565,7 +567,16 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             var TimeExecuted = DateTime.UtcNow;
             
             //FIND + REMOVE FROM HOLDINGS:
-            var holdingRows = Holdings.Tables[period].Select(string.Format("MarketDelta = '{0}'", OrderResponse.Exchange));
+            var holdingRows = Holdings.Tables[period].Select(string.Format("MarketDelta = '{0}'", OrderResponse.Exchange));            
+            
+            //CALC PROFIT WITH BOUGHT RATE AND FEES INCLUDED, OUTPUT:
+            var profit = ((OrderResponse.PricePerUnit / Convert.ToDecimal(holdingRows[0]["BoughtRate"])) - 1M);
+            var compoundMultiple = (Convert.ToDecimal(holdingRows[0]["BoughtRate"]) * Convert.ToDecimal(holdingRows[0]["Qty"])) / OPTIONS.BTCwagerAmt;
+
+            TradingTotal += (profit * compoundMultiple);
+            var netWorth = GetNetPercentage();
+
+            //REMOVE
             foreach (var row in holdingRows)
                 Holdings.Tables[period].Rows.Remove(row);
 
@@ -573,12 +584,6 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             var update = new SaveDataUpdate(period, OrderResponse.Exchange, "SELL", TimeExecuted, OrderResponse.Quantity, OrderResponse.PricePerUnit, null, true, TradingTotal);
             SQLDataWrites.Enqueue(update);
 
-            //CALC PROFIT WITH BOUGHT RATE AND FEES INCLUDED, OUTPUT:
-            var profit = ((OrderResponse.PricePerUnit / Convert.ToDecimal(holdingRows[0]["BoughtRate"])) - 1M);
-            var compoundMultiple = (Convert.ToDecimal(holdingRows[0]["BoughtRate"]) * Convert.ToDecimal(holdingRows[0]["Qty"])) / OPTIONS.BTCwagerAmt;
-
-            TradingTotal += (profit * compoundMultiple);
-            var netWorth = GetNetPercentage();
 
             //OUTPUT STOPLOSS EXECUTED:
             Trace.Write(string.Format("{0}{1} STOPLOSS-Sold {2} at {3:0.00000000}\r\n    =TradeProfit: ",
