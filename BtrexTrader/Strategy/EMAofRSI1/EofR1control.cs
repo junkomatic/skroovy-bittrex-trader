@@ -504,6 +504,12 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 
                 //FIND + REMOVE FROM HOLDINGS TABLE:
                 var holdingRows = Holdings.Tables[OrderData.CandlePeriod].Select(string.Format("MarketDelta = '{0}'", OrderData.MarketDelta));
+                foreach (var row in holdingRows)
+                    Holdings.Tables[OrderData.CandlePeriod].Rows.Remove(row);
+
+                //CREATE/ADD SQL DATA UPDATE:             
+                var update = new SaveDataUpdate(OrderData.CandlePeriod, OrderData.MarketDelta, "SELL", TimeCompleted, OrderData.Qty, OrderData.Rate, null, false, TradingTotal);
+                SQLDataWrites.Enqueue(update);
 
                 //CALC PROFIT WITH BOUGHT RATE AND FEES INCLUDED, OUTPUT:
                 var profit = ((OrderData.Rate / Convert.ToDecimal(holdingRows[0]["BoughtRate"])) - 1M);
@@ -546,14 +552,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 else
                     Console.ForegroundColor = ConsoleColor.DarkCyan;                
                 Trace.WriteLine(string.Format("=CurrentNetWorth: {0:+0.###%;-0.###%;0}", netWorth));
-                Console.ForegroundColor = ConsoleColor.DarkCyan;
-
-                foreach (var row in holdingRows)
-                    Holdings.Tables[OrderData.CandlePeriod].Rows.Remove(row);
-
-                //CREATE/ADD SQL UPDATE:             
-                var update = new SaveDataUpdate(OrderData.CandlePeriod, OrderData.MarketDelta, "SELL", TimeCompleted, OrderData.Qty, OrderData.Rate, null, false, TradingTotal);
-                SQLDataWrites.Enqueue(update);
+                Console.ForegroundColor = ConsoleColor.DarkCyan;               
                                 
             }
             
@@ -567,6 +566,12 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             
             //FIND + REMOVE FROM HOLDINGS:
             var holdingRows = Holdings.Tables[period].Select(string.Format("MarketDelta = '{0}'", OrderResponse.Exchange));
+            foreach (var row in holdingRows)
+                Holdings.Tables[period].Rows.Remove(row);
+
+            //CREATE & ENQUEUE SQLDatawrite obj:
+            var update = new SaveDataUpdate(period, OrderResponse.Exchange, "SELL", TimeExecuted, OrderResponse.Quantity, OrderResponse.PricePerUnit, null, true, TradingTotal);
+            SQLDataWrites.Enqueue(update);
 
             //CALC PROFIT WITH BOUGHT RATE AND FEES INCLUDED, OUTPUT:
             var profit = ((OrderResponse.PricePerUnit / Convert.ToDecimal(holdingRows[0]["BoughtRate"])) - 1M);
@@ -611,14 +616,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             else
                 Console.ForegroundColor = ConsoleColor.DarkCyan;
             Trace.WriteLine(string.Format("=CurrentNetWorth: {0:+0.###%;-0.###%;0}", netWorth));            
-            Console.ForegroundColor = ConsoleColor.DarkCyan;
-
-            foreach (var row in holdingRows)
-                Holdings.Tables[period].Rows.Remove(row);
-
-            //CREATE & ENQUEUE SQLDatawrite obj:
-            var update = new SaveDataUpdate(period, OrderResponse.Exchange, "SELL", TimeExecuted, OrderResponse.Quantity, OrderResponse.PricePerUnit, null, true, TradingTotal);
-            SQLDataWrites.Enqueue(update);
+            Console.ForegroundColor = ConsoleColor.DarkCyan;            
                         
         }
 
