@@ -518,6 +518,8 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 TradingTotal += (profit * compoundMultiple);
                 var netWorth = GetNetPercentage();
 
+                var timeHeld = TimeCompleted - Convert.ToDateTime(holdingRows[0]["DateTimeBUY"]);
+
                 //REMOVE
                 foreach (var row in holdingRows)
                     Holdings.Tables[OrderData.CandlePeriod].Rows.Remove(row);
@@ -540,7 +542,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 Trace.Write(string.Format("{0:+0.###%;-0.###%;0}", profit));
                 //OUTPUT TIME HELD
                 Console.ForegroundColor = ConsoleColor.DarkCyan;
-                Trace.Write(string.Format(".....=Time-Held: {0:hh\\:mm\\:ss}.....", (TimeCompleted - Convert.ToDateTime(holdingRows[0]["DateTimeBUY"]))));
+                Trace.Write(string.Format(".....=Time-Held: {0:hh\\:mm\\:ss}.....", timeHeld));
                 //OUTPUT GROSS TOTAL PROFIT PERCENTAGE:
                 if (TradingTotal < 0)
                     Console.ForegroundColor = ConsoleColor.Red;
@@ -570,7 +572,6 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         //CALLBACK FUNCTIONS FOR STOPLOSS EXE AND CALC-MOVE:
         public void StopLossExecutedCallback(GetOrderResult OrderResponse, string period)
         {
-            Console.WriteLine("*!*!*!*!*!*");
             var TimeExecuted = DateTime.UtcNow;
             
             //FIND + REMOVE FROM HOLDINGS:
