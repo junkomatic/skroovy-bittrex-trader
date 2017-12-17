@@ -30,7 +30,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             public const decimal ATRmultipleT2 = 2M;
             public const decimal ATRmultipleT3 = 1.5M;
 
-            public static bool SAFEMODE = true;
+            public static bool SAFEMODE = false;
             public const bool COMPOUND_WAGER = true;
             public const bool VirtualModeOnOff = true;
 
@@ -427,6 +427,8 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             {
                 foreach (DataRow row in dt.Rows)
                 {
+                    if (!BtrexData.Markets.ContainsKey(row["MarketDelta"].ToString()))
+                        continue;
                     var currentMargin = ((BtrexData.Markets[row["MarketDelta"].ToString()].TradeHistory.RecentFills.Last().Rate * 0.9975M) / Convert.ToDecimal(row["BoughtRate"])) - 1;
                     netWorth += currentMargin;
                  }
@@ -568,6 +570,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         //CALLBACK FUNCTIONS FOR STOPLOSS EXE AND CALC-MOVE:
         public void StopLossExecutedCallback(GetOrderResult OrderResponse, string period)
         {
+            Console.WriteLine("*!*!*!*!*!*");
             var TimeExecuted = DateTime.UtcNow;
             
             //FIND + REMOVE FROM HOLDINGS:
@@ -577,17 +580,15 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             var profit = ((OrderResponse.PricePerUnit / Convert.ToDecimal(holdingRows[0]["BoughtRate"])) - 1M);
             var compoundMultiple = (Convert.ToDecimal(holdingRows[0]["BoughtRate"]) * Convert.ToDecimal(holdingRows[0]["Qty"])) / OPTIONS.BTCwagerAmt;
 
+            var timeHeld = TimeExecuted - Convert.ToDateTime(holdingRows[0]["DateTimeBUY"]);
+
             TradingTotal += (profit * compoundMultiple);
             var netWorth = GetNetPercentage();
 
             //REMOVE
             foreach (var row in holdingRows)
                 Holdings.Tables[period].Rows.Remove(row);
-
-            //CREATE & ENQUEUE SQLDatawrite obj:
-            var update = new SaveDataUpdate(period, OrderResponse.Exchange, "SELL", TimeExecuted, OrderResponse.Quantity, OrderResponse.PricePerUnit, null, true, TradingTotal);
-            SQLDataWrites.Enqueue(update);
-
+                        
 
             //OUTPUT STOPLOSS EXECUTED:
             Trace.Write(string.Format("{0}{1} STOPLOSS-Sold {2} at {3:0.00000000}\r\n    =TradeProfit: ",
@@ -605,7 +606,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             Trace.Write(string.Format("{0:+0.###%;-0.###%;0}", profit));
             //OUTPUT TIME HELD
             Console.ForegroundColor = ConsoleColor.DarkCyan;
-            Trace.Write(string.Format(".....=Time-Held: {0:hh\\:mm\\:ss}.....", (TimeExecuted - Convert.ToDateTime(holdingRows[0]["DateTimeBUY"]))));
+            Trace.Write(string.Format(".....=Time-Held: {0:hh\\:mm\\:ss}.....", timeHeld));
             //OUTPUT GROSS TOTAL PROFIT PERCENTAGE:
             if (TradingTotal < 0)
                 Console.ForegroundColor = ConsoleColor.Red;
@@ -625,8 +626,11 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             else
                 Console.ForegroundColor = ConsoleColor.DarkCyan;
             Trace.WriteLine(string.Format("=CurrentNetWorth: {0:+0.###%;-0.###%;0}", netWorth));            
-            Console.ForegroundColor = ConsoleColor.DarkCyan;            
-                        
+            Console.ForegroundColor = ConsoleColor.DarkCyan;
+            
+            //CREATE & ENQUEUE SQLDatawrite obj:
+            var update = new SaveDataUpdate(period, OrderResponse.Exchange, "SELL", TimeExecuted, OrderResponse.Quantity, OrderResponse.PricePerUnit, null, true, TradingTotal);
+            SQLDataWrites.Enqueue(update);
         }
 
         public void ReCalcStoploss(string market, decimal oldRate, string period)
