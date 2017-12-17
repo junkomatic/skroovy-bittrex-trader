@@ -83,48 +83,63 @@ namespace BtrexTrader.Interface
 
         public static async Task<HistDataResponse> GetMarketHistoryV2(string delta, string period)
         {
-            HttpRequestMessage mesg = new HttpRequestMessage()
-            {
-                RequestUri = new Uri("https://bittrex.com/Api/v2.0/pub/market/GetTicks?marketName="+ delta +"&tickInterval=" + period + "", UriKind.Absolute),
-                Method = HttpMethod.Get
-            };
-
-            HistDataResponse history = null;
-            HttpResponseMessage response = await client.SendAsync(mesg);
-            if (response.IsSuccessStatusCode)
-                history = await response.Content.ReadAsAsync<HistDataResponse>();
-            else if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable || history == null)
-            {
-                do
+            
+                HttpRequestMessage mesg = new HttpRequestMessage()
                 {
+                    RequestUri = new Uri("https://bittrex.com/Api/v2.0/pub/market/GetTicks?marketName=" + delta + "&tickInterval=" + period + "", UriKind.Absolute),
+                    Method = HttpMethod.Get
+                };
 
-                    Thread.Sleep(500);
-                    HttpRequestMessage mesgClone = new HttpRequestMessage()
+                HistDataResponse history = null;
+                HttpResponseMessage response = await client.SendAsync(mesg);
+            while (true)
+            {
+
+
+                try
+                {
+                    if (response.IsSuccessStatusCode)
+                        history = await response.Content.ReadAsAsync<HistDataResponse>();
+                    else if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable || history == null)
                     {
-                        RequestUri = new Uri("https://bittrex.com/Api/v2.0/pub/market/GetTicks?marketName=" + delta + "&tickInterval=" + period + "", UriKind.Absolute),
-                        Method = HttpMethod.Get
-                    };
+                        do
+                        {
 
-                    response = await client.SendAsync(mesgClone);           
-                    history = await response.Content.ReadAsAsync<HistDataResponse>();
+                            Thread.Sleep(500);
+                            HttpRequestMessage mesgClone = new HttpRequestMessage()
+                            {
+                                RequestUri = new Uri("https://bittrex.com/Api/v2.0/pub/market/GetTicks?marketName=" + delta + "&tickInterval=" + period + "", UriKind.Absolute),
+                                Method = HttpMethod.Get
+                            };
 
-                } while (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable || history == null);
+                            response = await client.SendAsync(mesgClone);
+                            history = await response.Content.ReadAsAsync<HistDataResponse>();
 
+                        } while (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable || history == null);
+
+                    }
+                    else
+                        Console.WriteLine("FAIL:  " + response.ReasonPhrase);
+
+
+                    history.MarketDelta = string.Empty;
+
+                    if (history == null || history.MarketDelta == null || delta.Replace('-', '_') == null)
+                        Console.WriteLine("\r\nHIST NULL " + delta + " RESPONSE CODE: " + response.StatusCode + "\r\n\r\n");
+
+
+                    history.MarketDelta = delta.Replace('-', '_');
+                    if (period.ToUpper() != "ONEMIN" && history.result.Count > 0)
+                        history.result.Remove(history.result.Last());
+                    break;
+
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("\r\nHIST NULL " + delta + " RESPONSE CODE: " + response.StatusCode + "\r\n\r\n");
+
+                }
             }
-            else
-                Console.WriteLine("FAIL:  " + response.ReasonPhrase);
-
-
-            history.MarketDelta = string.Empty;
-
-            if (history == null || history.MarketDelta == null || delta.Replace('-', '_') == null)
-                Console.WriteLine("\r\nHIST NULL " + delta + " RESPONSE CODE: " + response.StatusCode + "\r\n\r\n");
-
-
-            history.MarketDelta = delta.Replace('-', '_');
-            if (period.ToUpper() != "ONEMIN" && history.result.Count > 0)
-                history.result.Remove(history.result.Last());
-
             return history;
         }
         

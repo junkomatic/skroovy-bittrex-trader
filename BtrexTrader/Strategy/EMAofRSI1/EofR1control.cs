@@ -73,10 +73,11 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             LoadHoldings();
 
             await SubTopMarketsByVol(60);
-            //await SubSpecificMarkets();
-                       
+            //await SubSpecificMarkets();                   
 
-            await StratData.PreloadCandleDicts(39);                       
+            await StratData.PreloadCandleDicts(39);
+
+            DisplayHoldings();
         }
 
         public async Task Start()
@@ -329,37 +330,12 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
         private void LoadTradingTotal()
         {
-            DateTime TimeCreated = new DateTime();
             using (var cmd = new SQLiteCommand(conn))
             {
                 cmd.CommandText = "SELECT PercentageTotal FROM totals LIMIT 1";
                 TradingTotal = Convert.ToDecimal(cmd.ExecuteScalar());
-
-                cmd.CommandText = "SELECT TimeCreatedUTC FROM totals LIMIT 1";
-                TimeCreated = Convert.ToDateTime(cmd.ExecuteScalar());
-            }
-
-     
-            if (TradingTotal > 0)
-            {
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.Write("=TradingTotal: {0:+0.###%}", TradingTotal);
-                Console.ForegroundColor = ConsoleColor.DarkGreen;
-                Console.Write("({0:+0.###%} net)", (TradingTotal / OPTIONS.MAXTOTALENTRANCES));
-            }
-            else if (TradingTotal < 0)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.Write("=TradingTotal: {0:0.###%}", TradingTotal);
-                Console.ForegroundColor = ConsoleColor.DarkRed;
-                Console.Write("({0:0.###%} net)", (TradingTotal / OPTIONS.MAXTOTALENTRANCES));
-            }
-            else
-            {
-                Console.Write("TradingTotal = {0}%", TradingTotal);
-            }
-            Console.ForegroundColor = ConsoleColor.DarkCyan;
-            Console.WriteLine(" ... StartTimeUTC: {0}\r\n", TimeCreated);
+            }                 
+            
         }
 
         private void LoadHoldings()
@@ -370,9 +346,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             AddHoldingsTable("period1h");
             AddHoldingsTable("period4h");
             AddHoldingsTable("period12h");
-
-            Console.WriteLine("\r\n>>>ASSETS HELD:");
-;
+            
             //REGISTER EXISTING STOPLOSS RATES FOR EACH HOLDING
             foreach (DataTable dt in Holdings.Tables)
             {
@@ -380,13 +354,80 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 {
                     var stopLoss = new StopLoss((string)row["MarketDelta"], Convert.ToDecimal(row["StopLossRate"]), Convert.ToDecimal(row["Qty"]), (a, b, c) => ReCalcStoploss(a, b, c), (a, b) => StopLossExecutedCallback(a, b), dt.TableName, OPTIONS.VirtualModeOnOff);
                     StopLossController.RegisterStoploss(stopLoss, string.Format("{0}_{1}", stopLoss.CandlePeriod, stopLoss.MarketDelta));
-                    Console.WriteLine("    {0}_{1}, SL_RATE: {2:0.00000000}", dt.TableName.Remove(0, 6), row["MarketDelta"], Convert.ToDecimal(row["StopLossRate"]));
                 }
             }
 
             //Load Total From SQLite data:
             LoadTradingTotal();
 
+        }
+
+        private void DisplayHoldings()
+        {
+            if (!Holdings.Tables.Cast<DataTable>().Any(x => x.DefaultView.Count > 0))
+            {
+                Console.WriteLine("\r\n>>>NO ASSETS HELD CURRENTLY");
+                return;
+            }
+            
+            Console.WriteLine("\r\n>>>ASSETS HELD:");
+            var netWorth = TradingTotal;
+            
+            foreach (DataTable dt in Holdings.Tables)
+            {
+                foreach (DataRow row in dt.Rows)
+                {
+                    var currentMargin = (BtrexData.Markets[row["MarketDelta"].ToString()].TradeHistory.RecentFills.Last().Rate / Convert.ToDecimal(row["BoughtRate"])) - 1;
+                    netWorth += currentMargin;
+                    Console.WriteLine("    {0}_{1}, SL_RATE: {2:0.00000000} .....{3,10:+0.###%;-0.###%;0%;}", dt.TableName.Remove(0, 6), row["MarketDelta"], Convert.ToDecimal(row["StopLossRate"]), currentMargin);
+                }
+            }
+
+            var TimeCreated = new DateTime();
+            using (var cmd = new SQLiteCommand(conn))
+            {
+                cmd.CommandText = "SELECT TimeCreatedUTC FROM totals LIMIT 1";
+                TimeCreated = Convert.ToDateTime(cmd.ExecuteScalar());
+            }
+
+            Console.WriteLine("CreationTimeUTC: {0}", TimeCreated);
+
+            if (TradingTotal > 0)
+                Console.ForegroundColor = ConsoleColor.DarkGreen;
+            else if (TradingTotal < 0)
+                Console.ForegroundColor = ConsoleColor.DarkRed;
+            else
+                Console.ForegroundColor = ConsoleColor.DarkCyan;
+            
+            Console.Write("=TradingTotal: {0:+0.###%;-0.###%;0%} ... =GrossProfit: {1:+0.###%;-0.###%;0%}", TradingTotal, (TradingTotal / OPTIONS.MAXTOTALENTRANCES));
+            
+            if (netWorth > 0)
+                Console.ForegroundColor = ConsoleColor.Green;
+            else if (netWorth < 0)
+                Console.ForegroundColor = ConsoleColor.Red;
+            else
+                Console.ForegroundColor = ConsoleColor.DarkCyan;
+
+            Console.WriteLine(" ... =NET WORTH: {0:+0.###%;-0.###%;+0%}", netWorth / OPTIONS.MAXTOTALENTRANCES);
+            Console.ForegroundColor = ConsoleColor.DarkCyan;
+
+        }
+
+        
+        private decimal GetNetPercentage()
+        {
+            var netWorth = TradingTotal;
+            
+            foreach (DataTable dt in Holdings.Tables)
+            {
+                foreach (DataRow row in dt.Rows)
+                {
+                    var currentMargin = ((BtrexData.Markets[row["MarketDelta"].ToString()].TradeHistory.RecentFills.Last().Rate * 0.9975M) / Convert.ToDecimal(row["BoughtRate"])) - 1;
+                    netWorth += currentMargin;
+                 }
+            }
+
+            return netWorth / OPTIONS.MAXTOTALENTRANCES;
         }
 
 
@@ -463,43 +504,48 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 //FIND + REMOVE FROM HOLDINGS TABLE:
                 var holdingRows = Holdings.Tables[OrderData.CandlePeriod].Select(string.Format("MarketDelta = '{0}'", OrderData.MarketDelta));
 
-                //OUTPUT SOLD ON SELLSIGNAL:
-                Console.Write("{0}{1} Sold {2} at {3}\r\n    =PROFIT: ",
-                    OPTIONS.VirtualModeOnOff ? "[VIRTUAL|" + TimeCompleted + "] ::: " : "[" + TimeCompleted + "] ::: ",
-                    OrderData.CandlePeriod.Remove(0, 6),
-                    OrderData.MarketDelta.Split('-')[1],
-                    OrderData.Rate);
                 //CALC PROFIT WITH BOUGHT RATE AND FEES INCLUDED, OUTPUT:
                 var profit = ((OrderData.Rate / Convert.ToDecimal(holdingRows[0]["BoughtRate"])) - 1M);
                 var compoundMultiple = ((Convert.ToDecimal(holdingRows[0]["BoughtRate"]) * Convert.ToDecimal(holdingRows[0]["Qty"])) / OPTIONS.BTCwagerAmt);
 
                 TradingTotal += (profit * compoundMultiple);
+                var netWorth = GetNetPercentage();
 
+                //OUTPUT SOLD ON SELLSIGNAL:
+                Console.Write("{0}{1} Sold {2} at {3}\r\n    =TradeProfit: ",
+                    OPTIONS.VirtualModeOnOff ? "[VIRTUAL|" + TimeCompleted + "] ::: " : "[" + TimeCompleted + "] ::: ",
+                    OrderData.CandlePeriod.Remove(0, 6),
+                    OrderData.MarketDelta.Split('-')[1],
+                    OrderData.Rate);
+                //OUTPUT PROFIT ON TRADE:
                 if (profit < 0)
                     Console.ForegroundColor = ConsoleColor.Red;
                 else if (profit > 0)
                     Console.ForegroundColor = ConsoleColor.Green;
                 Console.Write("{0:+0.###%;-0.###%;0}", profit);
+                //OUTPUT TIME HELD
                 Console.ForegroundColor = ConsoleColor.DarkCyan;
-                Console.Write(" ..... =Time-Held: {0:hh\\:mm\\:ss} ..... ",                    
-                    //CALC HELD TIME:
-                    (TimeCompleted - Convert.ToDateTime(holdingRows[0]["DateTimeBUY"])));
+                Console.Write(".....=Time-Held: {0:hh\\:mm\\:ss}.....", (TimeCompleted - Convert.ToDateTime(holdingRows[0]["DateTimeBUY"])));
+                //OUTPUT GROSS TOTAL PROFIT PERCENTAGE:
                 if (TradingTotal < 0)
-                {
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.Write("=TradingTotal: {0:+0.###%;-0.###%;0}", TradingTotal);
-                    Console.ForegroundColor = ConsoleColor.DarkRed;
-                    Console.WriteLine("({0:+0.###%;-0.###%;0} net)", (TradingTotal / OPTIONS.MAXTOTALENTRANCES));
-                }
                 else if (TradingTotal > 0)
-                {
                     Console.ForegroundColor = ConsoleColor.Green;
-                    Console.Write("=TradingTotal: {0:+0.###%;-0.###%;0}", TradingTotal);
-                    Console.ForegroundColor = ConsoleColor.DarkGreen;
-                    Console.WriteLine("({0:+0.###%;-0.###%;0} net)", (TradingTotal / OPTIONS.MAXTOTALENTRANCES));
-                }
-                    
+                else
+                    Console.ForegroundColor = ConsoleColor.DarkCyan;
+                Console.Write("=GrossProfit: {0:+0.###%;-0.###%;0}", TradingTotal / OPTIONS.MAXTOTALENTRANCES);
+
                 Console.ForegroundColor = ConsoleColor.DarkCyan;
+                Console.Write(".....");
+                //OUTPUT CURRENT NET WORTH PERCENTAGE INCLUDING HOLDINGS:
+                if (netWorth > 0)
+                    Console.ForegroundColor = ConsoleColor.DarkGreen;
+                else if (netWorth < 0)
+                    Console.ForegroundColor = ConsoleColor.DarkRed;
+                else
+                    Console.ForegroundColor = ConsoleColor.DarkCyan;                
+                Console.WriteLine("=CurrentNetWorth: {0:+0.###%;-0.###%;0}", netWorth);
+
 
                 foreach (var row in holdingRows)
                     Holdings.Tables[OrderData.CandlePeriod].Rows.Remove(row);
@@ -521,42 +567,51 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             //FIND + REMOVE FROM HOLDINGS:
             var holdingRows = Holdings.Tables[period].Select(string.Format("MarketDelta = '{0}'", OrderResponse.Exchange));
 
-            //OUTPUT STOPLOSS EXECUTED:
-            Console.Write("{0}{1} STOPLOSS-Sold {2} at {3:0.00000000}\r\n    =PROFIT: ",
-                    OPTIONS.VirtualModeOnOff ? "[VIRTUAL|" + TimeExecuted + "] ::: " : "[" + TimeExecuted + "] ::: ",
-                    period.Remove(0, 6),
-                    OrderResponse.Exchange.Split('-')[1],
-                    OrderResponse.PricePerUnit);
             //CALC PROFIT WITH BOUGHT RATE AND FEES INCLUDED, OUTPUT:
             var profit = ((OrderResponse.PricePerUnit / Convert.ToDecimal(holdingRows[0]["BoughtRate"])) - 1M);
             var compoundMultiple = (Convert.ToDecimal(holdingRows[0]["BoughtRate"]) * Convert.ToDecimal(holdingRows[0]["Qty"])) / OPTIONS.BTCwagerAmt;
 
             TradingTotal += (profit * compoundMultiple);
+            var netWorth = GetNetPercentage();
+
+            //OUTPUT STOPLOSS EXECUTED:
+            Console.Write("{0}{1} STOPLOSS-Sold {2} at {3:0.00000000}\r\n    =TradeProfit: ",
+                    OPTIONS.VirtualModeOnOff ? "[VIRTUAL|" + TimeExecuted + "] ::: " : "[" + TimeExecuted + "] ::: ",
+                    period.Remove(0, 6),
+                    OrderResponse.Exchange.Split('-')[1],
+                    OrderResponse.PricePerUnit);            
+            //OUTPUT PROFIT ON TRADE:
             if (profit < 0)
                 Console.ForegroundColor = ConsoleColor.Red;
             else if (profit > 0)
                 Console.ForegroundColor = ConsoleColor.Green;
+            else
+                Console.ForegroundColor = ConsoleColor.DarkCyan;
             Console.Write("{0:+0.###%;-0.###%;0}", profit);
+            //OUTPUT TIME HELD
             Console.ForegroundColor = ConsoleColor.DarkCyan;
-            Console.Write(" ..... =Time-Held: {0:hh\\:mm\\:ss} ..... ",
-                //CALC HELD TIME, OUTPUT:
-                (TimeExecuted - Convert.ToDateTime(holdingRows[0]["DateTimeBUY"])));
+            Console.Write(".....=Time-Held: {0:hh\\:mm\\:ss}.....", (TimeExecuted - Convert.ToDateTime(holdingRows[0]["DateTimeBUY"])));
+            //OUTPUT GROSS TOTAL PROFIT PERCENTAGE:
             if (TradingTotal < 0)
-            {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.Write("=TradingTotal: {0:+0.###%;-0.###%;0}", TradingTotal);
-                Console.ForegroundColor = ConsoleColor.DarkRed;
-                Console.WriteLine("({0:+0.###%;-0.###%;0} net)", (TradingTotal / OPTIONS.MAXTOTALENTRANCES));
-            }
             else if (TradingTotal > 0)
-            {
                 Console.ForegroundColor = ConsoleColor.Green;
-                Console.Write("=TradingTotal: {0:+0.###%;-0.###%;0}", TradingTotal);
-                Console.ForegroundColor = ConsoleColor.DarkGreen;
-                Console.WriteLine("({0:+0.###%;-0.###%;0} net)", (TradingTotal / OPTIONS.MAXTOTALENTRANCES));
-            }
+            else
+                Console.ForegroundColor = ConsoleColor.DarkCyan;
+            Console.Write("=GrossProfit: {0:+0.###%;-0.###%;0}", TradingTotal / OPTIONS.MAXTOTALENTRANCES);
 
-            
+            Console.ForegroundColor = ConsoleColor.DarkCyan;
+            Console.Write(".....");
+            //OUTPUT CURRENT NET WORTH PERCENTAGE INCLUDING HOLDINGS:
+            if (netWorth > 0)
+                Console.ForegroundColor = ConsoleColor.DarkGreen;
+            else if (netWorth < 0)
+                Console.ForegroundColor = ConsoleColor.DarkRed;
+            else
+                Console.ForegroundColor = ConsoleColor.DarkCyan;
+            Console.WriteLine("=CurrentNetWorth: {0:+0.###%;-0.###%;0}", netWorth);
+
+
             Console.ForegroundColor = ConsoleColor.DarkCyan;
 
             foreach (var row in holdingRows)
