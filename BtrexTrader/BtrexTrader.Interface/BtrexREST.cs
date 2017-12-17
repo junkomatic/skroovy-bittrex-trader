@@ -136,7 +136,7 @@ namespace BtrexTrader.Interface
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("\r\nHIST NULL " + delta + " RESPONSE CODE: " + response.StatusCode + "\r\n\r\n");
+                    //Console.WriteLine("\r\n222HIST NULL " + delta + " RESPONSE CODE: " + response.StatusCode + "\r\n\r\n");
 
                 }
             }

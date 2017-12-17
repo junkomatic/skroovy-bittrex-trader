@@ -379,7 +379,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 {
                     var currentMargin = (BtrexData.Markets[row["MarketDelta"].ToString()].TradeHistory.RecentFills.Last().Rate / Convert.ToDecimal(row["BoughtRate"])) - 1;
                     netWorth += currentMargin;
-                    Console.WriteLine("    {0}_{1}, SL_RATE: {2:0.00000000} .....{3,10:+0.###%;-0.###%;0%;}", dt.TableName.Remove(0, 6), row["MarketDelta"], Convert.ToDecimal(row["StopLossRate"]), currentMargin);
+                    Console.WriteLine("    {0,15}, SL_RATE: {1:0.00000000} .....{2,10:+0.###%;-0.###%;0%;}", dt.TableName.Remove(0, 6) + "_" + row["MarketDelta"], Convert.ToDecimal(row["StopLossRate"]), currentMargin);
                 }
             }
 
@@ -397,18 +397,19 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             else if (TradingTotal < 0)
                 Console.ForegroundColor = ConsoleColor.DarkRed;
             else
-                Console.ForegroundColor = ConsoleColor.DarkCyan;
-            
+                Console.ForegroundColor = ConsoleColor.DarkCyan;            
             Console.Write("=TradingTotal: {0:+0.###%;-0.###%;0%} ... =GrossProfit: {1:+0.###%;-0.###%;0%}", TradingTotal, (TradingTotal / OPTIONS.MAXTOTALENTRANCES));
-            
+
+            Console.ForegroundColor = ConsoleColor.DarkCyan;
+            Console.Write(" ... ");
+
             if (netWorth > 0)
                 Console.ForegroundColor = ConsoleColor.Green;
             else if (netWorth < 0)
                 Console.ForegroundColor = ConsoleColor.Red;
             else
                 Console.ForegroundColor = ConsoleColor.DarkCyan;
-
-            Console.WriteLine(" ... =NET WORTH: {0:+0.###%;-0.###%;+0%}", netWorth / OPTIONS.MAXTOTALENTRANCES);
+            Console.WriteLine("=NET WORTH: {0:+0.###%;-0.###%;+0%}", netWorth / OPTIONS.MAXTOTALENTRANCES);
             Console.ForegroundColor = ConsoleColor.DarkCyan;
 
         }

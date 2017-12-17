@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.IO;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using BtrexTrader.Control;
@@ -14,12 +16,11 @@ namespace BtrexTrader
     class Program
     {
         private static BtrexTradeController BtrexController = new BtrexTradeController();
-
+        
         static void Main(string[] args)
         {
             Console.BufferHeight = 9999;
-
-
+            
             PrintTitle();
             Console.ForegroundColor = ConsoleColor.DarkCyan;
             Console.BackgroundColor = ConsoleColor.Black;
@@ -33,10 +34,12 @@ namespace BtrexTrader
         {
             //UPDATE LOCALLY STORED 5m CANDLES, AND .CSV RECORDS:
             await HistoricalData.UpdateHistData();
-
+            
             //INITIALIZE DATA, THEN CONNECT WEBSOCKET
             BtrexData.NewData();
             await BtrexWS.Connect();
+            
+            ConfigTraceLogging();
 
             //SUBSCRIBE TO DESIRED MARKETS, THEN START-DATA-UPDATES:
             await BtrexController.InitializeMarkets();
@@ -79,6 +82,18 @@ namespace BtrexTrader
 -----------------------------------------------------------------------------------------------------------------------
 ");
 
+        }
+
+        private static void ConfigTraceLogging()
+        {
+            TextWriterTraceListener tr1 = new TextWriterTraceListener(System.Console.Out);
+            Trace.Listeners.Add(tr1);
+            Directory.CreateDirectory("LogFiles");
+            string path = @"LogFiles\" + DateTime.Now.ToString("dd-MM-yyyy") + ".log";
+            TextWriterTraceListener tr2 = new TextWriterTraceListener(System.IO.File.CreateText(path));
+            Trace.Listeners.Add(tr2);
+            Trace.AutoFlush = true;
+            
         }
 
     }

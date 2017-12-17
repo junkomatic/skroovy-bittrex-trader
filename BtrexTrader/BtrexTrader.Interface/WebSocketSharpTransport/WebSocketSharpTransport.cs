@@ -246,24 +246,14 @@ namespace BtrexTrader.Interface.WebSocketSharpTransport
         private async void DoReconnect()
         {
 
-            Console.WriteLine(" !!!!ERR>> SAVE-LOG-AND-RECONNECT.........");
+            Console.WriteLine(" !!!!ERR>> RESTART/RECONNECT.........");
             Console.Beep();
             Console.Beep();
             Console.Beep();
-
-            Directory.CreateDirectory("LogFiles");
-            string path = @"LogFiles\" + DateTime.Now.ToString("yyyy-dd-M HH.mm.ss") + ".log";
-
-            //Create LogFile: 
-            using (StreamWriter sw = new StreamWriter(new FileStream(path, FileMode.OpenOrCreate, FileAccess.Write)))
-            {
-                sw.BaseStream.Seek(0, SeekOrigin.End);
-                sw.Flush();
-                sw.Close();
-            }
+                                
                 
             //// Starts a new instance of the program itself
-            System.Diagnostics.Process.Start(System.Reflection.Assembly.GetEntryAssembly().Location);
+            Process.Start(System.Reflection.Assembly.GetEntryAssembly().Location);
 
             // Closes the current process
             Environment.Exit(0);
