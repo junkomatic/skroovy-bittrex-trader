@@ -41,7 +41,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             //(CANT PRELOAD ADEQUATE CANDLE DATA FOR CALCS -> SequenceContainsNoElements err)
             public static IReadOnlyList<string> ExcludeTheseDeltas = new List<string>()
             {            
-                "1ST", "NAV", "XVG", "VIB", "SAFEX", "BCY", "QRL", "CFI", "EDG", "MYST"
+                "1ST", "NAV", "XVG", "VIB", "SAFEX", "BCY", "QRL", "CFI", "EDG", "MYST", "GUP", "CVC", "STORJ", "TIX"
             };
 
             //ENTER MARKETS HERE FOR USE IN SubSpecificDeltas() METHOD:
@@ -377,7 +377,11 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             {
                 foreach (DataRow row in dt.Rows)
                 {
-                    var currentMargin = (BtrexData.Markets[row["MarketDelta"].ToString()].TradeHistory.RecentFills.Last().Rate / Convert.ToDecimal(row["BoughtRate"])) - 1;
+                    decimal currentMargin;
+                    if (!BtrexData.Markets.ContainsKey(row["MarketDelta"].ToString()))
+                        currentMargin = 0.0M;
+                    else
+                        currentMargin = (BtrexData.Markets[row["MarketDelta"].ToString()].TradeHistory.RecentFills.Last().Rate / Convert.ToDecimal(row["BoughtRate"])) - 1;
                     netWorth += currentMargin;
                     Trace.WriteLine(string.Format("    {0,15}, SL_RATE: {1:0.00000000} .....{2,10:+0.###%;-0.###%;0%;}", dt.TableName.Remove(0, 6) + "_" + row["MarketDelta"], Convert.ToDecimal(row["StopLossRate"]), currentMargin));
                 }
