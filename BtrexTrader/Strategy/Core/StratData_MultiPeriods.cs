@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Diagnostics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -38,7 +39,7 @@ namespace BtrexTrader.Strategy.Core
             foreach (string marketDelta in BtrexData.Markets.Keys)
             {
                 
-                Console.Write("\rPRELOADING MULTI-PERIOD CANDLES: {0}        ", marketDelta);
+                Trace.Write(string.Format("\rPRELOADING MULTI-PERIOD CANDLES: {0}        ", marketDelta));
 
                 Candles12h.Add(marketDelta, new List<Candle>());
                 Candles4h.Add(marketDelta, new List<Candle>());
@@ -173,7 +174,7 @@ namespace BtrexTrader.Strategy.Core
             }
 
 
-            Console.Write("\rPRELOADING MULTI-PERIOD CANDLES: [COMPLETE]");
+            Trace.Write("\rPRELOADING MULTI-PERIOD CANDLES: [COMPLETE]");
         }
 
 

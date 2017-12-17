@@ -242,11 +242,11 @@ namespace BtrexTrader.Interface.WebSocketSharpTransport
             DoReconnect();
         }
 
-        // fire and forget
+
         private async void DoReconnect()
         {
 
-            Console.WriteLine(" !!!!ERR>> RESTART/RECONNECT.........");
+            Trace.WriteLine(" !!!!ERR>> RESTART/RECONNECT.........");
             Console.Beep();
             Console.Beep();
             Console.Beep();
@@ -257,7 +257,6 @@ namespace BtrexTrader.Interface.WebSocketSharpTransport
 
             // Closes the current process
             Environment.Exit(0);
-            Trace.WriteLine("");
 
             
 

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Diagnostics;
 using System.Threading;
 using System.Net;
 using System.Net.Http;
@@ -59,7 +60,7 @@ namespace BtrexTrader.Interface
 
         public static async Task Connect()
         {
-            Console.Write("Connecting Websocket...");
+            Trace.Write("Connecting Websocket...");
             const string userAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36 OPR/48.0.2685.52";
 
             var bittrexUri = new Uri("https://bittrex.com");
@@ -108,7 +109,7 @@ namespace BtrexTrader.Interface
             WSSharpTransport.Connection.CookieContainer = cookieContainer;
 
             WSSharpTransport.Connect(config).Wait();
-            Console.WriteLine("\rWebsocket Connected.      ");
+            Trace.WriteLine("\rWebsocket Connected.      ");
 
             
 
@@ -121,10 +122,10 @@ namespace BtrexTrader.Interface
             ////CREATE PROXY, REGISTER CALLBACKS, CONNECT TO HUB:
             //btrexHubProxy = BtrexWS.hubConnection.CreateHubProxy("coreHub");
             //btrexHubProxy.On<MarketDataUpdate>("updateExchangeState", update => BtrexData.UpdateQueue.Enqueue(update));
-            ////btrexHubProxy.On<SummariesUpdate>("updateSummaryState", update => Console.WriteLine("FULL SUMMARY: "));
-            //Console.Write("Connecting Websocket...");
+            ////btrexHubProxy.On<SummariesUpdate>("updateSummaryState", update => Trace.WriteLine("FULL SUMMARY: "));
+            //Trace.Write("Connecting Websocket...");
             //await hubConnection.Start();
-            //Console.WriteLine("\rWebsocket Connected.      ");
+            //Trace.WriteLine("\rWebsocket Connected.      ");
         }
     }
 

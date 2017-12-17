@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Net.Http;
@@ -119,13 +120,13 @@ namespace BtrexTrader.Interface
 
                     }
                     else
-                        Console.WriteLine("FAIL:  " + response.ReasonPhrase);
+                        Trace.WriteLine("FAIL:  " + response.ReasonPhrase);
 
 
                     history.MarketDelta = string.Empty;
 
                     if (history == null || history.MarketDelta == null || delta.Replace('-', '_') == null)
-                        Console.WriteLine("\r\nHIST NULL " + delta + " RESPONSE CODE: " + response.StatusCode + "\r\n\r\n");
+                        Trace.WriteLine("\r\nHIST NULL " + delta + " RESPONSE CODE: " + response.StatusCode + "\r\n\r\n");
 
 
                     history.MarketDelta = delta.Replace('-', '_');
@@ -136,7 +137,7 @@ namespace BtrexTrader.Interface
                 }
                 catch (Exception e)
                 {
-                    //Console.WriteLine("\r\n222HIST NULL " + delta + " RESPONSE CODE: " + response.StatusCode + "\r\n\r\n");
+                    //Trace.WriteLine("\r\n222HIST NULL " + delta + " RESPONSE CODE: " + response.StatusCode + "\r\n\r\n");
 
                 }
             }
@@ -463,7 +464,7 @@ namespace BtrexTrader.Interface
             if (response.IsSuccessStatusCode)
                 ticker = await response.Content.ReadAsAsync<CBsellPriceResponse>();
             else
-                Console.WriteLine("FAIL:  " + response.ReasonPhrase);
+                Trace.WriteLine("FAIL:  " + response.ReasonPhrase);
 
             return Convert.ToDecimal(ticker.data.amount);
         }
@@ -495,7 +496,7 @@ namespace BtrexTrader.Interface
                     mks.Add(coin);
             }
 
-            Console.WriteLine("Markets: {0}", mks.Count);
+            Trace.WriteLine(string.Format("Markets: {0}", mks.Count));
             return mks;
         }
 

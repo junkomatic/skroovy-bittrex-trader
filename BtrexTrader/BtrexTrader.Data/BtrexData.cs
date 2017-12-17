@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Data;
+using System.Diagnostics;
 using System.Data.SQLite;
 using Quartz;
 using Quartz.Impl;
@@ -72,7 +73,7 @@ namespace BtrexTrader.Data
                         else if (mdUpdate.Nounce > Markets[mdUpdate.MarketName].Nounce + 1)
                         {
                             //IF NOUNCE IS DE-SYNCED, WIPE BOOK AND RE-SNAP
-                            Console.WriteLine("    !!!!ERR>>  NOUNCE OUT OF ORDER! " + mdUpdate.MarketName + " BOOK-DSYNC.  {0}, {1}", Markets[mdUpdate.MarketName].Nounce, mdUpdate.Nounce);
+                            Trace.WriteLine(string.Format("    !!!!ERR>>  NOUNCE OUT OF ORDER! " + mdUpdate.MarketName + " BOOK-DSYNC.  {0}, {1}", Markets[mdUpdate.MarketName].Nounce, mdUpdate.Nounce));
                             bool removed;
                             do
                             {
@@ -84,7 +85,7 @@ namespace BtrexTrader.Data
                             MarketQueryResponse marketQuery = BtrexWS.WSSharpTransport.HubProxy.Invoke<MarketQueryResponse>("QueryExchangeState", mdUpdate.MarketName).Result;
                             marketQuery.MarketName = mdUpdate.MarketName;
                             OpenMarket(marketQuery).Wait();
-                            Console.WriteLine("    [BOOK RE-SYNCED]");
+                            Trace.WriteLine("    [BOOK RE-SYNCED]");
                             break;
 
                         }

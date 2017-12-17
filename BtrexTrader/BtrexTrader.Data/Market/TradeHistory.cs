@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Diagnostics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -32,7 +33,7 @@ namespace BtrexTrader.Data.Market
                 foreach (Fill fill in snap.Fills)
                     RecentFills.Add(new mdFill(Convert.ToDateTime(fill.TimeStamp), fill.Price, fill.Quantity, fill.OrderType));
             }
-            Console.Write("\rResolving Candle Data: [{0}]         ", MarketDelta);
+            Trace.Write(string.Format("\rResolving Candle Data: [{0}]         ", MarketDelta));
             //Compare last-time from .data, and first-time from snap:
             using (SQLiteConnection conn = new SQLiteConnection("Data Source=" + HistoricalData.dbName + ";Version=3;"))
             {
@@ -58,7 +59,7 @@ namespace BtrexTrader.Data.Market
             {
                 BuildCandleFromRecentFills(NextCandleTime);
 
-                //Console.WriteLine("@@@@@ NEW CANDLE = T:{0} O:{1} H:{2} L:{3} C:{4} V:{5}",
+                //Trace.WriteLine("@@@@@ NEW CANDLE = T:{0} O:{1} H:{2} L:{3} C:{4} V:{5}",
                     //nextCandle.DateTime, nextCandle.Open, nextCandle.High, nextCandle.Low, nextCandle.Close, nextCandle.Volume);
                 
                 CandlesResolved = true;
@@ -73,7 +74,7 @@ namespace BtrexTrader.Data.Market
             DateTime NextCandleCurrTime = LastStoredCandle.AddMinutes(10);
             if (CandlesResolved)
             {
-                Console.WriteLine("\r[{1}] CANDLES RESOLVED - LastCandleStart: {0}", LastStoredCandle, MarketDelta);
+                Trace.WriteLine(string.Format("\r[{1}] CANDLES RESOLVED - LastCandleStart: {0}", LastStoredCandle, MarketDelta));
                 return true;
             }
             
@@ -82,7 +83,7 @@ namespace BtrexTrader.Data.Market
                 HistDataResponse response = await BtrexREST.GetMarketHistoryV2(MarketDelta, "oneMin");
                 if (!response.success)
                 {
-                    Console.WriteLine("    !!!!ERR GET-1m-CANDLES: [{0}]", MarketDelta);
+                    Trace.WriteLine("    !!!!ERR GET-1m-CANDLES: [{0}]", MarketDelta);
                     return false;
                 }
 
@@ -127,20 +128,20 @@ namespace BtrexTrader.Data.Market
                     BuildCandleFromRecentFills(NextCandleTime);
                     
                     CandlesResolved = true;
-                    Console.WriteLine("\r[{1}] CANDLES RESOLVED - LastCandleStart: {0}", LastStoredCandle, MarketDelta);
+                    Trace.WriteLine(string.Format("\r[{1}] CANDLES RESOLVED - LastCandleStart: {0}", LastStoredCandle, MarketDelta));
                 }
                 else
                 {
-                    //Console.WriteLine("    !!!!ERR RESOLVE_CANDLES>>Current: {0} < LastFill: {1} :: [{2}]", last1mCandleCurrTime, firstFillTime, MarketDelta);
+                    //Trace.WriteLine("    !!!!ERR RESOLVE_CANDLES>>Current: {0} < LastFill: {1} :: [{2}]", last1mCandleCurrTime, firstFillTime, MarketDelta);
                     if (!retryOnFail)
                         return false;
 
                     for (int s = 15; s > 0; s--)
                     {
-                        Console.Write("\r    Resolving [{0}] TradeHist->Candles time gap. Retry in {1} seconds...", MarketDelta, s);
+                        Trace.Write(string.Format("\r    Resolving [{0}] TradeHist->Candles time gap. Retry in {1} seconds...", MarketDelta, s));
                         Thread.Sleep(1000);
                     }
-                    Console.Write("\r                                                                                  \r");
+                    Trace.Write("\r                                                                                  \r");
                 }
             }
 
