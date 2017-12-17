@@ -545,7 +545,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 else
                     Console.ForegroundColor = ConsoleColor.DarkCyan;                
                 Console.WriteLine("=CurrentNetWorth: {0:+0.###%;-0.###%;0}", netWorth);
-
+                Console.ForegroundColor = ConsoleColor.DarkCyan;
 
                 foreach (var row in holdingRows)
                     Holdings.Tables[OrderData.CandlePeriod].Rows.Remove(row);
@@ -609,9 +609,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 Console.ForegroundColor = ConsoleColor.DarkRed;
             else
                 Console.ForegroundColor = ConsoleColor.DarkCyan;
-            Console.WriteLine("=CurrentNetWorth: {0:+0.###%;-0.###%;0}", netWorth);
-
-
+            Console.WriteLine("=CurrentNetWorth: {0:+0.###%;-0.###%;0}", netWorth);            
             Console.ForegroundColor = ConsoleColor.DarkCyan;
 
             foreach (var row in holdingRows)
