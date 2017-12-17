@@ -30,7 +30,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             public const decimal ATRmultipleT2 = 2M;
             public const decimal ATRmultipleT3 = 1.5M;
 
-            public static bool SAFEMODE = false;
+            public static bool SAFEMODE = true;
             public const bool COMPOUND_WAGER = true;
             public const bool VirtualModeOnOff = true;
 
