@@ -92,11 +92,12 @@ namespace BtrexTrader.Interface
             };
 
             HistDataResponse history = new HistDataResponse();
-            HttpResponseMessage response = await client.SendAsync(mesg);
             while (true)
             {
                 try
                 {
+                    HttpResponseMessage response = await client.SendAsync(mesg);
+
                     if (response.IsSuccessStatusCode)
                         history = await response.Content.ReadAsAsync<HistDataResponse>();
                     else if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable || history.result == null)
