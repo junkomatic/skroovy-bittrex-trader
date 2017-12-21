@@ -18,7 +18,7 @@ namespace BtrexTrader.Interface
         {
             if (!stopLoss.virtualSL)
             {
-                var lowestRate = minimumTradeSatoshis / stopLoss.Quantity;
+                var lowestRate = BtrexData.Markets[stopLoss.MarketDelta].TradeHistory.RecentFills.Last().Rate * 0.90M;//minimumTradeSatoshis / stopLoss.Quantity;
                 LimitOrderResponse orderResp = await BtrexREST.PlaceLimitOrder(stopLoss.MarketDelta, "sell", stopLoss.Quantity, lowestRate);
                 if (!orderResp.success)
                 {

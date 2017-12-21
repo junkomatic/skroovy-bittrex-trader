@@ -75,7 +75,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             await SubTopMarketsByVol(60);
             //await SubSpecificMarkets();                   
 
-            await StratData.PreloadCandleDicts(39);
+            await StratData.PreloadCandleDicts(45);
 
             DisplayHoldings();
         }
@@ -167,26 +167,34 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
         private bool? EMAofRSI1_STRATEGY(List<decimal> closes)
         {
-            var closesRSI = closes.Rsi(21);
-            var RSIs = new List<decimal>();
-            foreach (decimal? d in closesRSI)
+            try
             {
-                if (d != null)
+                var closesRSI = closes.Rsi(21);
+                var RSIs = new List<decimal>();
+                foreach (decimal? d in closesRSI)
                 {
-                    RSIs.Add(Convert.ToDecimal(d));
+                    if (d != null)
+                    {
+                        RSIs.Add(Convert.ToDecimal(d));
+                    }
+                }
+                var EMAofRSI = RSIs.Ema(14);
+
+                if (closesRSI.Last() > EMAofRSI.Last() && closesRSI[closesRSI.Count - 2] <= EMAofRSI[EMAofRSI.Count - 2])
+                {
+                    //RSI has crossed above its EMA and is RISING:
+                    return true;
+                }
+                else if (closesRSI.Last() < EMAofRSI.Last() && closesRSI[closesRSI.Count - 2] >= EMAofRSI[EMAofRSI.Count - 2])
+                {
+                    //RSI has crossed below its EMA and is FALLING:
+                    return false;
                 }
             }
-            var EMAofRSI = RSIs.Ema(14);
-                    
-            if (closesRSI.Last() > EMAofRSI.Last() && closesRSI[closesRSI.Count - 2] <= EMAofRSI[EMAofRSI.Count - 2])
+            catch (Exception e)
             {
-                //RSI has crossed above its EMA and is RISING:
-                return true;
-            }
-            else if (closesRSI.Last() < EMAofRSI.Last() && closesRSI[closesRSI.Count - 2] >= EMAofRSI[EMAofRSI.Count - 2])
-            {
-                //RSI has crossed below its EMA and is FALLING:
-                return false;
+
+                Trace.WriteLine("   ERR>>> EMAofRSI1_STRATEGY => " + e.Message);
             }
 
             return null;
