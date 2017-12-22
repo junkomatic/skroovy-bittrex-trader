@@ -83,19 +83,17 @@ namespace BtrexTrader.Interface
         //}
 
         public static async Task<HistDataResponse> GetMarketHistoryV2(string delta, string period)
-        {
-            
-            HttpRequestMessage mesg = new HttpRequestMessage()
-            {
-                RequestUri = new Uri("https://bittrex.com/Api/v2.0/pub/market/GetTicks?marketName=" + delta + "&tickInterval=" + period + "", UriKind.Absolute),
-                Method = HttpMethod.Get
-            };
-
+        {                        
             HistDataResponse history = new HistDataResponse();
             while (true)
             {
                 try
                 {
+                    var mesg = new HttpRequestMessage()
+                    {
+                        RequestUri = new Uri("https://bittrex.com/Api/v2.0/pub/market/GetTicks?marketName=" + delta + "&tickInterval=" + period + "", UriKind.Absolute),
+                        Method = HttpMethod.Get
+                    };
                     HttpResponseMessage response = await client.SendAsync(mesg);
 
                     if (response.IsSuccessStatusCode)

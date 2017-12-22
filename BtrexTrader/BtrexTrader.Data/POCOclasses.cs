@@ -259,7 +259,7 @@ namespace BtrexTrader
         public decimal Price { get; set; }
         public decimal PricePerUnit { get; set; }
         public string Opened { get; set; }
-        public object Closed { get; set; }
+        public bool Closed { get; set; }
         public bool IsOpen { get; set; }
         public string Sentinel { get; set; }
         public bool CancelInitiated { get; set; }

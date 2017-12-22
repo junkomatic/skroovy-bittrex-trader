@@ -12,13 +12,13 @@ namespace BtrexTrader.Interface
 {
     public class TradeControl
     {
-        public const decimal minimumTradeSatoshis = 0.00055M;
+        public const decimal minimumTradeSatoshis = 0.00109M;
 
         public async Task ExecuteStopLoss(StopLoss stopLoss)
         {
             if (!stopLoss.virtualSL)
             {
-                var lowestRate = BtrexData.Markets[stopLoss.MarketDelta].TradeHistory.RecentFills.Last().Rate * 0.90M;//minimumTradeSatoshis / stopLoss.Quantity;
+                var lowestRate = minimumTradeSatoshis / stopLoss.Quantity;
                 LimitOrderResponse orderResp = await BtrexREST.PlaceLimitOrder(stopLoss.MarketDelta, "sell", stopLoss.Quantity, lowestRate);
                 if (!orderResp.success)
                 {
@@ -82,6 +82,8 @@ namespace BtrexTrader.Interface
             var orderRate = ord.Rate;
             var BTCbuyWager = ord.Qty * ord.Rate * 1.0025M;
 
+                        Trace.WriteLine(string.Format("%%%%PLACING ORDER: {0} {1} ... QTY: {2} ... RATE: {3} ", ord.BUYorSELL, ord.MarketDelta, ord.Qty, ord.Rate));
+
             //PLACE INITIAL ORDER:
             var orderResp = await BtrexREST.PlaceLimitOrder(ord.MarketDelta, ord.BUYorSELL, ord.Qty, ord.Rate);
             if (!orderResp.success)
@@ -111,11 +113,15 @@ namespace BtrexTrader.Interface
                 if (orderComplete)
                 {
                     //ADD DATA TO RETURN OBJECT
-                    orderReturnData.Rate = (orderReturnData.Qty * orderReturnData.Rate) + (getOrder1.result.Quantity * getOrder1.result.Price) / (orderReturnData.Qty + getOrder1.result.Quantity);
+                    //avgRate = TOTAL BTC amt SPENT divided by TOTAL QTY RECIEVED)
+                    orderReturnData.Rate = ((orderReturnData.Qty * orderReturnData.Rate) + (getOrder1.result.Quantity * getOrder1.result.Price)) / (orderReturnData.Qty + getOrder1.result.Quantity);
                     orderReturnData.Qty += getOrder1.result.Quantity;
+                    Trace.WriteLine(ord.MarketDelta + "ORDER COMPLETE1&&&&&&&");
                 }
-                else
+                else if (!orderComplete)
                 {
+
+                    Trace.WriteLine(ord.MarketDelta + "else&&&&&&");
                     //IF THE REMAINING AMT IS UNDER DUST ORDER, JUST WAIT FOR COMPLETION
                     if (getOrder1.result.QuantityRemaining * getOrder1.result.Price < minimumTradeSatoshis)
                         continue;
@@ -149,7 +155,7 @@ namespace BtrexTrader.Interface
                             if (currentCompletion > 0M)
                             {
                                 //ADD DATA TO RETURN OBJECT
-                                orderReturnData.Rate = (orderReturnData.Qty * orderReturnData.Rate) + (completedQty * getOrder2.result.Price) / (orderReturnData.Qty + completedQty);
+                                orderReturnData.Rate = ((orderReturnData.Qty * orderReturnData.Rate) + (completedQty * getOrder2.result.Price)) / (orderReturnData.Qty + completedQty);
                                 orderReturnData.Qty += completedQty;
                             }
 
@@ -233,9 +239,9 @@ namespace BtrexTrader.Interface
 
             //ADJUST FINAL AVG RATE DATA FOR EXCHANGE FEE: 
             if (orderReturnData.BUYorSELL == "BUY")
-                orderReturnData.Rate = orderReturnData.Rate * 1.0025M;
+                orderReturnData.Rate = BtrexData.Markets[ord.MarketDelta].TradeHistory.RecentFills.Last().Rate; //orderReturnData.Rate = orderReturnData.Rate * 1.0025M;
             else if (orderReturnData.BUYorSELL == "SELL")
-                orderReturnData.Rate = orderReturnData.Rate * 0.0075M;
+                orderReturnData.Rate = orderReturnData.Rate * 0.9975M;
 
             //CALL NewOrder obj CALLBACK FUNCTION:
             ord.Callback(orderReturnData);

@@ -23,7 +23,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         //SET OPTIONS HERE PRIOR TO USE: 
         internal static class OPTIONS
         {
-            public const decimal BTCwagerAmt = 0.001M;
+            public const decimal BTCwagerAmt = 0.0016M;
             public const int MaxMarketsEnteredPerPeriod = 8;
             public const int MAXTOTALENTRANCES = 40;
             public const decimal ATRmultipleT1 = 2.5M;
@@ -32,7 +32,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
             public static bool SAFEMODE = true;
             public const bool COMPOUND_WAGER = true;
-            public const bool VirtualModeOnOff = true;
+            public const bool VirtualModeOnOff = false;
 
             public const bool LogStoplossRaised = true;
             public const bool LogSignals = true;
@@ -75,7 +75,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             await SubTopMarketsByVol(60);
             //await SubSpecificMarkets();                   
 
-            await StratData.PreloadCandleDicts(45);
+            await StratData.PreloadCandleDicts(42);
 
             DisplayHoldings();
         }
@@ -483,7 +483,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 }
 
                 if (OPTIONS.SAFEMODE)
-                    stoplossRate = 0.00056M / OrderData.Qty;
+                    stoplossRate = 0.00105M / OrderData.Qty;
                 
                 StopLossController.RegisterStoploss(new StopLoss(OrderData.MarketDelta, stoplossRate, OrderData.Qty, (a, b, c) => ReCalcStoploss(a, b, c), (a, b) => StopLossExecutedCallback(a, b), OrderData.CandlePeriod, OPTIONS.VirtualModeOnOff), string.Format("{0}_{1}", OrderData.CandlePeriod, OrderData.MarketDelta));
                 
@@ -779,7 +779,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         {
             if (!File.Exists(dataFile))
             {
-                Trace.WriteLine("CREATING NEW '{0}' FILE...", dataFile);
+                Trace.WriteLine(string.Format("CREATING NEW '{0}' FILE...", dataFile));
                 SQLiteConnection.CreateFile(dataFile);
                 conn = new SQLiteConnection("Data Source=" + dataFile + ";Version=3;");
                 conn.Open();
