@@ -1,8 +1,12 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.IO;
+using System.Data;
+using System.Data.SQLite;
 using System.Diagnostics;
 using BtrexTrader.Strategy.Core;
 using BtrexTrader.Data;
@@ -13,6 +17,141 @@ namespace BtrexTrader.Interface
     public class TradeControl
     {
         public const decimal minimumTradeSatoshis = 0.00109M;
+        private readonly TimeSpan LoopFrequency = TimeSpan.FromSeconds(1);
+
+        private static ConcurrentDictionary<string, OpenOrder> OpenOrders = new ConcurrentDictionary<string, OpenOrder>();
+        private static Thread TradeControllerThread;
+
+        private const string dataFile = "OpenOrders.data";
+        private SQLiteConnection conn;
+
+
+        public void StartTrading()
+        {
+            OpenSQLiteConn();
+            LoadOpenOrders();
+
+            TradeControllerThread = new Thread(async () => await ProcessOrders());
+            TradeControllerThread.IsBackground = true;
+            TradeControllerThread.Name = "TradeControl-Thread";
+            TradeControllerThread.Start();
+        }
+
+        private async Task ProcessOrders()
+        {
+            using (var cmd = new SQLiteCommand(conn))
+            {
+                while (true)
+                {
+                    if (OpenOrders.Count == 0)
+                    {
+                        Thread.Sleep(LoopFrequency);
+                        continue;
+                    }
+
+                    foreach (var order in OpenOrders)
+                    {
+                        //TODO: MAKE DECISIONS BASED ON THE STATE OF EACH OpenOrder obj:
+
+
+                    }
+
+
+
+                }
+            }
+            conn.Close();
+
+            Trace.WriteLine("\r\n\r\n    @@@ TradeControl-Thread STOPPED @@@\r\n\r\n");
+        }
+
+
+        public void RegisterNewOrder(NewOrder newOrd, string uniqueIdentifier)
+        {
+            //TODO: CONVERT NewOrder obj TO OpenOrder obj
+            var OpenOrd = new OpenOrder(newOrd);
+
+            bool added;
+            do
+            {
+                added = OpenOrders.TryAdd(uniqueIdentifier, OpenOrd);
+            } while (!added);
+
+        }
+
+        public void RemoveNewOrder(string uniqueIdentifier)
+        {
+            bool removed;
+            do
+            {
+                removed = OpenOrders.TryRemove(uniqueIdentifier, out var s);
+            } while (!removed);
+        }
+
+
+        private void LoadOpenOrders()
+        {
+            var dt = new DataTable();
+            using (var sqlAdapter = new SQLiteDataAdapter("SELECT * from OpenOrders", conn))
+                sqlAdapter.Fill(dt);
+
+            foreach (var row in dt.Rows)
+            {
+                //TODO: ADD OpenOrder obj TO OpenOrders DICT
+
+
+
+
+
+
+            }
+
+        }
+
+        private bool OpenSQLiteConn()
+        {
+            if (!File.Exists(dataFile))
+            {
+                Trace.WriteLine(string.Format("CREATING NEW '{0}' FILE...", dataFile));
+                SQLiteConnection.CreateFile(dataFile);
+                conn = new SQLiteConnection("Data Source=" + dataFile + ";Version=3;");
+                conn.Open();
+                using (var cmd = new SQLiteCommand(conn))
+                {
+                    using (var tx = conn.BeginTransaction())
+                    {
+                        //TODO: FINISH ADDING COLUMNS TO THIS TABLE FOR OpenOrder obj STORAGE:
+                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS OpenOrders (UniqueID TEXT, DateTime TEXT, Qty TEXT, BoughtRate TEXT, DateTimeSELL TEXT, SoldRate TEXT, StopLossRate TEXT, SL_Executed INTEGER)";
+                        cmd.ExecuteNonQuery();
+                        tx.Commit();
+                    }
+                }
+
+                return true;
+            }
+            else
+            {
+                conn = new SQLiteConnection("Data Source=" + dataFile + ";Version=3;");
+                conn.Open();
+
+                return false;
+            }
+        }
+
+
+
+
+
+
+
+
+
+
+
+        //*****************************************************************
+
+
+
 
         public async Task ExecuteStopLoss(StopLoss stopLoss)
         {
@@ -23,14 +162,14 @@ namespace BtrexTrader.Interface
                 if (!orderResp.success)
                 {
                     Trace.WriteLine(string.Format("    !!!!ERR ExecuteStopLoss-PLACE-ORDER1>> " + orderResp.message));
-                    Trace.WriteLine(string.Format(" QTY: {1} ... STOP-LOSS RATE: {2}", stopLoss.Quantity, stopLoss.StopRate));
+                    Trace.WriteLine(string.Format("        QTY: {1} ... STOP-LOSS RATE: {2}", stopLoss.Quantity, stopLoss.StopRate));
 
                     //REDUNTANT (FAILSAFE) CALL ON INITIAL CALL FAILURE 
                     orderResp = await BtrexREST.PlaceLimitOrder(stopLoss.MarketDelta, "sell", stopLoss.Quantity, lowestRate);
                     if (!orderResp.success)
                     {
                         Trace.WriteLine("    !!!!ERR ExecuteStopLoss-PLACE-ORDER1.2ndTry>> " + orderResp.message);
-                        Trace.WriteLine(string.Format(" QTY: {1} ... STOP-LOSS RATE: {2}", stopLoss.Quantity, stopLoss.StopRate));
+                        Trace.WriteLine(string.Format("        QTY: {1} ... STOP-LOSS RATE: {2}", stopLoss.Quantity, stopLoss.StopRate));
                         return;
                     }
                 }
@@ -485,4 +624,22 @@ namespace BtrexTrader.Interface
         }
 
     }
+
+    
+    public class OpenOrder
+    {
+        //TODO: CREATE FIELDS TO STORE OPEN ORDER STATE DATA
+
+
+
+        public OpenOrder(NewOrder nOrder)
+        {
+            
+
+
+        }
+
+    }
+
+
 }
