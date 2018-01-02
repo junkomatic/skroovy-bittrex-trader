@@ -22,15 +22,9 @@ namespace BtrexTrader.Interface
         private static ConcurrentDictionary<string, OpenOrder> OpenOrders = new ConcurrentDictionary<string, OpenOrder>();
         private static Thread TradeControllerThread;
 
-        private const string dataFile = "OpenOrders.data";
-        private SQLiteConnection conn;
-
 
         public void StartTrading()
         {
-            OpenSQLiteConn();
-            LoadOpenOrders();
-
             TradeControllerThread = new Thread(async () => await ProcessOrders());
             TradeControllerThread.IsBackground = true;
             TradeControllerThread.Name = "TradeControl-Thread";
@@ -39,8 +33,6 @@ namespace BtrexTrader.Interface
 
         private async Task ProcessOrders()
         {
-            using (var cmd = new SQLiteCommand(conn))
-            {
                 while (true)
                 {
                     if (OpenOrders.Count == 0)
@@ -59,8 +51,7 @@ namespace BtrexTrader.Interface
 
 
                 }
-            }
-            conn.Close();
+            
 
             Trace.WriteLine("\r\n\r\n    @@@ TradeControl-Thread STOPPED @@@\r\n\r\n");
         }
@@ -69,7 +60,7 @@ namespace BtrexTrader.Interface
         public void RegisterNewOrder(NewOrder newOrd, string uniqueIdentifier)
         {
             //TODO: CONVERT NewOrder obj TO OpenOrder obj
-            var OpenOrd = new OpenOrder(newOrd);
+            var OpenOrd = new OpenOrder();
 
             bool added;
             do
@@ -89,59 +80,9 @@ namespace BtrexTrader.Interface
         }
 
 
-        private void LoadOpenOrders()
-        {
-            var dt = new DataTable();
-            using (var sqlAdapter = new SQLiteDataAdapter("SELECT * from OpenOrders", conn))
-                sqlAdapter.Fill(dt);
+       
 
-            foreach (var row in dt.Rows)
-            {
-                //TODO: ADD OpenOrder obj TO OpenOrders DICT
-
-
-
-
-
-
-            }
-
-        }
-
-        private bool OpenSQLiteConn()
-        {
-            if (!File.Exists(dataFile))
-            {
-                Trace.WriteLine(string.Format("CREATING NEW '{0}' FILE...", dataFile));
-                SQLiteConnection.CreateFile(dataFile);
-                conn = new SQLiteConnection("Data Source=" + dataFile + ";Version=3;");
-                conn.Open();
-                using (var cmd = new SQLiteCommand(conn))
-                {
-                    using (var tx = conn.BeginTransaction())
-                    {
-                        //TODO: FINISH ADDING COLUMNS TO THIS TABLE FOR OpenOrder obj STORAGE:
-                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS OpenOrders (UniqueID TEXT, DateTime TEXT, Qty TEXT, BoughtRate TEXT, DateTimeSELL TEXT, SoldRate TEXT, StopLossRate TEXT, SL_Executed INTEGER)";
-                        cmd.ExecuteNonQuery();
-                        tx.Commit();
-                    }
-                }
-
-                return true;
-            }
-            else
-            {
-                conn = new SQLiteConnection("Data Source=" + dataFile + ";Version=3;");
-                conn.Open();
-
-                return false;
-            }
-        }
-
-
-
-
-
+  
 
 
 
@@ -214,7 +155,7 @@ namespace BtrexTrader.Interface
 
         public async Task ExecuteNewOrder(NewOrder ord)
         {
-            var orderReturnData = new NewOrder(ord.MarketDelta, ord.BUYorSELL, 0, 0, null, ord.CandlePeriod);            
+            var orderReturnData = new NewOrder(ord.MarketDelta, ord.BUYorSELL, 0, 0, null, null, ord.CandlePeriod);            
             bool orderComplete = false;
             decimal percentRemaining = 1;
             decimal newQty = ord.Qty;
@@ -383,13 +324,13 @@ namespace BtrexTrader.Interface
                 orderReturnData.Rate = orderReturnData.Rate * 0.9975M;
 
             //CALL NewOrder obj CALLBACK FUNCTION:
-            ord.Callback(orderReturnData);
+            ord.ExecutionCompleteCallback(orderReturnData);
         }
 
 
         public async Task VirtualExecuteNewOrder(NewOrder ord)
         {
-            ord.Callback(ord);
+            ord.ExecutionCompleteCallback(ord);
         }
 
 
@@ -607,17 +548,21 @@ namespace BtrexTrader.Interface
         public decimal Qty { get; set; }
         public decimal Rate { get; set; }
         public string CandlePeriod { get; set; }
-        public Action<NewOrder> Callback { get; set; }
+        public Action<OpenOrder> DataUpdateCallback { get; set; }
+        public Action<NewOrder> ExecutionCompleteCallback { get; set; }
 
-        public NewOrder(string mDelta, string BUYSELL, decimal quantity, decimal price, Action<NewOrder> cback = null, string cPeriod = null)
+        public NewOrder(string mDelta, string BUYSELL, decimal quantity, decimal price, Action<OpenOrder> DUpdateCback = null, Action<NewOrder> ExeCback = null, string cPeriod = null)
         {
             MarketDelta = mDelta;
             BUYorSELL = BUYSELL.ToUpper();
             Qty = quantity;            
             Rate = price;
 
-            if (cback != null)
-                Callback = cback;
+            if (DUpdateCback != null)
+                DataUpdateCallback = DUpdateCback;
+
+            if (ExeCback != null)
+                ExecutionCompleteCallback = ExeCback;
 
             if (cPeriod != null)
                 CandlePeriod = cPeriod;
@@ -629,14 +574,51 @@ namespace BtrexTrader.Interface
     public class OpenOrder
     {
         //TODO: CREATE FIELDS TO STORE OPEN ORDER STATE DATA
+        public string OrderUuid { get; set; }
+        public string Exchange { get; set; }
+        public string Type { get; set; }
+        public decimal Quantity { get; set; }
+        public decimal QuantityRemaining { get; set; }
+        public decimal Limit { get; set; }
+        public decimal Reserved { get; set; }
+        public decimal ReserveRemaining { get; set; }
+        public decimal CommissionReserved { get; set; }
+        public decimal CommissionReserveRemaining { get; set; }
+        public decimal CommissionPaid { get; set; }
+        public decimal Price { get; set; }
+        public decimal PricePerUnit { get; set; }
+        public DateTime Opened { get; set; }
+        public DateTime Closed { get; set; }
+        public bool IsOpen { get; set; }
+        public string Sentinel { get; set; }
+        public bool CancelInitiated { get; set; }        
+        public Action<OpenOrder> DataUpdateCallback { get; set; }
+        public Action<NewOrder> ExecutionCompleteCallback { get; set; }
 
 
-
-        public OpenOrder(NewOrder nOrder)
+        public void UpdateOpenOrder(GetOrderResult ord)
         {
-            
+            OrderUuid = ord.OrderUuid;
+            Exchange = ord.Exchange;
+            Type = ord.Type;
+            Quantity = ord.Quantity;
+            QuantityRemaining = ord.QuantityRemaining;
+            Limit = ord.Limit;
+            Reserved = ord.Reserved;
+            ReserveRemaining = ord.ReserveRemaining;
+            CommissionReserved = ord.CommissionReserved;
+            CommissionReserveRemaining = ord.CommissionReserveRemaining;
+            CommissionPaid = ord.CommissionPaid;
+            Price = ord.Price;
+            PricePerUnit = ord.PricePerUnit;
+            Opened = ord.Opened;
+            Closed = ord.Closed;
+            IsOpen = ord.IsOpen;
+            Sentinel = ord.Sentinel;
+            CancelInitiated = ord.CancelInitiated;
 
-
+            //TODO: CALL DataUpdateCallback HERE:
+            DataUpdateCallback(this);
         }
 
     }

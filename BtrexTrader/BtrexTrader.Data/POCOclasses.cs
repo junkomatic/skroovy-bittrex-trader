@@ -258,8 +258,8 @@ namespace BtrexTrader
         public decimal CommissionPaid { get; set; }
         public decimal Price { get; set; }
         public decimal PricePerUnit { get; set; }
-        public string Opened { get; set; }
-        public bool Closed { get; set; }
+        public DateTime Opened { get; set; }
+        public DateTime Closed { get; set; }
         public bool IsOpen { get; set; }
         public string Sentinel { get; set; }
         public bool CancelInitiated { get; set; }

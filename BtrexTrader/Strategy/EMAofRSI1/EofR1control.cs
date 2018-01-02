@@ -71,6 +71,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         {
             OpenSQLiteConn();
             LoadHoldings();
+            LoadOpenOrders();
 
             await SubTopMarketsByVol(60);
             //await SubSpecificMarkets();                   
@@ -775,6 +776,25 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         }
 
 
+        private void LoadOpenOrders()
+        {
+            var dt = new DataTable();
+            using (var sqlAdapter = new SQLiteDataAdapter("SELECT * from OpenOrders", conn))
+                sqlAdapter.Fill(dt);
+
+            foreach (var row in dt.Rows)
+            {
+                //TODO: ADD OpenOrder obj TO OpenOrders ConcDICT in TradeControl 
+
+
+
+
+
+
+            }
+
+        }
+
         private bool OpenSQLiteConn()
         {
             if (!File.Exists(dataFile))
@@ -801,7 +821,9 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                         cmd.ExecuteNonQuery();
                         cmd.CommandText = string.Format("INSERT INTO totals(TimeCreatedUTC, PercentageTotal) VALUES ('{0}', '{1}')", DateTime.UtcNow, "0.0");
                         cmd.ExecuteNonQuery();
-
+                        //TODO: FINISH ADDING COLUMNS TO THIS TABLE FOR OpenOrder obj STORAGE:
+                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS OpenOrders (UniqueID TEXT, DateTime TEXT, Qty TEXT, BoughtRate TEXT, xxx TEXT, xxx TEXT, xxx TEXT, boolxxxx INTEGER)";
+                        cmd.ExecuteNonQuery();
                         tx.Commit();
                     }
                 }

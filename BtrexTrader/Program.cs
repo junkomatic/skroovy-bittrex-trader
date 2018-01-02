@@ -43,11 +43,15 @@ namespace BtrexTrader
 
             //SUBSCRIBE TO DESIRED MARKETS, THEN START-DATA-UPDATES:
             await BtrexController.InitializeMarkets();
-            await BtrexData.StartDataUpdates();
 
+            //START DATA THREAD
+            await BtrexData.StartDataUpdates();
+            
             //START CALCS/STRATEGY WORK:
             BtrexController.StartWork();
-            
+
+            //START TRADING THREAD
+            BtrexREST.TradeController.StartTrading();
 
             Console.WriteLine("\r\n\r\n-PRESS ENTER 3 TIMES TO EXIT-\r\n\r\n");
             Console.ReadLine();
