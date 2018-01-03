@@ -151,16 +151,16 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                         var ords = new List<NewOrder>(NewOrders);
                         NewOrders = new List<NewOrder>();
 
-                        //    //This is not awaited because NewOrder objects reference their own callback
-                        //    BtrexREST.TradeController.ExecuteNewOrderList(ords, OPTIONS.VirtualModeOnOff);
-
+                        //This is not awaited because NewOrder objects reference their own callback
+                        BtrexREST.TradeController.ExecuteNewOrderList(ords, OPTIONS.VirtualModeOnOff);
                     }
+                    
 
-
-
-                        Thread.Sleep(TimeSpan.FromSeconds(3));
+                    Thread.Sleep(TimeSpan.FromSeconds(3));
 
                 }
+
+                //CONTROL-LOOP ENDED:
                 StopLossController.Stop();
             }
             
@@ -208,7 +208,8 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
         public void CheckStrategy(List<Candle> candles, string delta, string periodName)
         {
-            if (PendingOrders.Where(o => (o.CandlePeriod == periodName) && (o.MarketDelta == delta)).Count() == 0)
+            //If not already in pending OpenOrders:
+            if (Holdings.Tables["OpenOrders"].Select("Exchange = '" + delta + "' AND CandlePeriod = '" + periodName + "'").Count() == 0)
             {
                 var closes = new List<decimal>(candles.Select(c => c.Close));
                 bool? call = EMAofRSI1_STRATEGY(closes);
@@ -332,7 +333,6 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         
         
         
-
         private void LoadHoldings()
         {
             //Load held assets, stoploss amts, from SQLite for each period:
@@ -376,6 +376,22 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             {
                 cmd.CommandText = "SELECT PercentageTotal FROM totals LIMIT 1";
                 TradingTotal = Convert.ToDecimal(cmd.ExecuteScalar());
+            }
+
+        }
+
+
+        private void LoadOpenOrders()
+        {
+            var dt = new DataTable();
+            using (var sqlAdapter = new SQLiteDataAdapter("SELECT * from OpenOrders", conn))
+                sqlAdapter.Fill(dt);
+
+            foreach (DataRow row in Holdings.Tables["OpenOrders"].Rows)
+            {
+                //ADD OpenOrder obj TO OpenOrders ConcDICT in TradeControl 
+                var openOrd = new OpenOrder((string)row["OrderUuid"], (string)row["Exchange"], (string)row["Type"], Convert.ToDecimal(row["Quantity"]), Convert.ToDecimal(row["QuantityRemaining"]), Convert.ToDecimal(row["Limit"]), Convert.ToDecimal(row["Reserved"]), Convert.ToDecimal(row["CommissionReserved"]), Convert.ToDecimal(row["CommissionReservedRemaining"]), Convert.ToDecimal(row["CommissionPaid"]), Convert.ToDecimal(row["Price"]), Convert.ToDecimal(row["PricePerUnit"]), Convert.ToDateTime(row["Opened"]), (a) => OrderDataCallback(a), (a) => OrderExecutedCallback(a), (string)row["CandlePeriod"]);
+                BtrexREST.TradeController.RegisterOpenOrder(openOrd, (string)row["UniqueID"]);
             }
 
         }
@@ -461,10 +477,16 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         {
             //TODO!!:
 
+
+
+
+
+
+
         }
         
 
-        public void OrderExecutedCallback(NewOrder OrderData)
+        public void OrderExecutedCallback(GetOrderResult OrderData)
         { 
             var TimeCompleted = DateTime.UtcNow;
 
@@ -791,27 +813,8 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 }
             }
         }
-
-
-        private void LoadOpenOrders()
-        {
-            var dt = new DataTable();
-            using (var sqlAdapter = new SQLiteDataAdapter("SELECT * from OpenOrders", conn))
-                sqlAdapter.Fill(dt);
-
-            foreach (var row in Holdings.Tables["OpenOrders"].Rows)
-            {
-                //TODO: ADD OpenOrder obj TO OpenOrders ConcDICT in TradeControl 
-
-
-
-
-
-
-            }
-
-        }
-
+        
+        
         private bool OpenSQLiteConn()
         {
             if (!File.Exists(TradesDataFile))
@@ -838,7 +841,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                         cmd.ExecuteNonQuery();
                         cmd.CommandText = string.Format("INSERT INTO totals(TimeCreatedUTC, PercentageTotal) VALUES ('{0}', '{1}')", DateTime.UtcNow, "0.0");
                         cmd.ExecuteNonQuery();
-                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS OpenOrders (UniqueID TEXT, OrderUuid TEXT, Exchange TEXT, Type TEXT, Quantity TEXT, QuantityRemaining TEXT, Limit TEXT, Reserved TEXT, CommissionReserved TEXT, CommissionReserveRemaining TEXT, CommissionPaid TEXT, Price TEXT, PricePerUnit TEXT, Opened TEXT)";
+                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS OpenOrders (UniqueID TEXT, OrderUuid TEXT, Exchange TEXT, Type TEXT, Quantity TEXT, QuantityRemaining TEXT, Limit TEXT, Reserved TEXT, CommissionReserved TEXT, CommissionReserveRemaining TEXT, CommissionPaid TEXT, Price TEXT, PricePerUnit TEXT, Opened TEXT CandlePeriod TEXT)";
                         cmd.ExecuteNonQuery();
                         tx.Commit();
                     }
