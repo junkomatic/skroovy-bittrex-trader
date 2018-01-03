@@ -573,7 +573,6 @@ namespace BtrexTrader.Interface
     
     public class OpenOrder
     {
-        //TODO: CREATE FIELDS TO STORE OPEN ORDER STATE DATA
         public string OrderUuid { get; set; }
         public string Exchange { get; set; }
         public string Type { get; set; }
@@ -581,43 +580,53 @@ namespace BtrexTrader.Interface
         public decimal QuantityRemaining { get; set; }
         public decimal Limit { get; set; }
         public decimal Reserved { get; set; }
-        public decimal ReserveRemaining { get; set; }
         public decimal CommissionReserved { get; set; }
         public decimal CommissionReserveRemaining { get; set; }
         public decimal CommissionPaid { get; set; }
         public decimal Price { get; set; }
         public decimal PricePerUnit { get; set; }
-        public DateTime Opened { get; set; }
-        public DateTime Closed { get; set; }
-        public bool IsOpen { get; set; }
-        public string Sentinel { get; set; }
-        public bool CancelInitiated { get; set; }        
+        public DateTime Opened { get; set; }     
         public Action<OpenOrder> DataUpdateCallback { get; set; }
-        public Action<NewOrder> ExecutionCompleteCallback { get; set; }
+        public Action<GetOrderResult> ExecutionCompleteCallback { get; set; }
 
 
-        public void UpdateOpenOrder(GetOrderResult ord)
+        public OpenOrder(GetOrderResult ord, Action<OpenOrder> cBack_Data = null, Action<GetOrderResult> cBack_Exe = null)
         {
             OrderUuid = ord.OrderUuid;
             Exchange = ord.Exchange;
-            Type = ord.Type;
             Quantity = ord.Quantity;
             QuantityRemaining = ord.QuantityRemaining;
             Limit = ord.Limit;
             Reserved = ord.Reserved;
-            ReserveRemaining = ord.ReserveRemaining;
             CommissionReserved = ord.CommissionReserved;
             CommissionReserveRemaining = ord.CommissionReserveRemaining;
             CommissionPaid = ord.CommissionPaid;
             Price = ord.Price;
             PricePerUnit = ord.PricePerUnit;
             Opened = ord.Opened;
-            Closed = ord.Closed;
-            IsOpen = ord.IsOpen;
-            Sentinel = ord.Sentinel;
-            CancelInitiated = ord.CancelInitiated;
 
-            //TODO: CALL DataUpdateCallback HERE:
+            if (cBack_Data != null)
+                DataUpdateCallback = cBack_Data;
+
+            if (cBack_Exe != null)
+                ExecutionCompleteCallback = cBack_Exe;
+
+        }
+
+        public void UpdateOpenOrder(GetOrderResult ord)
+        {
+            Quantity = ord.Quantity;
+            QuantityRemaining = ord.QuantityRemaining;
+            Limit = ord.Limit;
+            Reserved = ord.Reserved;
+            CommissionReserved = ord.CommissionReserved;
+            CommissionReserveRemaining = ord.CommissionReserveRemaining;
+            CommissionPaid = ord.CommissionPaid;
+            Price = ord.Price;
+            PricePerUnit = ord.PricePerUnit;
+            Opened = ord.Opened;
+
+            //CALL DataUpdateCallback:
             DataUpdateCallback(this);
         }
 
