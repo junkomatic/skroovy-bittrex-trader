@@ -247,8 +247,9 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                                 wagerMultiple = (TradingTotal / OPTIONS.MAXTOTALENTRANCES) + 1;
 
                             var amt = (OPTIONS.BTCwagerAmt * wagerMultiple) / (rate * 1.0025M);
+                            var ID = string.Format("{0}_{1}", periodName, delta);
 
-                            NewOrders.Add(new NewOrder(delta, "BUY", amt, rate, (a) => OrderDataCallback(a), (a) => OrderExecutedCallback(a), periodName));
+                            NewOrders.Add(new NewOrder("TODO", delta, "BUY", amt, rate, (a) => OrderDataCallback(a), (a) => OrderExecutedCallback(a), periodName));
                         }
                         
                     }
@@ -260,7 +261,9 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                         if ((rate * 0.9975M) - Convert.ToDecimal(held[0]["BoughtRate"]) > 0)
                         {
                             var amt = Convert.ToDecimal(Holdings.Tables[periodName].AsEnumerable().Where(o => (string)o["MarketDelta"] == delta).First()["Qty"]);
-                            NewOrders.Add(new NewOrder(delta, "SELL", amt, rate, (a) => OrderDataCallback(a), (a) => OrderExecutedCallback(a), periodName));
+                            var ID = string.Format("{0}_{1}", periodName, delta);
+
+                            NewOrders.Add(new NewOrder("TODO", delta, "SELL", amt, rate, (a) => OrderDataCallback(a), (a) => OrderExecutedCallback(a), periodName));
                         }                        
                     }
                 }
