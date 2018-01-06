@@ -65,23 +65,66 @@ namespace BtrexTrader.Interface
                     {
                         //Update OpenOrder in Dict and Call DataCallback
                         OpenOrders[order.Key].UpdateOpenOrder(getOrder2.result);
-                    }       
-                    
+                    }
+
 
                     //BUY AND SELL LOGIC FOR STILL-OPEN ORDERS: 
-                    if (order.Value.Type == "LIMIT_BUY" && DateTime.UtcNow - order.Value.Opened > NewOrderWaitTime)
+                    //If the initial order time has elapsed, and the remaining amount is above min order satoshis:
+                    if (DateTime.UtcNow - order.Value.Opened > NewOrderWaitTime && order.Value.Reserved - order.Value.Price > minimumTradeSatoshis)
                     {
-                        //IF ORDER IS NOT AT TOP OF BIDS, CANCEL AND REPLACE TO MAKE IT SO:
-                        //QTY MUST BE ADJUSTED SO THAT 'Reserved' BTC AMT REAMINS EQUAL
+                        if (order.Value.Type == "LIMIT_BUY" && BtrexData.Markets[order.Value.Exchange].TradeHistory.RecentFills.Last().Rate > order.Value.Limit)
+                        {
+                            //Cancel and Replace at top bid:
+                            //QTY MUST BE ADJUSTED SO THAT 'Reserved' BTC AMT REAMINS EQUAL
 
 
-                    }
-                    else if (order.Value.Type == "LIMIT_SELL" && DateTime.UtcNow - order.Value.Opened > NewOrderWaitTime)
-                    {
-                        //IF ORDER IS NOT AT TOP OF ASKS, CANCEL AND REPLACE TO MAKE IT SO:
-                        //Use QuantityRemains
 
 
+
+
+                        }
+                        else if (order.Value.Type == "LIMIT_SELL" && BtrexData.Markets[order.Value.Exchange].TradeHistory.RecentFills.Last().Rate < order.Value.Limit)
+                        {
+                            //IF ORDER IS NOT AT TOP OF ASKS, CANCEL AND REPLACE TO MAKE IT SO:
+                            //Use QuantityRemains
+                            var cancelRequest = await BtrexREST.CancelLimitOrder(order.Value.OrderUuid);
+                            if (!cancelRequest.success)
+                            {
+                                Trace.WriteLine("    !!!!ERR CANCEL-ORDER>>> " + order.Key + ": " + cancelRequest.message);
+                                continue;
+                            }
+
+                            //Get data from cancelled order:
+                            var canceledOrderData = new GetOrderResponse();
+                            do
+                            {
+                                canceledOrderData = await BtrexREST.GetOrder(order.Value.OrderUuid);
+                                if (!canceledOrderData.success)
+                                {
+                                    Trace.WriteLine("    !!!!ERR GET-CANCELED-ORDDATA>>> " + order.Key + ": " + canceledOrderData.message);
+                                }
+                            }
+                            while (canceledOrderData.result == null || canceledOrderData.result.IsOpen == false);
+
+
+                            //UPDATE DATA
+
+
+
+                            //MAKE SURE REMAINING AMOUNT IS ABOVE MIN SATOSHIS
+                            //AND REPLACE ORDER
+
+
+
+                            //UPDATE DATA
+
+
+
+                            //CALL UPDATE ON DICT OpenOrder OBJ
+
+
+
+                        }
                     }
 
                 }
