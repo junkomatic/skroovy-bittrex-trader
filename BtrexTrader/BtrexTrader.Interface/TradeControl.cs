@@ -106,17 +106,17 @@ namespace BtrexTrader.Interface
                             }
                             while (canceledOrderData.result == null || canceledOrderData.result.IsOpen == false);
 
-
-                            //UPDATE DATA
-
-
-
-                            //MAKE SURE REMAINING AMOUNT IS ABOVE MIN SATOSHIS
+                            
+                            //MAKE SURE REMAINING AMOUNT IS STILL ABOVE MIN SATOSHIS
                             //AND REPLACE ORDER
 
 
 
-                            //UPDATE DATA
+                            //GET REPLACED ORDER DATA
+
+
+
+                            //UPDATE DATA BY COMBINING CANCELLED-ORDDATA AND REPLACED ORDER DATA
 
 
 
