@@ -393,7 +393,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             foreach (DataRow row in Holdings.Tables["OpenOrders"].Rows)
             {
                 //ADD OpenOrder obj TO OpenOrders ConcDICT in TradeControl 
-                var openOrd = new OpenOrder((string)row["OrderUuid"], (string)row["Exchange"], (string)row["Type"], Convert.ToDecimal(row["TotalQuantity"]), Convert.ToDecimal(row["Quantity"]), Convert.ToDecimal(row["QuantityRemaining"]), Convert.ToDecimal(row["Limit"]), Convert.ToDecimal(row["Reserved"]), Convert.ToDecimal(row["CommissionReserved"]), Convert.ToDecimal(row["CommissionReservedRemaining"]), Convert.ToDecimal(row["CommissionPaid"]), Convert.ToDecimal(row["Price"]), Convert.ToDecimal(row["PricePerUnit"]), Convert.ToDateTime(row["Opened"]), (a) => OrderDataCallback(a), (a) => OrderExecutedCallback(a), (string)row["CandlePeriod"]);
+                var openOrd = new OpenOrder((string)row["OrderUuid"], (string)row["Exchange"], (string)row["Type"], Convert.ToDecimal(row["TotalQuantity"]), Convert.ToDecimal(row["TotalReserved"]), Convert.ToDecimal(row["Quantity"]), Convert.ToDecimal(row["QuantityRemaining"]), Convert.ToDecimal(row["Limit"]), Convert.ToDecimal(row["Reserved"]), Convert.ToDecimal(row["CommissionReserved"]), Convert.ToDecimal(row["CommissionReservedRemaining"]), Convert.ToDecimal(row["CommissionPaid"]), Convert.ToDecimal(row["Price"]), Convert.ToDecimal(row["PricePerUnit"]), Convert.ToDateTime(row["Opened"]), (a) => OrderDataCallback(a), (a) => OrderExecutedCallback(a), (string)row["CandlePeriod"]);
                 BtrexREST.TradeController.RegisterOpenOrder(openOrd, (string)row["UniqueID"]);
             }
 
@@ -844,7 +844,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                         cmd.ExecuteNonQuery();
                         cmd.CommandText = string.Format("INSERT INTO totals(TimeCreatedUTC, PercentageTotal) VALUES ('{0}', '{1}')", DateTime.UtcNow, "0.0");
                         cmd.ExecuteNonQuery();
-                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS OpenOrders (UniqueID TEXT, OrderUuid TEXT, Exchange TEXT, Type TEXT, TotalQuantity TEXT, Quantity TEXT, QuantityRemaining TEXT, Limit TEXT, Reserved TEXT, CommissionReserved TEXT, CommissionReserveRemaining TEXT, CommissionPaid TEXT, Price TEXT, PricePerUnit TEXT, Opened TEXT CandlePeriod TEXT)";
+                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS OpenOrders (UniqueID TEXT, OrderUuid TEXT, Exchange TEXT, Type TEXT, TotalQuantity TEXT, TotalReserved TEXT, Quantity TEXT, QuantityRemaining TEXT, Limit TEXT, Reserved TEXT, CommissionReserved TEXT, CommissionReserveRemaining TEXT, CommissionPaid TEXT, Price TEXT, PricePerUnit TEXT, Opened TEXT CandlePeriod TEXT)";
                         cmd.ExecuteNonQuery();
                         tx.Commit();
                     }

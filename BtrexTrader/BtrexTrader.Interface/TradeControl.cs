@@ -64,18 +64,20 @@ namespace BtrexTrader.Interface
                     else if (getOrder2.result.QuantityRemaining != order.Value.QuantityRemaining)
                     {
                         //Update OpenOrder in Dict and Call DataCallback
-                        OpenOrders[order.Key].UpdateOpenOrder(getOrder2.result);
+                        OpenOrders[order.Key].UpdateOrder(getOrder2.result);
                     }
 
 
                     //BUY AND SELL LOGIC FOR STILL-OPEN ORDERS: 
                     //If the initial order time has elapsed, and the remaining amount is above min order satoshis:
-                    if (DateTime.UtcNow - order.Value.Opened > NewOrderWaitTime && order.Value.Reserved - order.Value.Price > minimumTradeSatoshis)
+                    
+
+                    if (DateTime.UtcNow - order.Value.Opened > NewOrderWaitTime)
                     {
-                        if (order.Value.Type == "LIMIT_BUY" && BtrexData.Markets[order.Value.Exchange].TradeHistory.RecentFills.Last().Rate > order.Value.Limit)
+                        if (order.Value.Type == "LIMIT_BUY" && BtrexData.Markets[order.Value.Exchange].OrderBook.Bids.OrderByDescending(a => a.Key).First().Key > order.Value.Limit)
                         {
                             //Cancel and Replace at top bid:
-                            //QTY MUST BE ADJUSTED SO THAT 'Reserved' BTC AMT REAMINS EQUAL
+                            //QTY MUST BE ADJUSTED SO THAT 'TotalReserved' BTC AMT REAMINS EQUAL
 
 
 
@@ -83,7 +85,7 @@ namespace BtrexTrader.Interface
 
 
                         }
-                        else if (order.Value.Type == "LIMIT_SELL" && BtrexData.Markets[order.Value.Exchange].TradeHistory.RecentFills.Last().Rate < order.Value.Limit)
+                        else if (order.Value.Type == "LIMIT_SELL" && BtrexData.Markets[order.Value.Exchange].OrderBook.Asks.OrderBy(a => a.Key).First().Key < order.Value.Limit)
                         {
                             //IF ORDER IS NOT AT TOP OF ASKS, CANCEL AND REPLACE TO MAKE IT SO:
                             //Use QuantityRemains
@@ -108,17 +110,18 @@ namespace BtrexTrader.Interface
 
 
                             //MAKE SURE REMAINING AMOUNT IS STILL ABOVE MIN SATOSHIS
-                            if (canceledOrderData.result.Reserved - canceledOrderData.result.Price < minimumTradeSatoshis)
+                            var highestBid = BtrexData.Markets[canceledOrderData.result.Exchange].OrderBook.Asks.OrderBy(a => a.Key).First().Key;
+                            var satoshis = highestBid * canceledOrderData.result.QuantityRemaining;
+                            if (satoshis < minimumTradeSatoshis)
                             {
                                 //ORDER IS COMPLETE, CALL EXE CALLBACK
                                 RemoveNewOrder(order.Key);
                                 order.Value.CompleteOrder(canceledOrderData.result);
                                 continue;
                             }
-
-
+                            
                             //REPLACE ORDER
-                            var order2 = await BtrexREST.PlaceLimitOrder2(canceledOrderData.result.Exchange, "SELL", canceledOrderData.result.QuantityRemaining, BtrexData.Markets[canceledOrderData.result.Exchange].TradeHistory.RecentFills.Last().Rate);
+                            var order2 = await BtrexREST.PlaceLimitOrder2(canceledOrderData.result.Exchange, "SELL", canceledOrderData.result.QuantityRemaining, BtrexData.Markets[canceledOrderData.result.Exchange].OrderBook.Asks.OrderBy(a => a.Key).First().Key);
                             if (!order2.success)
                             {
                                 Trace.WriteLine("    !!!!ERR PLACE-ORDER2>>> " + order.Key + ": " + order2.message);
@@ -146,15 +149,9 @@ namespace BtrexTrader.Interface
                                 continue;
                             }
 
-
                             //UPDATE DATA BY COMBINING CANCELED-ORDDATA AND ORDER2DATA
-
-
-
-                            //CALL UPDATE ON DICT OpenOrder OBJ
-
-
-
+                            OpenOrders[order.Key].ReplaceOrder(canceledOrderData.result, order2data.result);                          
+                            
                         }
                     }
 
@@ -283,11 +280,21 @@ namespace BtrexTrader.Interface
             }
 
             var totalQty = 0M;
-            if (getOrder1.result.Type.ToUpper() == "LIMIT_SELL")
-                totalQty = getOrder1.result.Quantity;
+            var totalReserved = 0M;
 
+            if (getOrder1.result.Type.ToUpper() == "LIMIT_SELL")
+            {
+                totalQty = getOrder1.result.Quantity;
+                totalReserved = getOrder1.result.Price;
+            }
+            else if (getOrder1.result.Type.ToUpper() == "LIMIT_BUY")
+            {
+                totalReserved = getOrder1.result.Reserved;
+                totalQty = getOrder1.result.Quantity - getOrder1.result.QuantityRemaining;
+            }
+                        
             //Enter Order Data into Dictionary
-            var order = new OpenOrder(getOrder1.result, totalQty, ord.DataUpdateCallback, ord.ExecutionCompleteCallback, ord.CandlePeriod);
+            var order = new OpenOrder(getOrder1.result, totalQty, totalReserved, ord.DataUpdateCallback, ord.ExecutionCompleteCallback, ord.CandlePeriod);
             RegisterOpenOrder(order, ord.UniqueID);
             
         }
@@ -300,9 +307,8 @@ namespace BtrexTrader.Interface
 
 
 
-
-            var orderData = new OpenOrder(new GetOrderResult(), 0M);
-            ord.ExecutionCompleteCallback(orderData);
+            
+            //ord.ExecutionCompleteCallback(orderData);
         }
 
 
@@ -550,11 +556,12 @@ namespace BtrexTrader.Interface
         public string OrderUuid { get; set; }
         public string Exchange { get; set; }
         public string Type { get; set; }
-        public decimal TotalQuantity { get; set; }
         public decimal Quantity { get; set; }
         public decimal QuantityRemaining { get; set; }
         public decimal Limit { get; set; }
         public decimal Reserved { get; set; }
+        public decimal TotalQuantity { get; set; }
+        public decimal TotalReserved { get; set; }
         public decimal CommissionReserved { get; set; }
         public decimal CommissionReserveRemaining { get; set; }
         public decimal CommissionPaid { get; set; }
@@ -566,12 +573,13 @@ namespace BtrexTrader.Interface
         public Action<OpenOrder> ExecutionCompleteCallback { get; set; }
 
 
-        public OpenOrder(GetOrderResult ord, decimal totalQty, Action<OpenOrder> cBack_Data = null, Action<OpenOrder> cBack_Exe = null, string periodName = null)
+        public OpenOrder(GetOrderResult ord, decimal totalQty, decimal totalRes, Action<OpenOrder> cBack_Data, Action<OpenOrder> cBack_Exe, string periodName = null)
         {
             OrderUuid = ord.OrderUuid;
             Exchange = ord.Exchange;
             Type = ord.Type;
             TotalQuantity = totalQty;
+            TotalReserved = totalRes;
             Quantity = ord.Quantity;
             QuantityRemaining = ord.QuantityRemaining;
             Limit = ord.Limit;
@@ -580,73 +588,107 @@ namespace BtrexTrader.Interface
             CommissionReserveRemaining = ord.CommissionReserveRemaining;
             CommissionPaid = ord.CommissionPaid;
             Price = ord.Price;
-            PricePerUnit = ord.PricePerUnit;
-            Opened = ord.Opened;
-
-            if (cBack_Data != null)
-                DataUpdateCallback = cBack_Data;
-
-            if (cBack_Exe != null)
-                ExecutionCompleteCallback = cBack_Exe;
+            PricePerUnit = 0M;
+            Opened = ord.Opened;            
+            DataUpdateCallback = cBack_Data;
+            ExecutionCompleteCallback = cBack_Exe;
 
             if (periodName != null)
                 CandlePeriod = periodName;
+            
         }
 
 
-        public OpenOrder(string ID, string delta, string orderType, decimal totalQty, decimal qty, decimal qtyRemains, decimal limit_price, decimal BTCreserved, decimal feeReserved, decimal feeRemains, decimal feePaid, decimal BTCprice, decimal PPU, DateTime TimeOpened, Action<OpenOrder> cBack_Data = null, Action<OpenOrder> cBack_Exe = null, string periodName = null)
+        public OpenOrder(string ID, string delta, string orderType, decimal totalQty, decimal totalRes, decimal qty, decimal qtyRemains, decimal limit_price, decimal BTCreserved, decimal feeReserved, decimal feeRemains, decimal feePaid, decimal BTCprice, decimal PPU, DateTime TimeOpened, Action<OpenOrder> cBack_Data, Action<OpenOrder> cBack_Exe, string periodName = null)
         {
             OrderUuid = ID;
             Exchange = delta;
             Type = orderType;
             TotalQuantity = totalQty;
+            TotalReserved = totalRes;
             Quantity = qty;
             QuantityRemaining = qtyRemains;
             Limit = limit_price;
-            Reserved = BTCreserved;
+            Reserved = BTCreserved;           
             CommissionReserved = feeReserved;
             CommissionReserveRemaining = feeRemains;
             CommissionPaid = feePaid;
             Price = BTCprice;
             PricePerUnit = PPU;
             Opened = TimeOpened;
-
-            if (cBack_Data != null)
-                DataUpdateCallback = cBack_Data;
-
-            if (cBack_Exe != null)
-                ExecutionCompleteCallback = cBack_Exe;
+            DataUpdateCallback = cBack_Data;
+            ExecutionCompleteCallback = cBack_Exe;
 
             if (periodName != null)
                 CandlePeriod = periodName;
+                        
         }
 
 
-        public void UpdateOpenOrder(GetOrderResult ord)
+        public void UpdateOrder(GetOrderResult ord)
         {
+            //UPDATE TOTALS:
+            if (ord.Type.ToUpper() == "LIMIT_SELL")
+                TotalReserved += ord.Price - Price;
+            else if (ord.Type.ToUpper() == "LIMIT_BUY")
+                TotalQuantity += QuantityRemaining - ord.QuantityRemaining;
+
+            Limit = ord.Limit;
             Quantity = ord.Quantity;
             QuantityRemaining = ord.QuantityRemaining;
-            Limit = ord.Limit;
             Reserved = ord.Reserved;
+            Price = ord.Price;             
             CommissionReserved = ord.CommissionReserved;
             CommissionReserveRemaining = ord.CommissionReserveRemaining;
-            CommissionPaid = ord.CommissionPaid;
-            Price = ord.Price;
-            PricePerUnit = ord.PricePerUnit;
-            Opened = ord.Opened;
+            CommissionPaid = ord.CommissionPaid;  
 
             //CALL DataUpdateCallback:
             DataUpdateCallback(this);
         }
 
-
-        public void CompleteOrder(GetOrderResult data)
+        
+        public void CompleteOrder(GetOrderResult ord)
         {
-            //TODO: ADD DATA TO this OpenOrder, then call exe-callback:
+            //UPDATE TOTALS:
+            if (ord.Type.ToUpper() == "LIMIT_SELL")
+                TotalReserved += ord.Price - Price;
+            else if (ord.Type.ToUpper() == "LIMIT_BUY")
+                TotalQuantity += QuantityRemaining - ord.QuantityRemaining;
 
+            Limit = ord.Limit;
+            Quantity = ord.Quantity;
+            QuantityRemaining = ord.QuantityRemaining;
+            Reserved = ord.Reserved;
+            Price = ord.Price;
+            CommissionReserved = ord.CommissionReserved;
+            CommissionReserveRemaining = ord.CommissionReserveRemaining;
+            CommissionPaid = ord.CommissionPaid;
 
-
+            //CALL ExecutionCallback:
             ExecutionCompleteCallback(this);
+        }
+        
+        public void ReplaceOrder(GetOrderResult oldOrder, GetOrderResult newOrder)
+        {
+            OrderUuid = newOrder.OrderUuid;
+
+            if (newOrder.Type.ToUpper() == "LIMIT_SELL")            
+                TotalReserved += (oldOrder.Price - Price) + newOrder.Price;            
+            else if (newOrder.Type.ToUpper() == "LIMIT_BUY")
+                TotalQuantity += (QuantityRemaining - oldOrder.QuantityRemaining) + (newOrder.Quantity - newOrder.QuantityRemaining);
+
+            Limit = newOrder.Limit;
+            Quantity = newOrder.Quantity;
+            QuantityRemaining = newOrder.QuantityRemaining;
+            Reserved = newOrder.Reserved;
+            Price = newOrder.Price;
+            CommissionReserved = newOrder.CommissionReserved;
+            CommissionReserveRemaining = newOrder.CommissionReserveRemaining;
+            CommissionPaid = newOrder.CommissionPaid;
+
+            //CALL DataUpdateCallback:
+            DataUpdateCallback(this);
+
         }
 
     }
