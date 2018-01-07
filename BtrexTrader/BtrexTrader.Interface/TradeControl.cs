@@ -57,7 +57,7 @@ namespace BtrexTrader.Interface
                     {
                         //Remove from Dictionary and call ExeCallback:
                         RemoveNewOrder(order.Key);
-                        order.Value.ExecutionCompleteCallback(getOrder2.result);
+                        order.Value.CompleteOrder(getOrder2.result);
 
                         continue;
                     }
@@ -112,7 +112,7 @@ namespace BtrexTrader.Interface
                             {
                                 //ORDER IS COMPLETE, CALL EXE CALLBACK
                                 RemoveNewOrder(order.Key);
-                                order.Value.ExecutionCompleteCallback(canceledOrderData.result);
+                                order.Value.CompleteOrder(canceledOrderData.result);
                                 continue;
                             }
 
@@ -142,12 +142,12 @@ namespace BtrexTrader.Interface
                             {
                                 //ORDER IS COMPLETE, CALL EXE CALLBACK
                                 RemoveNewOrder(order.Key);
-                                order.Value.ExecutionCompleteCallback(canceledOrderData.result);
+                                order.Value.CompleteOrder(canceledOrderData.result);
                                 continue;
                             }
 
 
-                            //UPDATE DATA BY COMBINING CANCELLED-ORDDATA AND ORDER2DATA
+                            //UPDATE DATA BY COMBINING CANCELED-ORDDATA AND ORDER2DATA
 
 
 
@@ -282,192 +282,26 @@ namespace BtrexTrader.Interface
                 Trace.WriteLine("    !!!!ERR ExecuteNewOrder-GET-ORDER1: " + getOrder1.message);
             }
 
+            var totalQty = 0M;
+            if (getOrder1.result.Type.ToUpper() == "LIMIT_SELL")
+                totalQty = getOrder1.result.Quantity;
+
             //Enter Order Data into Dictionary
-            var order = new OpenOrder(getOrder1.result, ord.DataUpdateCallback, ord.ExecutionCompleteCallback, ord.CandlePeriod);
+            var order = new OpenOrder(getOrder1.result, totalQty, ord.DataUpdateCallback, ord.ExecutionCompleteCallback, ord.CandlePeriod);
             RegisterOpenOrder(order, ord.UniqueID);
-
-
-            //    var orderReturnData = new NewOrder(ord.MarketDelta, ord.BUYorSELL, 0, 0, null, null, ord.CandlePeriod);            
-            //    bool orderComplete = false;
-            //    decimal percentRemaining = 1;
-            //    decimal newQty = ord.Qty;
-            //    var orderRate = ord.Rate;
-            //    var BTCbuyWager = ord.Qty * ord.Rate * 1.0025M;
-
-            //                Trace.WriteLine(string.Format("%%%%PLACING ORDER: {0} {1} ... QTY: {2} ... RATE: {3} ", ord.BUYorSELL, ord.MarketDelta, ord.Qty, ord.Rate));
-
-            //    //PLACE INITIAL ORDER:
-            //    var orderResp = await BtrexREST.PlaceLimitOrder(ord.MarketDelta, ord.BUYorSELL, ord.Qty, ord.Rate);
-            //    if (!orderResp.success)
-            //    {
-            //        Trace.WriteLine("    !!!!ERR ExecuteNewOrder-PLACE-ORDER1>> " + orderResp.message);
-            //        Trace.WriteLine(string.Format("{0} {3} QTY: {1} ...  RATE: {2}", ord.MarketDelta, ord.Qty, ord.Rate, ord.BUYorSELL));
-            //        return;
-            //    }
-
-            //    string OrderID = orderResp.result.uuid;
-
-            //    var stopwatch = new Stopwatch();
-            //    stopwatch.Start();                       
-
-            //    //ORDER EXECUTION LOOP:
-            //    do
-            //    {
-            //        Thread.Sleep(1000);
-            //        var getOrder1 = await BtrexREST.GetOrder(OrderID);
-            //        if (!getOrder1.success)
-            //        {
-            //            Trace.WriteLine("    !!!!ERR ExecuteNewOrder-GET-ORDER1: " + getOrder1.message);
-            //        }                              
-
-            //        orderComplete = !getOrder1.result.IsOpen;
-
-            //        if (orderComplete)
-            //        {
-            //            //ADD DATA TO RETURN OBJECT
-            //            //avgRate = TOTAL BTC amt SPENT divided by TOTAL QTY RECIEVED)
-            //            orderReturnData.Rate = ((orderReturnData.Qty * orderReturnData.Rate) + (getOrder1.result.Quantity * getOrder1.result.Price)) / (orderReturnData.Qty + getOrder1.result.Quantity);
-            //            orderReturnData.Qty += getOrder1.result.Quantity;
-            //            Trace.WriteLine(ord.MarketDelta + "ORDER COMPLETE1&&&&&&&");
-            //        }
-            //        else if (!orderComplete)
-            //        {
-
-            //            Trace.WriteLine(ord.MarketDelta + "else&&&&&&");
-            //            //IF THE REMAINING AMT IS UNDER DUST ORDER, JUST WAIT FOR COMPLETION
-            //            if (getOrder1.result.QuantityRemaining * getOrder1.result.Price < minimumTradeSatoshis)
-            //                continue;
-            //            //ELSE, IF THE ORDER REMAINS AFTER (30) SECONDS, CANCEL & REPLACE AT NEW RATE:
-            //            else if (stopwatch.Elapsed > TimeSpan.FromSeconds(12))
-            //            {                    
-            //                //RECALC RATE and (BUY)QTY AND REPOST ORDER AT DATA PRICE
-            //                if (ord.BUYorSELL == "BUY" && BtrexData.Markets[ord.MarketDelta].OrderBook.Bids.ToList().OrderByDescending(k => k.Key).First().Key > orderRate)
-            //                {
-            //                    //CANCEL TRADE ORDER IF NOT IMMEDIATE EXE
-            //                    LimitOrderResponse cancel = await BtrexREST.CancelLimitOrder(OrderID);
-            //                    if (!cancel.success)
-            //                    {
-            //                        Trace.WriteLine("    !!!!ERR ExecuteNewOrder-CANCEL-MOVE>> " + cancel.message);
-            //                        return;
-            //                    }
-
-            //                    //GET ORDER ONCE AGAIN TO CHECK PARTIALLY COMPLETED
-            //                    var getOrder2 = await BtrexREST.GetOrder(OrderID);
-            //                    if (!getOrder2.success)
-            //                    {
-            //                        Trace.WriteLine("    !!!!ERR ExecuteNewOrder-GET-ORDER2: " + getOrder2.message);
-            //                    }
-
-            //                    //Add completed amount to percentComplete:
-            //                    var completedQty = getOrder2.result.Quantity - getOrder2.result.QuantityRemaining;
-            //                    var currentCompletion = completedQty / getOrder2.result.Quantity;
-            //                    percentRemaining -= percentRemaining * currentCompletion;
-            //                    var wagerRemains = percentRemaining * BTCbuyWager;
-
-            //                    if (currentCompletion > 0M)
-            //                    {
-            //                        //ADD DATA TO RETURN OBJECT
-            //                        orderReturnData.Rate = ((orderReturnData.Qty * orderReturnData.Rate) + (completedQty * getOrder2.result.Price)) / (orderReturnData.Qty + completedQty);
-            //                        orderReturnData.Qty += completedQty;
-            //                    }
-
-            //                    //FINAL CHECK FOR ORDER COMPLETE:
-            //                    if (getOrder2.result.QuantityRemaining == 0M || wagerRemains > minimumTradeSatoshis)
-            //                    {
-            //                        orderComplete = true;
-            //                        break;
-            //                    }
-
-            //                    //REPLACE CANCELED ORDER AT NEW RATE WITH NEW QTY:
-            //                    orderRate = BtrexData.Markets[ord.MarketDelta].OrderBook.Bids.ToList().OrderByDescending(k => k.Key).First().Key;
-            //                    newQty = wagerRemains / (orderRate * 1.0025M);
-
-            //                    var orderResp2 = await BtrexREST.PlaceLimitOrder(ord.MarketDelta, "BUY", newQty, orderRate);
-            //                    if (!orderResp2.success)
-            //                    {
-            //                        Trace.WriteLine("    !!!!ERR ExecuteNewOrder-PLACE(BUY)-ORDER2>> " + orderResp2.message);
-            //                        Trace.WriteLine(string.Format(" QTY: {1} ...  RATE: {2}", newQty, orderRate));
-            //                    }
-
-            //                    OrderID = orderResp2.result.uuid;
-
-
-            //                }
-            //                //REPLACE "SELL" ORDER TO SELL REAMINING QTY AT NEW RATE:
-            //                else if (ord.BUYorSELL == "SELL" && BtrexData.Markets[ord.MarketDelta].OrderBook.Asks.ToList().OrderBy(k => k.Key).First().Key < orderRate)
-            //                {
-            //                    //CANCEL TRADE ORDER IF NOT IMMEDIATE EXE
-            //                    LimitOrderResponse cancel = await BtrexREST.CancelLimitOrder(OrderID);
-            //                    if (!cancel.success)
-            //                    {
-            //                        Trace.WriteLine("    !!!!ERR CANCEL-MOVE>> " + cancel.message);
-            //                        return;
-            //                    }
-
-            //                    //GET ORDER ONCE AGAIN TO CHECK PARTIALLY COMPLETED
-            //                    var getOrder2 = await BtrexREST.GetOrder(OrderID);
-            //                    if (!getOrder2.success)
-            //                    {
-            //                        Trace.WriteLine("    !!!!ERR ExecuteNewOrder-GET-ORDER2: " + getOrder2.message);
-            //                    }
-
-            //                    var completedQty = getOrder2.result.Quantity - getOrder2.result.QuantityRemaining;
-
-            //                    if (completedQty > 0)
-            //                    {
-            //                        //ADD DATA TO RETURN OBJECT
-            //                        orderReturnData.Rate = ((orderReturnData.Qty * orderReturnData.Rate) + (completedQty * getOrder2.result.Price)) / (orderReturnData.Qty + completedQty);
-            //                        orderReturnData.Qty += completedQty;
-            //                    }
-
-            //                    //CHECK NEW ORDER RATE:
-            //                    orderRate = BtrexData.Markets[ord.MarketDelta].OrderBook.Asks.ToList().OrderBy(k => k.Key).First().Key;
-
-            //                    //FINAL CHECK FOR ORDER COMPLETE, OR REMAINING AMOUNT == LESS THAN DUST:
-            //                    if (getOrder2.result.QuantityRemaining == 0 || getOrder2.result.QuantityRemaining * orderRate < minimumTradeSatoshis)  
-            //                    {
-            //                        orderComplete = true;
-            //                        break;
-            //                    }
-
-            //                    //REPLACE ORDER TO SELL REMAINING QTY AT NEW RATE:
-            //                    var orderResp2 = await BtrexREST.PlaceLimitOrder(ord.MarketDelta, "SELL", getOrder2.result.QuantityRemaining, orderRate);
-            //                    if (!orderResp2.success)
-            //                    {
-            //                        Trace.WriteLine("    !!!!ERR ExecuteNewOrder-PLACE(SELL)-ORDER2>> " + orderResp2.message);
-            //                        Trace.WriteLine(string.Format(" QTY: {1} ...  RATE: {2}", newQty, orderRate));
-            //                    }
-
-            //                    OrderID = orderResp2.result.uuid;
-
-            //                }
-
-            //            }
-            //        }                                
-
-            //    } while (!orderComplete);
-
-            //    stopwatch.Stop();
-
-            //    //ADJUST FINAL AVG RATE DATA FOR EXCHANGE FEE: 
-            //    if (orderReturnData.BUYorSELL == "BUY")
-            //        orderReturnData.Rate = BtrexData.Markets[ord.MarketDelta].TradeHistory.RecentFills.Last().Rate; //orderReturnData.Rate = orderReturnData.Rate * 1.0025M;
-            //    else if (orderReturnData.BUYorSELL == "SELL")
-            //        orderReturnData.Rate = orderReturnData.Rate * 0.9975M;
-
-            //    //CALL NewOrder obj CALLBACK FUNCTION:
-            //    ord.ExecutionCompleteCallback(orderReturnData);
+            
         }
 
 
         public async Task VirtualExecuteNewOrder(NewOrder ord)
         {
-            var orderData = new GetOrderResult();
-            
+
             //TODO: CREATE ORDER-DATA FROM ord
 
 
 
+
+            var orderData = new OpenOrder(new GetOrderResult(), 0M);
             ord.ExecutionCompleteCallback(orderData);
         }
 
@@ -688,9 +522,9 @@ namespace BtrexTrader.Interface
         public decimal Rate { get; set; }
         public string CandlePeriod { get; set; }
         public Action<OpenOrder> DataUpdateCallback { get; set; }
-        public Action<GetOrderResult> ExecutionCompleteCallback { get; set; }
+        public Action<OpenOrder> ExecutionCompleteCallback { get; set; }
 
-        public NewOrder(string ID, string mDelta, string BUYSELL, decimal quantity, decimal price, Action<OpenOrder> DUpdateCback = null, Action<GetOrderResult> ExeCback = null, string cPeriod = null)
+        public NewOrder(string ID, string mDelta, string BUYSELL, decimal quantity, decimal price, Action<OpenOrder> DUpdateCback = null, Action<OpenOrder> ExeCback = null, string cPeriod = null)
         {
             UniqueID = ID;
             MarketDelta = mDelta;
@@ -716,6 +550,7 @@ namespace BtrexTrader.Interface
         public string OrderUuid { get; set; }
         public string Exchange { get; set; }
         public string Type { get; set; }
+        public decimal TotalQuantity { get; set; }
         public decimal Quantity { get; set; }
         public decimal QuantityRemaining { get; set; }
         public decimal Limit { get; set; }
@@ -728,14 +563,15 @@ namespace BtrexTrader.Interface
         public DateTime Opened { get; set; }
         public string CandlePeriod { get; set; }
         public Action<OpenOrder> DataUpdateCallback { get; set; }
-        public Action<GetOrderResult> ExecutionCompleteCallback { get; set; }
+        public Action<OpenOrder> ExecutionCompleteCallback { get; set; }
 
 
-        public OpenOrder(GetOrderResult ord, Action<OpenOrder> cBack_Data = null, Action<GetOrderResult> cBack_Exe = null, string periodName = null)
+        public OpenOrder(GetOrderResult ord, decimal totalQty, Action<OpenOrder> cBack_Data = null, Action<OpenOrder> cBack_Exe = null, string periodName = null)
         {
             OrderUuid = ord.OrderUuid;
             Exchange = ord.Exchange;
             Type = ord.Type;
+            TotalQuantity = totalQty;
             Quantity = ord.Quantity;
             QuantityRemaining = ord.QuantityRemaining;
             Limit = ord.Limit;
@@ -758,11 +594,12 @@ namespace BtrexTrader.Interface
         }
 
 
-        public OpenOrder(string ID, string delta, string orderType, decimal qty, decimal qtyRemains, decimal limit_price, decimal BTCreserved, decimal feeReserved, decimal feeRemains, decimal feePaid, decimal BTCprice, decimal PPU, DateTime TimeOpened, Action<OpenOrder> cBack_Data = null, Action<GetOrderResult> cBack_Exe = null, string periodName = null)
+        public OpenOrder(string ID, string delta, string orderType, decimal totalQty, decimal qty, decimal qtyRemains, decimal limit_price, decimal BTCreserved, decimal feeReserved, decimal feeRemains, decimal feePaid, decimal BTCprice, decimal PPU, DateTime TimeOpened, Action<OpenOrder> cBack_Data = null, Action<OpenOrder> cBack_Exe = null, string periodName = null)
         {
             OrderUuid = ID;
             Exchange = delta;
             Type = orderType;
+            TotalQuantity = totalQty;
             Quantity = qty;
             QuantityRemaining = qtyRemains;
             Limit = limit_price;
@@ -800,6 +637,16 @@ namespace BtrexTrader.Interface
 
             //CALL DataUpdateCallback:
             DataUpdateCallback(this);
+        }
+
+
+        public void CompleteOrder(GetOrderResult data)
+        {
+            //TODO: ADD DATA TO this OpenOrder, then call exe-callback:
+
+
+
+            ExecutionCompleteCallback(this);
         }
 
     }
