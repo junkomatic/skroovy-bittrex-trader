@@ -4,9 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.IO;
 using System.Data;
-using System.Data.SQLite;
 using System.Diagnostics;
 using BtrexTrader.Strategy.Core;
 using BtrexTrader.Data;
@@ -26,10 +24,15 @@ namespace BtrexTrader.Interface
 
         public void StartTrading()
         {
-            TradeControllerThread = new Thread(async () => await ProcessOrders());
+            TradeControllerThread = new Thread(() => RunAsync());
             TradeControllerThread.IsBackground = true;
             TradeControllerThread.Name = "TradeControl-Thread";
             TradeControllerThread.Start();
+        }
+
+        private void RunAsync()
+        {
+            ProcessOrders().Wait();
         }
 
         private async Task ProcessOrders()
