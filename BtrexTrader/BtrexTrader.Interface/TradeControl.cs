@@ -267,9 +267,13 @@ namespace BtrexTrader.Interface
             var orderResp = await BtrexREST.PlaceLimitOrder(ord.MarketDelta, ord.BUYorSELL, ord.Qty, ord.Rate);
             if (!orderResp.success)
             {
-                Trace.WriteLine("    !!!!ERR ExecuteNewOrder-PLACE-ORDER1>> " + orderResp.message);
-                Trace.WriteLine(string.Format("{0} {3} QTY: {1} ...  RATE: {2}", ord.MarketDelta, ord.Qty, ord.Rate, ord.BUYorSELL));
-                return;
+                orderResp = await BtrexREST.PlaceLimitOrder2(ord.MarketDelta, ord.BUYorSELL, ord.Qty, ord.Rate);
+                if (!orderResp.success)
+                {
+                    Trace.WriteLine("    !!!!ERR ExecuteNewOrder-PLACE-ORDER1>> " + orderResp.message);
+                    Trace.WriteLine(string.Format("{0} {3} QTY: {1} ...  RATE: {2}", ord.MarketDelta, ord.Qty, ord.Rate, ord.BUYorSELL));
+                    return; 
+                }
             }
 
             //Wait for server processing time and then call order data:

@@ -249,7 +249,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                             var amt = (OPTIONS.BTCwagerAmt * wagerMultiple) / (rate * 1.0025M);
                             var ID = string.Format("{0}_{1}", periodName, delta);
 
-                            NewOrders.Add(new NewOrder("TODO", delta, "BUY", amt, rate, (a) => OrderDataCallback(a), (a) => OrderExecutedCallback(a), periodName));
+                            NewOrders.Add(new NewOrder(ID, delta, "BUY", amt, rate, (a) => OrderDataCallback(a), (a) => OrderExecutedCallback(a), periodName));
                         }
                         
                     }
@@ -257,13 +257,13 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     {
                         //ADD SELL ORDER on period
                         var rate = BtrexData.Markets[delta].TradeHistory.RecentFills.Last().Rate;
-                        //EXECUTE SELL ON SIGNAL IF RATE IS PROFITABLE (OTHERWISE BAG HOLD/STOPLOSS SELL)
+                        //EXECUTE SELL ON SIGNAL IF RATE IS PROFITABLE (OTHERWISE BAG HOLD->STOPLOSS SELL)
                         if ((rate * 0.9975M) - Convert.ToDecimal(held[0]["BoughtRate"]) > 0)
                         {
                             var amt = Convert.ToDecimal(Holdings.Tables[periodName].AsEnumerable().Where(o => (string)o["MarketDelta"] == delta).First()["Qty"]);
                             var ID = string.Format("{0}_{1}", periodName, delta);
 
-                            NewOrders.Add(new NewOrder("TODO", delta, "SELL", amt, rate, (a) => OrderDataCallback(a), (a) => OrderExecutedCallback(a), periodName));
+                            NewOrders.Add(new NewOrder(ID, delta, "SELL", amt, rate, (a) => OrderDataCallback(a), (a) => OrderExecutedCallback(a), periodName));
                         }                        
                     }
                 }
@@ -478,144 +478,25 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
         public void OrderDataCallback(OpenOrder OrderData)
         {
-            //TODO!!:
-
-
+            //TODO:
+            //CREATE/UPDATE DATA ENTRIES IN OpenOrders AND GENERATE SQL ORDER-UPDATE
+            //(CREATE NEW UPDATE CLASS FOR PENDING ORDER UPDATES)
 
 
 
 
 
         }
-        
+
 
         public void OrderExecutedCallback(OpenOrder OrderData)
         { 
-            //var TimeCompleted = DateTime.UtcNow;
+            //TODO:
+            //REMOVE FROM OpenOrders TABLE, SQL, AND GENERATE SQL SaveDataUpdate
 
-            ////Pull from pending orders     ***TODO: OpenOrder Finished Execution DataUpdates
-            ////PendingOrders.RemoveAll(o => o.MarketDelta == OrderData.MarketDelta && o.CandlePeriod == OrderData.CandlePeriod);
 
-            //if (OrderData.BUYorSELL == "BUY")
-            //{
-            //    //Create and register stoploss
-            //    decimal stoplossRate = OrderData.Rate - (CalcStoplossMargin(OrderData.MarketDelta, OrderData.CandlePeriod) * OPTIONS.ATRmultipleT1);
 
-            //    switch (OrderData.CandlePeriod)
-            //    {
-            //        case "period5m":
-            //            if (stoplossRate / OrderData.Rate < 0.98M)
-            //                stoplossRate = OrderData.Rate * 0.98M;
-            //            break;
-            //        case "period20m":
-            //            if (stoplossRate / OrderData.Rate < 0.95M)
-            //                stoplossRate = OrderData.Rate * 0.95M;
-            //            break;
-            //        case "period1h":
-            //            if (stoplossRate / OrderData.Rate < 0.93M)
-            //                stoplossRate = OrderData.Rate * 0.93M;
-            //            break;
-            //        case "period4h":
-            //            if (stoplossRate / OrderData.Rate < 0.90M)
-            //                stoplossRate = OrderData.Rate * 0.90M;
-            //            break;
-            //        case "period12h":
-            //            if (stoplossRate / OrderData.Rate < 0.88M)
-            //                stoplossRate = OrderData.Rate * 0.88M;
-            //            break;
-            //    }
 
-            //    if (OPTIONS.SAFEMODE)
-            //        stoplossRate = 0.00105M / OrderData.Qty;
-                
-            //    StopLossController.RegisterStoploss(new StopLoss(OrderData.MarketDelta, stoplossRate, OrderData.Qty, (a, b, c) => ReCalcStoploss(a, b, c), (a, b) => StopLossExecutedCallback(a, b), OrderData.CandlePeriod, OPTIONS.VirtualModeOnOff), string.Format("{0}_{1}", OrderData.CandlePeriod, OrderData.MarketDelta));
-                
-            //    //ENTER INTO HOLDINGS:
-            //    var newHoldingsRow = Holdings.Tables[OrderData.CandlePeriod].NewRow();
-            //    newHoldingsRow["MarketDelta"] = OrderData.MarketDelta;
-            //    newHoldingsRow["DateTimeBUY"] = TimeCompleted;
-            //    newHoldingsRow["Qty"] = OrderData.Qty;
-            //    newHoldingsRow["BoughtRate"] = OrderData.Rate;
-            //    newHoldingsRow["DateTimeSELL"] = "OWNED";
-            //    newHoldingsRow["SoldRate"] = "OWNED";
-            //    newHoldingsRow["StopLossRate"] = stoplossRate;
-            //    newHoldingsRow["SL_Executed"] = 0;
-            //    Holdings.Tables[OrderData.CandlePeriod].Rows.Add(newHoldingsRow);
-
-            //    //CREATE/ADD SQL UPDATE:
-            //    var update = new SaveDataUpdate(OrderData.CandlePeriod, OrderData.MarketDelta, "BUY", TimeCompleted, OrderData.Qty, OrderData.Rate, stoplossRate);
-            //    SQLDataWrites.Enqueue(update);
-
-            //    //OUTPUT BOUGHT ON BUYSIGNAL:
-            //    Trace.WriteLine(string.Format("{0}{1} Bought {2} at {3}, SL_Rate: {4:0.00000000}",
-            //        OPTIONS.VirtualModeOnOff ? "[VIRTUAL|" + TimeCompleted + "] ::: " : "["+ TimeCompleted +"] ::: ", 
-            //        OrderData.CandlePeriod.Remove(0, 6),
-            //        OrderData.MarketDelta.Split('-')[1],
-            //        OrderData.Rate,
-            //        stoplossRate));
-            //}
-            //else if (OrderData.BUYorSELL == "SELL")
-            //{
-            //    //CANCEL STOPLOSS
-            //    StopLossController.CancelStoploss(string.Format("{0}_{1}", OrderData.CandlePeriod, OrderData.MarketDelta));
-                
-            //    //FIND + REMOVE FROM HOLDINGS TABLE:
-            //    var holdingRows = Holdings.Tables[OrderData.CandlePeriod].Select(string.Format("MarketDelta = '{0}'", OrderData.MarketDelta));                                              
-
-            //    //CALC PROFIT WITH BOUGHT RATE AND FEES INCLUDED, OUTPUT:
-            //    var profit = ((OrderData.Rate / Convert.ToDecimal(holdingRows[0]["BoughtRate"])) - 1M);
-            //    var compoundMultiple = ((Convert.ToDecimal(holdingRows[0]["BoughtRate"]) * Convert.ToDecimal(holdingRows[0]["Qty"])) / OPTIONS.BTCwagerAmt);
-
-            //    TradingTotal += (profit * compoundMultiple);
-            //    var netWorth = GetNetPercentage();
-
-            //    var timeHeld = TimeCompleted - Convert.ToDateTime(holdingRows[0]["DateTimeBUY"]);
-
-            //    //REMOVE
-            //    foreach (var row in holdingRows)
-            //        Holdings.Tables[OrderData.CandlePeriod].Rows.Remove(row);
-
-            //    //CREATE/ADD SQL DATA UPDATE:             
-            //    var update = new SaveDataUpdate(OrderData.CandlePeriod, OrderData.MarketDelta, "SELL", TimeCompleted, OrderData.Qty, OrderData.Rate, null, false, TradingTotal);
-            //    SQLDataWrites.Enqueue(update);
-
-            //    //OUTPUT SOLD ON SELLSIGNAL:
-            //    Trace.Write(string.Format("{0}{1} Sold {2} at {3}\r\n    =TradeProfit: ",
-            //        OPTIONS.VirtualModeOnOff ? "[VIRTUAL|" + TimeCompleted + "] ::: " : "[" + TimeCompleted + "] ::: ",
-            //        OrderData.CandlePeriod.Remove(0, 6),
-            //        OrderData.MarketDelta.Split('-')[1],
-            //        OrderData.Rate));
-            //    //OUTPUT PROFIT ON TRADE:
-            //    if (profit < 0)
-            //        Console.ForegroundColor = ConsoleColor.Red;
-            //    else if (profit > 0)
-            //        Console.ForegroundColor = ConsoleColor.Green;
-            //    Trace.Write(string.Format("{0:+0.###%;-0.###%;0}", profit));
-            //    //OUTPUT TIME HELD
-            //    Console.ForegroundColor = ConsoleColor.DarkCyan;
-            //    Trace.Write(string.Format(".....=Time-Held: {0:hh\\:mm\\:ss}.....", timeHeld));
-            //    //OUTPUT GROSS TOTAL PROFIT PERCENTAGE:
-            //    if (TradingTotal < 0)
-            //        Console.ForegroundColor = ConsoleColor.Red;
-            //    else if (TradingTotal > 0)
-            //        Console.ForegroundColor = ConsoleColor.Green;
-            //    else
-            //        Console.ForegroundColor = ConsoleColor.DarkCyan;
-            //    Trace.Write(string.Format("=GrossProfit: {0:+0.###%;-0.###%;0}", TradingTotal / OPTIONS.MAXTOTALENTRANCES));
-
-            //    Console.ForegroundColor = ConsoleColor.DarkCyan;
-            //    Trace.Write(".....");
-            //    //OUTPUT CURRENT NET WORTH PERCENTAGE INCLUDING HOLDINGS:
-            //    if (netWorth > 0)
-            //        Console.ForegroundColor = ConsoleColor.DarkGreen;
-            //    else if (netWorth < 0)
-            //        Console.ForegroundColor = ConsoleColor.DarkRed;
-            //    else
-            //        Console.ForegroundColor = ConsoleColor.DarkCyan;                
-            //    Trace.WriteLine(string.Format("=CurrentNetWorth: {0:+0.###%;-0.###%;0}", netWorth));
-            //    Console.ForegroundColor = ConsoleColor.DarkCyan;               
-                                
-            //}
             
         }
 
