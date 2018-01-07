@@ -235,6 +235,8 @@
     <Compile Include="BtrexTrader.Interface\BtrexREST.cs" />
     <Compile Include="BtrexTrader.Data\POCOclasses.cs" />
     <Compile Include="BtrexTrader.Interface\BtrexWS.cs" />
+    <Compile Include="BtrexTrader.Interface\NewOrder.cs" />
+    <Compile Include="BtrexTrader.Interface\OpenOrder.cs" />
     <Compile Include="BtrexTrader.Interface\WebSocketSharpTransport\WebSocketSharpRequestWrapperEx.cs" />
     <Compile Include="BtrexTrader.Interface\WebSocketSharpTransport\BtrexWSwithCFUtil.cs" />
     <Compile Include="BtrexTrader.Interface\TradeControl.cs" />
@@ -253,6 +255,7 @@
     <Compile Include="Strategy\EMAofRSI1\EofR1control.cs" />
     <Compile Include="Strategy\Core\StratData_MultiPeriods.cs" />
     <Compile Include="Strategy\TripletStrategy\TripletData.cs" />
+    <Compile Include="Strategy\TripletStrategy\TripletTradeControlEntries.cs" />
     <Compile Include="Strategy\TripletStrategy\TripletTrader.cs" />
   </ItemGroup>
   <ItemGroup>
