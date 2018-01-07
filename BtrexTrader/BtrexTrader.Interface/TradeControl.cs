@@ -106,17 +106,48 @@ namespace BtrexTrader.Interface
                             }
                             while (canceledOrderData.result == null || canceledOrderData.result.IsOpen == false);
 
-                            
+
                             //MAKE SURE REMAINING AMOUNT IS STILL ABOVE MIN SATOSHIS
-                            //AND REPLACE ORDER
+                            if (canceledOrderData.result.Reserved - canceledOrderData.result.Price < minimumTradeSatoshis)
+                            {
+                                //ORDER IS COMPLETE, CALL EXE CALLBACK
+                                RemoveNewOrder(order.Key);
+                                order.Value.ExecutionCompleteCallback(canceledOrderData.result);
+                                continue;
+                            }
 
 
+                            //REPLACE ORDER
+                            var order2 = await BtrexREST.PlaceLimitOrder2(canceledOrderData.result.Exchange, "SELL", canceledOrderData.result.QuantityRemaining, BtrexData.Markets[canceledOrderData.result.Exchange].TradeHistory.RecentFills.Last().Rate);
+                            if (!order2.success)
+                            {
+                                Trace.WriteLine("    !!!!ERR PLACE-ORDER2>>> " + order.Key + ": " + order2.message);
+                                continue;
+                            }
 
                             //GET REPLACED ORDER DATA
+                            var order2data = new GetOrderResponse();
+                            do
+                            {
+                                order2data = await BtrexREST.GetOrder(order2.result.uuid);
+                                if (!order2data.success)
+                                {
+                                    Trace.WriteLine("    !!!!ERR GET-ORD2DATA>>> " + order.Key + ": " + order2data.message);
+                                }
+                            }
+                            while (order2data.result == null || order2data.result.IsOpen == false);
+
+                            //CHECK IsOpen, IF false THEN EXE CALLBACK
+                            if (!order2data.result.IsOpen)
+                            {
+                                //ORDER IS COMPLETE, CALL EXE CALLBACK
+                                RemoveNewOrder(order.Key);
+                                order.Value.ExecutionCompleteCallback(canceledOrderData.result);
+                                continue;
+                            }
 
 
-
-                            //UPDATE DATA BY COMBINING CANCELLED-ORDDATA AND REPLACED ORDER DATA
+                            //UPDATE DATA BY COMBINING CANCELLED-ORDDATA AND ORDER2DATA
 
 
 
