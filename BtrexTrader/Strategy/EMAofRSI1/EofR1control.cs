@@ -524,34 +524,34 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             foreach (var row in OpenOrderRows)
                     Holdings.Tables["OpenOrders"].Rows.Remove(row);
             
-            var AvgPricePerUnit = OrderData.TotalReserved / OrderData.TotalQuantity;
+            OrderData.PricePerUnit = OrderData.TotalReserved / OrderData.TotalQuantity;
 
             if (OrderData.Type == "LIMIT_BUY")
             {
                 //Calculate stoploss, within acceptable range per PeriodLength:
-                decimal stoplossRate = AvgPricePerUnit - (CalcStoplossMargin(OrderData.Exchange, OrderData.CandlePeriod) * OPTIONS.ATRmultipleT1);
+                decimal stoplossRate = OrderData.PricePerUnit - (CalcStoplossMargin(OrderData.Exchange, OrderData.CandlePeriod) * OPTIONS.ATRmultipleT1);
 
                 switch (OrderData.CandlePeriod)
                 {
                     case "period5m":
-                        if (stoplossRate / AvgPricePerUnit < 0.98M)
-                            stoplossRate = AvgPricePerUnit * 0.98M;
+                        if (stoplossRate / OrderData.PricePerUnit < 0.98M)
+                            stoplossRate = OrderData.PricePerUnit * 0.98M;
                         break;
                     case "period20m":
-                        if (stoplossRate / AvgPricePerUnit < 0.95M)
-                            stoplossRate = AvgPricePerUnit * 0.95M;
+                        if (stoplossRate / OrderData.PricePerUnit < 0.95M)
+                            stoplossRate = OrderData.PricePerUnit * 0.95M;
                         break;
                     case "period1h":
-                        if (stoplossRate / AvgPricePerUnit < 0.93M)
-                            stoplossRate = AvgPricePerUnit * 0.93M;
+                        if (stoplossRate / OrderData.PricePerUnit < 0.93M)
+                            stoplossRate = OrderData.PricePerUnit * 0.93M;
                         break;
                     case "period4h":
-                        if (stoplossRate / AvgPricePerUnit < 0.90M)
-                            stoplossRate = AvgPricePerUnit * 0.90M;
+                        if (stoplossRate / OrderData.PricePerUnit < 0.90M)
+                            stoplossRate = OrderData.PricePerUnit * 0.90M;
                         break;
                     case "period12h":
-                        if (stoplossRate / AvgPricePerUnit < 0.88M)
-                            stoplossRate = AvgPricePerUnit * 0.88M;
+                        if (stoplossRate / OrderData.PricePerUnit < 0.88M)
+                            stoplossRate = OrderData.PricePerUnit * 0.88M;
                         break;
                 }
 
@@ -567,23 +567,24 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 newHoldingsRow["MarketDelta"] = OrderData.Exchange;
                 newHoldingsRow["DateTimeBUY"] = OrderData.Closed;
                 newHoldingsRow["Qty"] = OrderData.TotalQuantity;
-                newHoldingsRow["BoughtRate"] = AvgPricePerUnit;
+                newHoldingsRow["BoughtRate"] = OrderData.PricePerUnit;
                 newHoldingsRow["DateTimeSELL"] = "OWNED";
                 newHoldingsRow["SoldRate"] = "OWNED";
                 newHoldingsRow["StopLossRate"] = stoplossRate;
                 newHoldingsRow["SL_Executed"] = 0;
                 Holdings.Tables[OrderData.CandlePeriod].Rows.Add(newHoldingsRow);
 
-                //Create + Enqueue SaveDataUpdate
-                var update = new SaveDataUpdate(OrderData.CandlePeriod, OrderData.Exchange, "BUY", (DateTime)OrderData.Closed, OrderData.TotalQuantity, AvgPricePerUnit, stoplossRate);
+                //Create + Enqueue SaveDataUpdate + OrderUpdate
+                var update = new SaveDataUpdate(OrderData.CandlePeriod, OrderData.Exchange, "BUY", (DateTime)OrderData.Closed, OrderData.TotalQuantity, OrderData.PricePerUnit, stoplossRate);
                 SQLDataUpdateWrites.Enqueue(update);
+                SQLOrderUpdateWrites.Enqueue(OrderData);
 
                 //OUTPUT BUY
                 Trace.WriteLine(string.Format("{0}{1} Bought {2} at {3}, SL_Rate: {4:0.00000000}",
                     OPTIONS.VirtualModeOnOff ? "[VIRTUAL|" + OrderData.Closed + "] ::: " : "[" + OrderData.Closed + "] ::: ",
                     OrderData.CandlePeriod.Remove(0, 6),
                     OrderData.Exchange.Split('-')[1],
-                    AvgPricePerUnit,
+                    OrderData.PricePerUnit,
                     stoplossRate));
                 
             }
@@ -595,7 +596,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     Holdings.Tables[OrderData.CandlePeriod].Rows.Remove(row);
 
                 //Calc profit with BoughtRate and include fees:
-                var profit = ((AvgPricePerUnit / Convert.ToDecimal(holdingRows[0]["BoughtRate"])) - 1M);
+                var profit = ((OrderData.PricePerUnit / Convert.ToDecimal(holdingRows[0]["BoughtRate"])) - 1M);
                 //Calc compound multiple
                 var compoundMultiple = ((Convert.ToDecimal(holdingRows[0]["BoughtRate"]) * Convert.ToDecimal(holdingRows[0]["Qty"])) / OPTIONS.BTCwagerAmt);
                 //Calc TradingTotal and NetWorth
@@ -604,16 +605,17 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
                 var timeHeld = OrderData.Closed - Convert.ToDateTime(holdingRows[0]["DateTimeBUY"]);
 
-                //Create and add the SQL SaveDataUpdate
-                var update = new SaveDataUpdate(OrderData.CandlePeriod, OrderData.Exchange, "SELL", (DateTime)OrderData.Closed, OrderData.TotalQuantity, AvgPricePerUnit, null, false, TradingTotal);
+                //Create and add the SQL SaveDataUpdate + OrderUpdate
+                var update = new SaveDataUpdate(OrderData.CandlePeriod, OrderData.Exchange, "SELL", (DateTime)OrderData.Closed, OrderData.TotalQuantity, OrderData.PricePerUnit, null, false, TradingTotal);
                 SQLDataUpdateWrites.Enqueue(update);
+                SQLOrderUpdateWrites.Enqueue(OrderData);
 
                 //OUTPUT SELL-ON-SIGNAL
                 Trace.Write(string.Format("{0}{1} Sold {2} at {3}\r\n    =TradeProfit: ",
                     OPTIONS.VirtualModeOnOff ? "[VIRTUAL|" + OrderData.Closed + "] ::: " : "[" + OrderData.Closed + "] ::: ",
                     OrderData.CandlePeriod.Remove(0, 6),
                     OrderData.Exchange.Split('-')[1],
-                    AvgPricePerUnit));
+                    OrderData.PricePerUnit));
                 //OUTPUT PROFIT ON TRADE:
                 if (profit < 0)
                     Console.ForegroundColor = ConsoleColor.Red;
@@ -819,15 +821,19 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                             dqed = SQLOrderUpdateWrites.TryDequeue(out update);
                         } while (!dqed);
 
+                        var uniqueID = string.Format("{0}_{1}", update.CandlePeriod, update.Exchange);
+
                         if (update.IsOpen)
                         {
-                            //TODO
-
+                            cmd.CommandText = string.Format("REPLACE INTO OpenOrders (UniqueID, OrderUuid, Exchange, Type, TotalQuantity, TotalReserved, Quantity, QuantityRemaining, Limit, Reserved, CommissionReserved, CommissionReserveRemaining, CommissionPaid, Price, PricePerUnit, Opened, CandlePeriod) VALUES ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}', '{7}', '{8}', '{9}', '{10}', '{11}', '{12}', '{13}', '{14}', '{15}', '{16}')", 
+                                uniqueID, update.OrderUuid, update.Exchange, update.Type, update.TotalQuantity, update.TotalReserved, update.Quantity, update.QuantityRemaining, update.Limit, update.Reserved, update.CommissionReserved, update.CommissionReserveRemaining, update.CommissionPaid, update.Price, update.PricePerUnit, update.Opened, update.CandlePeriod);
+                            cmd.ExecuteNonQuery();
+                            
                         }
                         else if (!update.IsOpen)
                         {
-                            
-
+                            cmd.CommandText = string.Format("DELETE FROM OpenOrders WHERE UniqueID = '{0}'", uniqueID);
+                            cmd.ExecuteNonQuery();
                         }                    
 
                     }
@@ -912,6 +918,9 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                         cmd.ExecuteNonQuery();
                         cmd.CommandText = "CREATE TABLE IF NOT EXISTS OpenOrders (UniqueID TEXT, OrderUuid TEXT, Exchange TEXT, Type TEXT, TotalQuantity TEXT, TotalReserved TEXT, Quantity TEXT, QuantityRemaining TEXT, Limit TEXT, Reserved TEXT, CommissionReserved TEXT, CommissionReserveRemaining TEXT, CommissionPaid TEXT, Price TEXT, PricePerUnit TEXT, Opened TEXT CandlePeriod TEXT)";
                         cmd.ExecuteNonQuery();
+                        cmd.CommandText = "CREATE UNIQUE INDEX idx_OpenOrders_UniqueID ON OpenOrders (UniqueID)";
+                        cmd.ExecuteNonQuery();
+
                         tx.Commit();
                     }
                 }
