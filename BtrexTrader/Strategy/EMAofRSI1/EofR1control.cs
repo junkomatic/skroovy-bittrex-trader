@@ -524,34 +524,34 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             foreach (var row in OpenOrderRows)
                     Holdings.Tables["OpenOrders"].Rows.Remove(row);
             
+            var AvgPricePerUnit = OrderData.TotalReserved / OrderData.TotalQuantity;
 
             if (OrderData.Type == "LIMIT_BUY")
             {
                 //Calculate stoploss, within acceptable range per PeriodLength:
-                var AvgBuyPrice = OrderData.TotalReserved / OrderData.TotalQuantity; 
-                decimal stoplossRate = AvgBuyPrice - (CalcStoplossMargin(OrderData.Exchange, OrderData.CandlePeriod) * OPTIONS.ATRmultipleT1);
+                decimal stoplossRate = AvgPricePerUnit - (CalcStoplossMargin(OrderData.Exchange, OrderData.CandlePeriod) * OPTIONS.ATRmultipleT1);
 
                 switch (OrderData.CandlePeriod)
                 {
                     case "period5m":
-                        if (stoplossRate / AvgBuyPrice < 0.98M)
-                            stoplossRate = AvgBuyPrice * 0.98M;
+                        if (stoplossRate / AvgPricePerUnit < 0.98M)
+                            stoplossRate = AvgPricePerUnit * 0.98M;
                         break;
                     case "period20m":
-                        if (stoplossRate / AvgBuyPrice < 0.95M)
-                            stoplossRate = AvgBuyPrice * 0.95M;
+                        if (stoplossRate / AvgPricePerUnit < 0.95M)
+                            stoplossRate = AvgPricePerUnit * 0.95M;
                         break;
                     case "period1h":
-                        if (stoplossRate / AvgBuyPrice < 0.93M)
-                            stoplossRate = AvgBuyPrice * 0.93M;
+                        if (stoplossRate / AvgPricePerUnit < 0.93M)
+                            stoplossRate = AvgPricePerUnit * 0.93M;
                         break;
                     case "period4h":
-                        if (stoplossRate / AvgBuyPrice < 0.90M)
-                            stoplossRate = AvgBuyPrice * 0.90M;
+                        if (stoplossRate / AvgPricePerUnit < 0.90M)
+                            stoplossRate = AvgPricePerUnit * 0.90M;
                         break;
                     case "period12h":
-                        if (stoplossRate / AvgBuyPrice < 0.88M)
-                            stoplossRate = AvgBuyPrice * 0.88M;
+                        if (stoplossRate / AvgPricePerUnit < 0.88M)
+                            stoplossRate = AvgPricePerUnit * 0.88M;
                         break;
                 }
 
@@ -567,7 +567,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 newHoldingsRow["MarketDelta"] = OrderData.Exchange;
                 newHoldingsRow["DateTimeBUY"] = OrderData.Closed;
                 newHoldingsRow["Qty"] = OrderData.TotalQuantity;
-                newHoldingsRow["BoughtRate"] = AvgBuyPrice;
+                newHoldingsRow["BoughtRate"] = AvgPricePerUnit;
                 newHoldingsRow["DateTimeSELL"] = "OWNED";
                 newHoldingsRow["SoldRate"] = "OWNED";
                 newHoldingsRow["StopLossRate"] = stoplossRate;
@@ -575,7 +575,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 Holdings.Tables[OrderData.CandlePeriod].Rows.Add(newHoldingsRow);
 
                 //Create + Enqueue SaveDataUpdate
-                var update = new SaveDataUpdate(OrderData.CandlePeriod, OrderData.Exchange, "BUY", (DateTime)OrderData.Closed, OrderData.TotalQuantity, AvgBuyPrice, stoplossRate);
+                var update = new SaveDataUpdate(OrderData.CandlePeriod, OrderData.Exchange, "BUY", (DateTime)OrderData.Closed, OrderData.TotalQuantity, AvgPricePerUnit, stoplossRate);
                 SQLDataUpdateWrites.Enqueue(update);
 
                 //OUTPUT BUY
@@ -583,21 +583,69 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     OPTIONS.VirtualModeOnOff ? "[VIRTUAL|" + OrderData.Closed + "] ::: " : "[" + OrderData.Closed + "] ::: ",
                     OrderData.CandlePeriod.Remove(0, 6),
                     OrderData.Exchange.Split('-')[1],
-                    AvgBuyPrice,
+                    AvgPricePerUnit,
                     stoplossRate));
                 
             }
             else if (OrderData.Type == "LIMIT_SELL")
             {
-                //IF SELL
                 //Find + Remove from Holdings:
+                var holdingRows = Holdings.Tables[OrderData.CandlePeriod].Select(string.Format("MarketDelta = '{0}'", OrderData.Exchange));
+                foreach (var row in holdingRows)
+                    Holdings.Tables[OrderData.CandlePeriod].Rows.Remove(row);
+
                 //Calc profit with BoughtRate and include fees:
+                var profit = ((AvgPricePerUnit / Convert.ToDecimal(holdingRows[0]["BoughtRate"])) - 1M);
                 //Calc compound multiple
+                var compoundMultiple = ((Convert.ToDecimal(holdingRows[0]["BoughtRate"]) * Convert.ToDecimal(holdingRows[0]["Qty"])) / OPTIONS.BTCwagerAmt);
                 //Calc TradingTotal and NetWorth
+                TradingTotal += (profit * compoundMultiple);
+                var netWorth = GetNetPercentage();
+
+                var timeHeld = OrderData.Closed - Convert.ToDateTime(holdingRows[0]["DateTimeBUY"]);
+
                 //Create and add the SQL SaveDataUpdate
+                var update = new SaveDataUpdate(OrderData.CandlePeriod, OrderData.Exchange, "SELL", (DateTime)OrderData.Closed, OrderData.TotalQuantity, AvgPricePerUnit, null, false, TradingTotal);
+                SQLDataUpdateWrites.Enqueue(update);
+
                 //OUTPUT SELL-ON-SIGNAL
+                Trace.Write(string.Format("{0}{1} Sold {2} at {3}\r\n    =TradeProfit: ",
+                    OPTIONS.VirtualModeOnOff ? "[VIRTUAL|" + OrderData.Closed + "] ::: " : "[" + OrderData.Closed + "] ::: ",
+                    OrderData.CandlePeriod.Remove(0, 6),
+                    OrderData.Exchange.Split('-')[1],
+                    AvgPricePerUnit));
+                //OUTPUT PROFIT ON TRADE:
+                if (profit < 0)
+                    Console.ForegroundColor = ConsoleColor.Red;
+                else if (profit > 0)
+                    Console.ForegroundColor = ConsoleColor.Green;
+                Trace.Write(string.Format("{0:+0.###%;-0.###%;0}", profit));
+                //OUTPUT TIME HELD
+                Console.ForegroundColor = ConsoleColor.DarkCyan;
+                Trace.Write(string.Format(".....=Time-Held: {0:hh\\:mm\\:ss}.....", timeHeld));
+                //OUTPUT GROSS TOTAL PROFIT PERCENTAGE:
+                if (TradingTotal < 0)
+                    Console.ForegroundColor = ConsoleColor.Red;
+                else if (TradingTotal > 0)
+                    Console.ForegroundColor = ConsoleColor.Green;
+                else
+                    Console.ForegroundColor = ConsoleColor.DarkCyan;
+                Trace.Write(string.Format("=GrossProfit: {0:+0.###%;-0.###%;0}", TradingTotal / OPTIONS.MAXTOTALENTRANCES));
+
+                Console.ForegroundColor = ConsoleColor.DarkCyan;
+                Trace.Write(".....");
+                //OUTPUT CURRENT NET WORTH PERCENTAGE INCLUDING HOLDINGS:
+                if (netWorth > 0)
+                    Console.ForegroundColor = ConsoleColor.DarkGreen;
+                else if (netWorth < 0)
+                    Console.ForegroundColor = ConsoleColor.DarkRed;
+                else
+                    Console.ForegroundColor = ConsoleColor.DarkCyan;
+                Trace.WriteLine(string.Format("=CurrentNetWorth: {0:+0.###%;-0.###%;0}", netWorth));
+                Console.ForegroundColor = ConsoleColor.DarkCyan;
+
             }
-                        
+
         }
 
 
