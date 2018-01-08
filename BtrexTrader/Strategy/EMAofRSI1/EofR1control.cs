@@ -520,7 +520,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         public void OrderExecutedCallback(OpenOrder OrderData)
         { 
             //TODO:
-            //REMOVE FROM OpenOrders TABLE, SQL, AND GENERATE SQL SaveDataUpdate, OUTPUT
+            //REMOVE FROM OpenOrders TABLE, ENQUEUE ORDER-UPDATE, AND GENERATE SQL SaveDataUpdate, THEN OUTPUT
 
 
 
