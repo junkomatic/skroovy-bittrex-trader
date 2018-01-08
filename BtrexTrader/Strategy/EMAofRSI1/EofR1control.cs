@@ -519,26 +519,85 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
         public void OrderExecutedCallback(OpenOrder OrderData)
         {
-            //TODO:
-            //REMOVE FROM OpenOrders TABLE, 
+            //Find + REMOVE FROM OpenOrders TABLE, 
+            var OpenOrderRows = Holdings.Tables["OpenOrders"].Select(string.Format("UniqueID = '{0}_{1}'", OrderData.CandlePeriod, OrderData.Exchange));
+            foreach (var row in OpenOrderRows)
+                    Holdings.Tables["OpenOrders"].Rows.Remove(row);
+            
 
-            //IF BUY
-            //Calculate stoploss, within acceptable range per PeriodLength:
-            //If 'SAFEMMODE' then Stoploss will be set to sell at minimum satoshis until profitable:
-            //Register new StopLoss in controller:
-            //Enter into Holdings Table:
-            //Create + Enqueue SaveDataUpdate
-            //OUTPUT BUY
+            if (OrderData.Type == "LIMIT_BUY")
+            {
+                //Calculate stoploss, within acceptable range per PeriodLength:
+                var AvgBuyPrice = OrderData.TotalReserved / OrderData.TotalQuantity; 
+                decimal stoplossRate = AvgBuyPrice - (CalcStoplossMargin(OrderData.Exchange, OrderData.CandlePeriod) * OPTIONS.ATRmultipleT1);
 
-            //IF SELL
-            //Find + Remove from Holdings:
-            //Calc profit with BoughtRate and include fees:
-            //Calc compound multiple
-            //Calc TradingTotal and NetWorth
-            //Create and add the SQL SaveDataUpdate
-            //OUTPUT SELL-ON-SIGNAL
+                switch (OrderData.CandlePeriod)
+                {
+                    case "period5m":
+                        if (stoplossRate / AvgBuyPrice < 0.98M)
+                            stoplossRate = AvgBuyPrice * 0.98M;
+                        break;
+                    case "period20m":
+                        if (stoplossRate / AvgBuyPrice < 0.95M)
+                            stoplossRate = AvgBuyPrice * 0.95M;
+                        break;
+                    case "period1h":
+                        if (stoplossRate / AvgBuyPrice < 0.93M)
+                            stoplossRate = AvgBuyPrice * 0.93M;
+                        break;
+                    case "period4h":
+                        if (stoplossRate / AvgBuyPrice < 0.90M)
+                            stoplossRate = AvgBuyPrice * 0.90M;
+                        break;
+                    case "period12h":
+                        if (stoplossRate / AvgBuyPrice < 0.88M)
+                            stoplossRate = AvgBuyPrice * 0.88M;
+                        break;
+                }
 
-                     
+                //If 'SAFEMMODE' then Stoploss will be set to sell at minimum satoshis until profitable:
+                if (OPTIONS.SAFEMODE)
+                    stoplossRate = 0.00105M / OrderData.TotalQuantity;
+
+                //Register new StopLoss in controller:
+                StopLossController.RegisterStoploss(new StopLoss(OrderData.Exchange, stoplossRate, OrderData.TotalQuantity, (a, b, c) => ReCalcStoploss(a, b, c), (a, b) => StopLossExecutedCallback(a, b), OrderData.CandlePeriod, OPTIONS.VirtualModeOnOff), string.Format("{0}_{1}", OrderData.CandlePeriod, OrderData.Exchange));
+
+                //Enter into Holdings Table:
+                var newHoldingsRow = Holdings.Tables[OrderData.CandlePeriod].NewRow();
+                newHoldingsRow["MarketDelta"] = OrderData.Exchange;
+                newHoldingsRow["DateTimeBUY"] = OrderData.Closed;
+                newHoldingsRow["Qty"] = OrderData.TotalQuantity;
+                newHoldingsRow["BoughtRate"] = AvgBuyPrice;
+                newHoldingsRow["DateTimeSELL"] = "OWNED";
+                newHoldingsRow["SoldRate"] = "OWNED";
+                newHoldingsRow["StopLossRate"] = stoplossRate;
+                newHoldingsRow["SL_Executed"] = 0;
+                Holdings.Tables[OrderData.CandlePeriod].Rows.Add(newHoldingsRow);
+
+                //Create + Enqueue SaveDataUpdate
+                var update = new SaveDataUpdate(OrderData.CandlePeriod, OrderData.Exchange, "BUY", (DateTime)OrderData.Closed, OrderData.TotalQuantity, AvgBuyPrice, stoplossRate);
+                SQLDataUpdateWrites.Enqueue(update);
+
+                //OUTPUT BUY
+                Trace.WriteLine(string.Format("{0}{1} Bought {2} at {3}, SL_Rate: {4:0.00000000}",
+                    OPTIONS.VirtualModeOnOff ? "[VIRTUAL|" + OrderData.Closed + "] ::: " : "[" + OrderData.Closed + "] ::: ",
+                    OrderData.CandlePeriod.Remove(0, 6),
+                    OrderData.Exchange.Split('-')[1],
+                    AvgBuyPrice,
+                    stoplossRate));
+                
+            }
+            else if (OrderData.Type == "LIMIT_SELL")
+            {
+                //IF SELL
+                //Find + Remove from Holdings:
+                //Calc profit with BoughtRate and include fees:
+                //Calc compound multiple
+                //Calc TradingTotal and NetWorth
+                //Create and add the SQL SaveDataUpdate
+                //OUTPUT SELL-ON-SIGNAL
+            }
+                        
         }
 
 
