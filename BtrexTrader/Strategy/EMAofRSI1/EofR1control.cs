@@ -827,8 +827,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                         {
                             cmd.CommandText = string.Format("REPLACE INTO OpenOrders (UniqueID, OrderUuid, Exchange, Type, TotalQuantity, TotalReserved, Quantity, QuantityRemaining, Limit, Reserved, CommissionReserved, CommissionReserveRemaining, CommissionPaid, Price, PricePerUnit, Opened, CandlePeriod) VALUES ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}', '{7}', '{8}', '{9}', '{10}', '{11}', '{12}', '{13}', '{14}', '{15}', '{16}')", 
                                 uniqueID, update.OrderUuid, update.Exchange, update.Type, update.TotalQuantity, update.TotalReserved, update.Quantity, update.QuantityRemaining, update.Limit, update.Reserved, update.CommissionReserved, update.CommissionReserveRemaining, update.CommissionPaid, update.Price, update.PricePerUnit, update.Opened, update.CandlePeriod);
-                            cmd.ExecuteNonQuery();
-                            
+                            cmd.ExecuteNonQuery();                            
                         }
                         else if (!update.IsOpen)
                         {
