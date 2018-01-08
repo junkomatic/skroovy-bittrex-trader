@@ -518,14 +518,27 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
 
         public void OrderExecutedCallback(OpenOrder OrderData)
-        { 
+        {
             //TODO:
-            //REMOVE FROM OpenOrders TABLE, ENQUEUE ORDER-UPDATE, AND GENERATE SQL SaveDataUpdate, THEN OUTPUT
+            //REMOVE FROM OpenOrders TABLE, 
 
+            //IF BUY
+            //Calculate stoploss, within acceptable range per PeriodLength:
+            //If 'SAFEMMODE' then Stoploss will be set to sell at minimum satoshis until profitable:
+            //Register new StopLoss in controller:
+            //Enter into Holdings Table:
+            //Create + Enqueue SaveDataUpdate
+            //OUTPUT BUY
 
+            //IF SELL
+            //Find + Remove from Holdings:
+            //Calc profit with BoughtRate and include fees:
+            //Calc compound multiple
+            //Calc TradingTotal and NetWorth
+            //Create and add the SQL SaveDataUpdate
+            //OUTPUT SELL-ON-SIGNAL
 
-
-            
+                     
         }
 
 

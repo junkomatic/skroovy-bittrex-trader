@@ -48,7 +48,7 @@ namespace BtrexTrader.Strategy.Core
                
                 
 
-                foreach (var stop in SL_Book)
+                foreach (var stop in SL_Book.ToList())
                 {
                     if (!BtrexData.Markets.ContainsKey(stop.Value.MarketDelta))
                         continue;
