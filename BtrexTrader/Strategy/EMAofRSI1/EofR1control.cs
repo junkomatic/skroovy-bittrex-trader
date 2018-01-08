@@ -60,8 +60,8 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         private SQLiteConnection conn;
 
         private List<NewOrder> NewOrders = new List<NewOrder>();
-        //private List<NewOrder> PendingOrders = new List<NewOrder>();
-        private ConcurrentQueue<SaveDataUpdate> SQLDataWrites = new ConcurrentQueue<SaveDataUpdate>();
+        private ConcurrentQueue<SaveDataUpdate> SQLDataUpdateWrites = new ConcurrentQueue<SaveDataUpdate>();
+        private ConcurrentQueue<OpenOrder> SQLOrderUpdateWrites = new ConcurrentQueue<OpenOrder>();
         private Thread EofR1ExeThread;
         private bool isStarted = false;
 
@@ -480,8 +480,10 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         {
             //TODO:
             //CREATE/UPDATE DATA ENTRIES IN OpenOrders AND GENERATE SQL ORDER-UPDATE
-            //(CREATE NEW UPDATE CLASS FOR PENDING ORDER UPDATES)
+            if (Holdings.Tables["OpenOrders"].Select(string.Format("UniqueID = '{0}_{1}'", OrderData.CandlePeriod, OrderData.Exchange)).Count() == 0)
+            {
 
+            }
 
 
 
@@ -492,7 +494,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         public void OrderExecutedCallback(OpenOrder OrderData)
         { 
             //TODO:
-            //REMOVE FROM OpenOrders TABLE, SQL, AND GENERATE SQL SaveDataUpdate
+            //REMOVE FROM OpenOrders TABLE, SQL, AND GENERATE SQL SaveDataUpdate, OUTPUT
 
 
 
@@ -563,7 +565,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             
             //CREATE & ENQUEUE SQLDatawrite obj:
             var update = new SaveDataUpdate(period, OrderResponse.Exchange, "SELL", TimeExecuted, OrderResponse.Quantity, OrderResponse.PricePerUnit, null, true, TradingTotal);
-            SQLDataWrites.Enqueue(update);
+            SQLDataUpdateWrites.Enqueue(update);
         }
 
         public void ReCalcStoploss(string market, decimal oldRate, string period)
@@ -607,7 +609,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
                 //CREATE & ENQUEUE SQLDataWrite:
                 var update = new SaveDataUpdate(period, market, "SL_MOVE", SLmovedTime, 0, 0, stoplossRate);
-                SQLDataWrites.Enqueue(update);
+                SQLDataUpdateWrites.Enqueue(update);
 
                 //OUTPUT STOPLOSS MOVED:
                 if (OPTIONS.LogStoplossRaised)
@@ -657,18 +659,18 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
         private void SaveSQLData(SQLiteCommand cmd)
         {
-            if (!SQLDataWrites.IsEmpty)
+            if (!SQLDataUpdateWrites.IsEmpty)
             {
                 using (var tx = conn.BeginTransaction())
                 {
                     //SAVE DATA EVENT CHANGES
-                    while (!SQLDataWrites.IsEmpty)
+                    while (!SQLDataUpdateWrites.IsEmpty)
                     {
                         SaveDataUpdate update;
                         bool dqed;
                         do
                         {
-                            dqed = SQLDataWrites.TryDequeue(out update);
+                            dqed = SQLDataUpdateWrites.TryDequeue(out update);
                         } while (!dqed);
 
                         //Execute SaveData SQL commands:
@@ -777,5 +779,6 @@ namespace BtrexTrader.Strategy.EMAofRSI1
     }
 
 
+   
 
 }

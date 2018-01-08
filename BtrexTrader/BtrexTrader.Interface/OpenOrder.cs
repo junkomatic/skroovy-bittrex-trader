@@ -23,6 +23,8 @@ namespace BtrexTrader.Interface
         public decimal Price { get; set; }
         public decimal PricePerUnit { get; set; }
         public DateTime Opened { get; set; }
+        public DateTime? Closed { get; set; }
+        public bool IsOpen { get; set; }
         public string CandlePeriod { get; set; }
         public Action<OpenOrder> DataUpdateCallback { get; set; }
         public Action<OpenOrder> ExecutionCompleteCallback { get; set; }
@@ -47,6 +49,7 @@ namespace BtrexTrader.Interface
             Opened = ord.Opened;
             DataUpdateCallback = cBack_Data;
             ExecutionCompleteCallback = cBack_Exe;
+            IsOpen = true;
 
             if (periodName != null)
                 CandlePeriod = periodName;
@@ -73,6 +76,7 @@ namespace BtrexTrader.Interface
             Opened = TimeOpened;
             DataUpdateCallback = cBack_Data;
             ExecutionCompleteCallback = cBack_Exe;
+            IsOpen = true;
 
             if (periodName != null)
                 CandlePeriod = periodName;
@@ -116,6 +120,8 @@ namespace BtrexTrader.Interface
             CommissionReserved = ord.CommissionReserved;
             CommissionReserveRemaining = ord.CommissionReserveRemaining;
             CommissionPaid = ord.CommissionPaid;
+            Closed = ord.Closed;
+            IsOpen = false;
 
             //CALL ExecutionCallback:
             ExecutionCompleteCallback(this);
