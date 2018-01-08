@@ -103,6 +103,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 while (!(Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Backspace))
                 {
                     //WRITE/SAVE SQL DATA CHANGES:
+                    SaveSQLOrderData(cmd);
                     SaveSQLData(cmd);
 
                     //BEGIN CANDLES ASSESSMENTS:
@@ -478,15 +479,40 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
         public void OrderDataCallback(OpenOrder OrderData)
         {
-            //TODO:
-            //CREATE/UPDATE DATA ENTRIES IN OpenOrders AND GENERATE SQL ORDER-UPDATE
-            if (Holdings.Tables["OpenOrders"].Select(string.Format("UniqueID = '{0}_{1}'", OrderData.CandlePeriod, OrderData.Exchange)).Count() == 0)
-            {
+            //CREATE/UPDATE DATA ENTRIES IN OpenOrders AND ENQUEUE SQL SAVE-ORDER-UPDATE
+            var UniqueID = string.Format("UniqueID = '{0}_{1}'", OrderData.CandlePeriod, OrderData.Exchange);
+            var rows = Holdings.Tables["OpenOrders"].Select(string.Format("UniqueID = '{0}'", UniqueID));
+            DataRow row;
 
+            if (rows.Count() == 0)
+            {
+                row = Holdings.Tables["OpenOrders"].NewRow();
+                Holdings.Tables["OpenOrders"].Rows.Add(row);
+            }
+            else
+            {
+                row = rows.First();                
             }
 
-
-
+            row["UniqueID"] = UniqueID;
+            row["OrderUuid"] = OrderData.OrderUuid;
+            row["Exchange"] = OrderData.Exchange;
+            row["Type"] = OrderData.Type;
+            row["TotalQuantity"] = OrderData.TotalQuantity;
+            row["TotalReserved"] = OrderData.TotalReserved;
+            row["Quantity"] = OrderData.Quantity;
+            row["QuantityRemaining"] = OrderData.QuantityRemaining;
+            row["Limit"] = OrderData.Limit;
+            row["Reserved"] = OrderData.Reserved;
+            row["CommissionReserved"] = OrderData.CommissionReserved;
+            row["CommissionReserveRemaining"] = OrderData.CommissionReserveRemaining;
+            row["CommissionPaid"] = OrderData.CommissionPaid;
+            row["Price"] = OrderData.Price;
+            row["PricePerUnit"] = OrderData.PricePerUnit;
+            row["Opened"] = OrderData.Opened;
+            row["CandlePeriod"] = OrderData.CandlePeriod;
+            
+            SQLOrderUpdateWrites.Enqueue(OrderData);
 
         }
 
@@ -656,6 +682,43 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             
             return ATR;
         }
+
+
+        private void SaveSQLOrderData(SQLiteCommand cmd)
+        {
+            if (!SQLOrderUpdateWrites.IsEmpty)
+            {
+                using (var tx = conn.BeginTransaction())
+                {
+                    while (!SQLOrderUpdateWrites.IsEmpty)
+                    {
+                        OpenOrder update;
+                        bool dqed;
+                        do
+                        {
+                            dqed = SQLOrderUpdateWrites.TryDequeue(out update);
+                        } while (!dqed);
+
+                        if (update.IsOpen)
+                        {
+                            //TODO
+
+                        }
+                        else if (!update.IsOpen)
+                        {
+                            
+
+                        }                    
+
+                    }
+
+                    tx.Commit();
+                }
+            }
+
+
+        }
+
 
         private void SaveSQLData(SQLiteCommand cmd)
         {
