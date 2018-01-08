@@ -108,7 +108,7 @@ namespace BtrexTrader.Interface
 
             WSSharpTransport.Connection.CookieContainer = cookieContainer;
 
-            WSSharpTransport.Connect(config).Wait();
+            await WSSharpTransport.Connect(config);
             Console.WriteLine("\rWebsocket Connected.      ");
 
             

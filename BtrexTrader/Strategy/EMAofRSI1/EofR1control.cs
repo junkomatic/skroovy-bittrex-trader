@@ -24,15 +24,15 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         internal static class OPTIONS
         {
             public const decimal BTCwagerAmt = 0.0016M;
-            public const int MaxMarketsEnteredPerPeriod = 8;
-            public const int MAXTOTALENTRANCES = 40;
+            public const int MaxMarketsEnteredPerPeriod = 6;
+            public const int MAXTOTALENTRANCES = 30;
             public const decimal ATRmultipleT1 = 2.5M;
             public const decimal ATRmultipleT2 = 2M;
             public const decimal ATRmultipleT3 = 1.5M;
 
-            public static bool SAFEMODE = true;
-            public const bool COMPOUND_WAGER = true;
+            public static bool SAFEMODE = false;
             public const bool VirtualModeOnOff = false;
+            public const bool COMPOUND_WAGER = true;
 
             public const bool LogStoplossRaised = true;
             public const bool LogSignals = true;
@@ -81,7 +81,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             DisplayHoldings();
         }
 
-        public async Task Start()
+        public void Start()
         {
             StopLossController.StartWatching();
 
