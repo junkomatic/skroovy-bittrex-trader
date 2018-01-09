@@ -336,7 +336,7 @@ namespace BtrexTrader.Interface
                 Quantity = ord.Qty,
                 Reserved = TotRes,
                 Type = type,
-                OrderUuid = orderData.OrderUuid
+                OrderUuid = orderData.OrderUuid              
             };
                  
             //CALL EXE-CALLBACK WITH MOCK DATA:

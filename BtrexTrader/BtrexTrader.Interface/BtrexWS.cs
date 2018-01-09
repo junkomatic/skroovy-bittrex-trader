@@ -14,8 +14,6 @@ using BtrexTrader.Interface.WebSocketSharpTransport;
 
 namespace BtrexTrader.Interface
 {
-    /// PRE CLOUDFLARE CODE:
-
     public static class BtrexWS
     {
         public static BtrexWSwithCFUtil WSSharpTransport { get; set; }
@@ -39,12 +37,13 @@ namespace BtrexTrader.Interface
             await Task.WhenAll(subList);
 
             foreach (string d in deltas)
-            {
+            {                
                 var delta = "BTC-" + d;
-                await WSSharpTransport.HubProxy.Invoke("SubscribeToExchangeDeltas", delta);
-                
-                MarketQueryResponse marketQuery = WSSharpTransport.HubProxy.Invoke<MarketQueryResponse>("QueryExchangeState", delta).Result;
 
+                Trace.Write("\rSUBBING: " + delta + "                       \r");
+                await WSSharpTransport.HubProxy.Invoke("SubscribeToExchangeDeltas", delta);
+                                
+                MarketQueryResponse marketQuery = await WSSharpTransport.HubProxy.Invoke<MarketQueryResponse>("QueryExchangeState", delta);
                 marketQuery.MarketName = delta;
                 bool opened = await BtrexData.TryOpenMarket(marketQuery);
 

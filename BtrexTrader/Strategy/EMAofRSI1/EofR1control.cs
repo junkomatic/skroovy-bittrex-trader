@@ -24,14 +24,14 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         internal static class OPTIONS
         {
             public const decimal BTCwagerAmt = 0.0016M;
-            public const int MaxMarketsEnteredPerPeriod = 6;
-            public const int MAXTOTALENTRANCES = 30;
+            public const int MaxMarketsEnteredPerPeriod = 10;
+            public const int MAXTOTALENTRANCES = 50;
             public const decimal ATRmultipleT1 = 2.5M;
             public const decimal ATRmultipleT2 = 2M;
             public const decimal ATRmultipleT3 = 1.5M;
 
-            public static bool SAFEMODE = false;
-            public const bool VirtualModeOnOff = false;
+            public static bool SAFE_MODE = false;
+            public const bool VITRUAL_MODE = true;
             public const bool COMPOUND_WAGER = true;
 
             public const bool LogStoplossRaised = true;
@@ -41,7 +41,8 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             //(CANT PRELOAD ADEQUATE CANDLE DATA FOR CALCS -> SequenceContainsNoElements err)
             public static IReadOnlyList<string> ExcludeTheseDeltas = new List<string>()
             {            
-                "1ST", "NAV", "XVG", "VIB", "SAFEX", "BCY", "QRL", "CFI", "EDG", "MYST", "GUP", "CVC", "STORJ", "TIX"
+                "1ST", "NAV", "XVG", "VIB", "SAFEX", "BCY", "QRL", "CFI", "EDG", "MYST", "GUP", "CVC", "STORJ", "TIX",
+                "ARDR", "DGD", "MTL", "SWIFT", "TRIG", "UKG"
             };
 
             //ENTER MARKETS HERE FOR USE IN SubSpecificDeltas() METHOD:
@@ -153,7 +154,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                         NewOrders = new List<NewOrder>();
 
                         //This is not awaited because NewOrder objects reference their own callback
-                        BtrexREST.TradeController.ExecuteNewOrderList(ords, OPTIONS.VirtualModeOnOff);
+                        BtrexREST.TradeController.ExecuteNewOrderList(ords, OPTIONS.VITRUAL_MODE);
                     }
                     
 
@@ -350,9 +351,12 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             //REGISTER EXISTING STOPLOSS RATES FOR EACH HOLDING
             foreach (DataTable dt in Holdings.Tables)
             {
+                if (dt.TableName == "OpenOrders")
+                    continue;
+
                 foreach (DataRow row in dt.Rows)
                 {
-                    var stopLoss = new StopLoss((string)row["MarketDelta"], Convert.ToDecimal(row["StopLossRate"]), Convert.ToDecimal(row["Qty"]), (a, b, c) => ReCalcStoploss(a, b, c), (a, b) => StopLossExecutedCallback(a, b), dt.TableName, OPTIONS.VirtualModeOnOff);
+                    var stopLoss = new StopLoss((string)row["MarketDelta"], Convert.ToDecimal(row["StopLossRate"]), Convert.ToDecimal(row["Qty"]), (a, b, c) => ReCalcStoploss(a, b, c), (a, b) => StopLossExecutedCallback(a, b), dt.TableName, OPTIONS.VITRUAL_MODE);
                     StopLossController.RegisterStoploss(stopLoss, string.Format("{0}_{1}", stopLoss.CandlePeriod, stopLoss.MarketDelta));
                 }
             }
@@ -363,13 +367,23 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         }
 
 
-        private void AddHoldingsTable(string periodName)
+        private void AddHoldingsTable(string tableName)
         {
             var dt = new DataTable();
-            using (var sqlAdapter = new SQLiteDataAdapter("SELECT * from " + periodName + " WHERE DateTimeSELL = 'OWNED'", conn))
-                sqlAdapter.Fill(dt);
 
-            dt.TableName = periodName;
+            if (tableName == "OpenOrders")
+            {
+                using (var sqlAdapter = new SQLiteDataAdapter("SELECT * from " + tableName, conn))
+                    sqlAdapter.Fill(dt);
+            }
+            else
+            {
+                using (var sqlAdapter = new SQLiteDataAdapter("SELECT * from " + tableName + " WHERE DateTimeSELL = 'OWNED'", conn))
+                    sqlAdapter.Fill(dt);
+            }
+            
+
+            dt.TableName = tableName;
             Holdings.Tables.Add(dt);
         }
 
@@ -556,11 +570,11 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 }
 
                 //If 'SAFEMMODE' then Stoploss will be set to sell at minimum satoshis until profitable:
-                if (OPTIONS.SAFEMODE)
+                if (OPTIONS.SAFE_MODE)
                     stoplossRate = 0.00105M / OrderData.TotalQuantity;
 
                 //Register new StopLoss in controller:
-                StopLossController.RegisterStoploss(new StopLoss(OrderData.Exchange, stoplossRate, OrderData.TotalQuantity, (a, b, c) => ReCalcStoploss(a, b, c), (a, b) => StopLossExecutedCallback(a, b), OrderData.CandlePeriod, OPTIONS.VirtualModeOnOff), string.Format("{0}_{1}", OrderData.CandlePeriod, OrderData.Exchange));
+                StopLossController.RegisterStoploss(new StopLoss(OrderData.Exchange, stoplossRate, OrderData.TotalQuantity, (a, b, c) => ReCalcStoploss(a, b, c), (a, b) => StopLossExecutedCallback(a, b), OrderData.CandlePeriod, OPTIONS.VITRUAL_MODE), string.Format("{0}_{1}", OrderData.CandlePeriod, OrderData.Exchange));
 
                 //Enter into Holdings Table:
                 var newHoldingsRow = Holdings.Tables[OrderData.CandlePeriod].NewRow();
@@ -581,7 +595,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
                 //OUTPUT BUY
                 Trace.WriteLine(string.Format("{0}{1} Bought {2} at {3}, SL_Rate: {4:0.00000000}",
-                    OPTIONS.VirtualModeOnOff ? "[VIRTUAL|" + OrderData.Closed + "] ::: " : "[" + OrderData.Closed + "] ::: ",
+                    OPTIONS.VITRUAL_MODE ? "[VIRTUAL|" + OrderData.Closed + "] ::: " : "[" + OrderData.Closed + "] ::: ",
                     OrderData.CandlePeriod.Remove(0, 6),
                     OrderData.Exchange.Split('-')[1],
                     OrderData.PricePerUnit,
@@ -612,7 +626,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
                 //OUTPUT SELL-ON-SIGNAL
                 Trace.Write(string.Format("{0}{1} Sold {2} at {3}\r\n    =TradeProfit: ",
-                    OPTIONS.VirtualModeOnOff ? "[VIRTUAL|" + OrderData.Closed + "] ::: " : "[" + OrderData.Closed + "] ::: ",
+                    OPTIONS.VITRUAL_MODE ? "[VIRTUAL|" + OrderData.Closed + "] ::: " : "[" + OrderData.Closed + "] ::: ",
                     OrderData.CandlePeriod.Remove(0, 6),
                     OrderData.Exchange.Split('-')[1],
                     OrderData.PricePerUnit));
@@ -675,7 +689,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
             //OUTPUT STOPLOSS EXECUTED:
             Trace.Write(string.Format("{0}{1} STOPLOSS-Sold {2} at {3:0.00000000}\r\n    =TradeProfit: ",
-                    OPTIONS.VirtualModeOnOff ? "[VIRTUAL|" + TimeExecuted + "] ::: " : "[" + TimeExecuted + "] ::: ",
+                    OPTIONS.VITRUAL_MODE ? "[VIRTUAL|" + TimeExecuted + "] ::: " : "[" + TimeExecuted + "] ::: ",
                     period.Remove(0, 6),
                     OrderResponse.Exchange.Split('-')[1],
                     OrderResponse.PricePerUnit));            
@@ -731,7 +745,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             if (stoplossRate < boughtRate * 1.0025M)
             {
                 stoplossRate = BtrexData.Markets[market].TradeHistory.RecentFills.Last().Rate - (ATR * OPTIONS.ATRmultipleT1);
-                if (OPTIONS.SAFEMODE)
+                if (OPTIONS.SAFE_MODE)
                     stoplossRate = 0.0M;
 
                 tier = "*";
@@ -915,7 +929,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                         cmd.ExecuteNonQuery();
                         cmd.CommandText = string.Format("INSERT INTO totals(TimeCreatedUTC, PercentageTotal) VALUES ('{0}', '{1}')", DateTime.UtcNow, "0.0");
                         cmd.ExecuteNonQuery();
-                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS OpenOrders (UniqueID TEXT, OrderUuid TEXT, Exchange TEXT, Type TEXT, TotalQuantity TEXT, TotalReserved TEXT, Quantity TEXT, QuantityRemaining TEXT, Limit TEXT, Reserved TEXT, CommissionReserved TEXT, CommissionReserveRemaining TEXT, CommissionPaid TEXT, Price TEXT, PricePerUnit TEXT, Opened TEXT CandlePeriod TEXT)";
+                        cmd.CommandText = @"CREATE TABLE IF NOT EXISTS OpenOrders (UniqueID TEXT, OrderUuid TEXT, Exchange TEXT, Type TEXT, TotalQuantity TEXT, TotalReserved TEXT, Quantity TEXT, QuantityRemaining TEXT, ""Limit"" TEXT, Reserved TEXT, CommissionReserved TEXT, CommissionReserveRemaining TEXT, CommissionPaid TEXT, Price TEXT, PricePerUnit TEXT, Opened TEXT, CandlePeriod TEXT)";
                         cmd.ExecuteNonQuery();
                         cmd.CommandText = "CREATE UNIQUE INDEX idx_OpenOrders_UniqueID ON OpenOrders (UniqueID)";
                         cmd.ExecuteNonQuery();
