@@ -594,7 +594,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 SQLOrderUpdateWrites.Enqueue(OrderData);
 
                 //OUTPUT BUY
-                Trace.WriteLine(string.Format("{0}{1} Bought {2} at {3}, SL_Rate: {4:0.00000000}",
+                Trace.WriteLine(string.Format("{0}{1} Bought {2} at {3:0.00000000}, SL_Rate: {4:0.00000000}",
                     OPTIONS.VITRUAL_MODE ? "[VIRTUAL|" + OrderData.Closed + "] ::: " : "[" + OrderData.Closed + "] ::: ",
                     OrderData.CandlePeriod.Remove(0, 6),
                     OrderData.Exchange.Split('-')[1],
