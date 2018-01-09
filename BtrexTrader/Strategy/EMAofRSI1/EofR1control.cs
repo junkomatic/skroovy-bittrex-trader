@@ -101,7 +101,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         {
             using (var cmd = new SQLiteCommand(conn))
             {
-                while (!(Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Backspace))
+                while (true) //!(Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Backspace))
                 {
                     //WRITE/SAVE SQL DATA CHANGES:
                     SaveSQLOrderData(cmd);
