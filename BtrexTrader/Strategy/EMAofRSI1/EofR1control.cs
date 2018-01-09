@@ -611,11 +611,9 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             else if (OrderData.Type == "LIMIT_SELL")
             {
                 StopLossController.CancelStoploss(string.Format("{0}_{1}", OrderData.CandlePeriod, OrderData.Exchange));
-                //Find + Remove from Holdings:
-                var holdingRows = Holdings.Tables[OrderData.CandlePeriod].Select(string.Format("MarketDelta = '{0}'", OrderData.Exchange));
-                foreach (var row in holdingRows)
-                    Holdings.Tables[OrderData.CandlePeriod].Rows.Remove(row);
-
+                //Find row in Holdings:
+                var holdingRows = Holdings.Tables[OrderData.CandlePeriod].Select(string.Format("MarketDelta = '{0}'", OrderData.Exchange));                
+                
                 //Calc profit with BoughtRate and include fees:
                 var profit = ((OrderData.PricePerUnit / Convert.ToDecimal(holdingRows[0]["BoughtRate"])) - 1M);
                 //Calc compound multiple
@@ -626,11 +624,16 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
                 var timeHeld = OrderData.Closed - Convert.ToDateTime(holdingRows[0]["DateTimeBUY"]);
 
+                //Remove from Holdings:
+                foreach (var row in holdingRows)
+                    Holdings.Tables[OrderData.CandlePeriod].Rows.Remove(row);
+
                 //Create and add the SQL SaveDataUpdate + OrderUpdate
                 var update = new SaveDataUpdate(OrderData.CandlePeriod, OrderData.Exchange, "SELL", (DateTime)OrderData.Closed, OrderData.TotalQuantity, OrderData.PricePerUnit, null, false, TradingTotal);
                 SQLDataUpdateWrites.Enqueue(update);
                 SQLOrderUpdateWrites.Enqueue(OrderData);
-
+                
+                
                 //OUTPUT SELL-ON-SIGNAL
                 Trace.Write(string.Format("{0}{1} Sold {2} at {3}\r\n    =TradeProfit: ",
                     OPTIONS.VITRUAL_MODE ? "[VIRTUAL|" + OrderData.Closed + "] ::: " : "[" + OrderData.Closed + "] ::: ",
