@@ -538,7 +538,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             foreach (var row in OpenOrderRows)
                     Holdings.Tables["OpenOrders"].Rows.Remove(row);
             
-            OrderData.PricePerUnit = OrderData.TotalReserved / OrderData.TotalQuantity;
+            OrderData.PricePerUnit = Math.Round((OrderData.TotalReserved / OrderData.TotalQuantity), 8);
 
             if (OrderData.Type == "LIMIT_BUY")
             {
