@@ -71,8 +71,10 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         public async Task Initialize()
         {
             OpenSQLiteConn();
+            
             LoadHoldings();
-            LoadOpenOrders();
+            
+            LoadOpenOrders();            
 
             await SubTopMarketsByVol(60);
             //await SubSpecificMarkets();                   
@@ -84,8 +86,6 @@ namespace BtrexTrader.Strategy.EMAofRSI1
 
         public void Start()
         {
-            StopLossController.StartWatching();
-
             if (!isStarted)
             {
                 EofR1ExeThread = new Thread(() => WatchMarkets());
@@ -95,6 +95,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 isStarted = true;
             }
 
+            StopLossController.StartWatching();
         }
 
         private void WatchMarkets()
@@ -340,26 +341,31 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         
         private void LoadHoldings()
         {
-            //Load held assets, stoploss amts, from SQLite for each period:
+            //Load held assets, stoploss amts, from SQLite for each period:            
             AddHoldingsTable("period5m");
             AddHoldingsTable("period20m");
             AddHoldingsTable("period1h");
             AddHoldingsTable("period4h");
             AddHoldingsTable("period12h");
             AddHoldingsTable("OpenOrders");
+                       
 
             //REGISTER EXISTING STOPLOSS RATES FOR EACH HOLDING
             foreach (DataTable dt in Holdings.Tables)
-            {
+            {                
                 if (dt.TableName == "OpenOrders")
                     continue;
 
                 foreach (DataRow row in dt.Rows)
                 {
                     var stopLoss = new StopLoss((string)row["MarketDelta"], Convert.ToDecimal(row["StopLossRate"]), Convert.ToDecimal(row["Qty"]), (a, b, c) => ReCalcStoploss(a, b, c), (a, b) => StopLossExecutedCallback(a, b), dt.TableName, OPTIONS.VITRUAL_MODE);
+
+                    //Trace.WriteLine(string.Format("{0}_{1} ... {2} ... {3} ... {4}", stopLoss.CandlePeriod, stopLoss.MarketDelta, stopLoss.Quantity, stopLoss.StopRate, stopLoss.virtualSL));
+
                     StopLossController.RegisterStoploss(stopLoss, string.Format("{0}_{1}", stopLoss.CandlePeriod, stopLoss.MarketDelta));
                 }
             }
+                        
 
             //Load Total From SQLite data:
             LoadTradingTotal();

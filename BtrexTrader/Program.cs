@@ -93,7 +93,7 @@ namespace BtrexTrader
             TextWriterTraceListener tr1 = new TextWriterTraceListener(System.Console.Out);
             Trace.Listeners.Add(tr1);
             Directory.CreateDirectory("LogFiles");
-            string path = @"LogFiles\" + DateTime.Now.ToString("dd-MM-yyyy") + ".log";
+            string path = @"LogFiles\" + DateTime.Now.ToString("dd-MM-yyyy HH.mm.ss") + ".log";
             TextWriterTraceListener tr2 = new TextWriterTraceListener(System.IO.File.CreateText(path));
             Trace.Listeners.Add(tr2);
             Trace.AutoFlush = true;
