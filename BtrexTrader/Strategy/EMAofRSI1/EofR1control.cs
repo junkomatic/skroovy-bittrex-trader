@@ -604,6 +604,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             }
             else if (OrderData.Type == "LIMIT_SELL")
             {
+                StopLossController.CancelStoploss(string.Format("{0}_{1}", OrderData.CandlePeriod, OrderData.Exchange));
                 //Find + Remove from Holdings:
                 var holdingRows = Holdings.Tables[OrderData.CandlePeriod].Select(string.Format("MarketDelta = '{0}'", OrderData.Exchange));
                 foreach (var row in holdingRows)
@@ -668,7 +669,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         //CALLBACK FUNCTIONS FOR STOPLOSS EXE AND CALC-MOVE:
         public void StopLossExecutedCallback(GetOrderResult OrderResponse, string period)
         {
-            var TimeExecuted = DateTime.UtcNow;
+            var TimeExecuted = OrderResponse.Closed;
             
             //FIND + REMOVE FROM HOLDINGS:
             var holdingRows = Holdings.Tables[period].Select(string.Format("MarketDelta = '{0}'", OrderResponse.Exchange));            
@@ -726,15 +727,25 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             Console.ForegroundColor = ConsoleColor.DarkCyan;
             
             //CREATE & ENQUEUE SQLDatawrite obj:
-            var update = new SaveDataUpdate(period, OrderResponse.Exchange, "SELL", TimeExecuted, OrderResponse.Quantity, OrderResponse.PricePerUnit, null, true, TradingTotal);
+            var update = new SaveDataUpdate(period, OrderResponse.Exchange, "SELL", (DateTime)TimeExecuted, OrderResponse.Quantity, OrderResponse.PricePerUnit, null, true, TradingTotal);
             SQLDataUpdateWrites.Enqueue(update);
         }
 
         public void ReCalcStoploss(string market, decimal oldRate, string period)
         {
             //RECALC NEW STOPLOSSRATE, THEN RAISE REGISTERED RATE IF HIGHER NOW:
-            var ATR = CalcStoplossMargin(market, period);
-            decimal boughtRate = Convert.ToDecimal(Holdings.Tables[period].Select(string.Format("MarketDelta = '{0}'", market))[0]["BoughtRate"]);
+            decimal boughtRate = 0;
+            decimal ATR = 0;
+            try
+            {
+                ATR = CalcStoplossMargin(market, period);
+                boughtRate = Convert.ToDecimal(Holdings.Tables[period].Select(string.Format("MarketDelta = '{0}'", market))[0]["BoughtRate"]);
+            }
+            catch (Exception e)
+            {
+                Trace.WriteLine("    ****ERR RECALC-STOPLOSS>>> " + market + " | " + period + "... BOUGHT: " + boughtRate + " ... RATE: " + ATR);
+                return;
+            }
 
             //TIERED TRAILING STOPLOSS:
             //Teir 2 (calculate):

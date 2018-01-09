@@ -381,7 +381,8 @@ namespace BtrexTrader.Interface
                 {
                     Exchange = stopLoss.MarketDelta,
                     Quantity = stopLoss.Quantity,
-                    PricePerUnit = BtrexData.Markets[stopLoss.MarketDelta].TradeHistory.RecentFills.Last().Rate * 0.9975M
+                    PricePerUnit = BtrexData.Markets[stopLoss.MarketDelta].TradeHistory.RecentFills.Last().Rate * 0.9975M,
+                    Closed = DateTime.UtcNow
                 };
                 
                 stopLoss.ExecutionCallback(vSell, stopLoss.CandlePeriod);
