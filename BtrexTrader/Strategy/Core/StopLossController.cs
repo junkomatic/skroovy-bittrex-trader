@@ -49,30 +49,30 @@ namespace BtrexTrader.Strategy.Core
                 
 
                 foreach (var stop in SL_Book.ToList())
-                {
+                {                 
                     if (!BtrexData.Markets.ContainsKey(stop.Value.MarketDelta))
                         continue;
                     if (BtrexData.Markets[stop.Value.MarketDelta].TradeHistory.RecentFills.Last().Rate <= stop.Value.StopRate)
                     {
-                        if (ExecutionPoints.ContainsKey(stop.Value.MarketDelta))
+                        if (ExecutionPoints.ContainsKey(stop.Key))
                         {
-                            if (ExecutionPoints[stop.Value.MarketDelta] >= 5)
+                            if (ExecutionPoints[stop.Key] >= 5)
                             {
                                 //EXECUTE STOPLOSS, CALL CALLBACK
                                 CancelStoploss(stop.Key);
-                                ExecutionPoints.Remove(stop.Value.MarketDelta);
+                                ExecutionPoints.Remove(stop.Key);
                                 BtrexREST.TradeController.ExecuteStopLoss(stop.Value);
                                 continue;
                             }
                             else
                             {
-                                ExecutionPoints[stop.Value.MarketDelta]++;
+                                ExecutionPoints[stop.Key]++;
                                 continue;
                             }                            
                         }
                         else
                         {
-                            ExecutionPoints.Add(stop.Value.MarketDelta, 0);
+                            ExecutionPoints.Add(stop.Key, 0);
                             continue;
                         }
 
@@ -80,7 +80,7 @@ namespace BtrexTrader.Strategy.Core
                     else
                     {
                         //CHECK TO RAISE SL USING CALLBACK FOR NEW RATE CALC:
-                        ExecutionPoints[stop.Value.MarketDelta] = 0;
+                        ExecutionPoints[stop.Key] = 0;
                         stop.Value.ReCalcCallback(stop.Value.MarketDelta, stop.Value.StopRate, stop.Value.CandlePeriod);
                     }
                    
