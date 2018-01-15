@@ -24,13 +24,13 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         internal static class OPTIONS
         {
             public const decimal BTCwagerAmt = 0.0016M;
-            public const int MaxMarketsEnteredPerPeriod = 10;
-            public const int MAXTOTALENTRANCES = 50;
+            public const int MaxMarketsEnteredPerPeriod = 8;
+            public const int MAXTOTALENTRANCES = 40;
             public const decimal ATRmultipleT1 = 2.5M;
             public const decimal ATRmultipleT2 = 2M;
             public const decimal ATRmultipleT3 = 1.5M;
 
-            public static bool SAFE_MODE = false;
+            public static bool SAFE_MODE = true;
             public const bool VITRUAL_MODE = true;
             public const bool COMPOUND_WAGER = true;
 
@@ -42,7 +42,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             public static IReadOnlyList<string> ExcludeTheseDeltas = new List<string>()
             {            
                 "1ST", "NAV", "XVG", "VIB", "SAFEX", "BCY", "QRL", "CFI", "EDG", "MYST", "GUP", "CVC", "STORJ", "TIX",
-                "ARDR", "DGD", "MTL", "SWIFT", "TRIG", "UKG"
+                "ARDR", "DGD", "MTL", "SWIFT", "TRIG", "UKG", "XWC"
             };
 
             //ENTER MARKETS HERE FOR USE IN SubSpecificDeltas() METHOD:
@@ -74,9 +74,10 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             
             LoadHoldings();
             
-            LoadOpenOrders();            
-
+            LoadOpenOrders();
+            
             await SubTopMarketsByVol(60);
+
             //await SubSpecificMarkets();                   
 
             await StratData.PreloadCandleDicts(42);
@@ -278,7 +279,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
         private async Task SubTopMarketsByVol(int n)
         {
             List<string> topMarkets = await BtrexREST.GetTopMarketsByBVbtcOnly(n);
-
+            
             //ADD DELTAS FROM HOLDINGS TABLE
             foreach (DataTable dt in Holdings.Tables)
             {
@@ -290,10 +291,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     }
                 }
             }
-
-            //TODO: CHECK SQLITE FOR ADEQUATE HISTORY-TIME FOR CANDLE PRELOAD
-
-
+            
             //SUBSCRIBE ALL MARKETS, RETRY FAILED AT END:
             List<MarketQueryResponse> timeGapMarkets = await BtrexWS.SubscribeMarketsList(topMarkets.Except(OPTIONS.ExcludeTheseDeltas).ToList());
 
@@ -360,6 +358,11 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                 {
                     var stopLoss = new StopLoss((string)row["MarketDelta"], Convert.ToDecimal(row["StopLossRate"]), Convert.ToDecimal(row["Qty"]), (a, b, c) => ReCalcStoploss(a, b, c), (a, b) => StopLossExecutedCallback(a, b), dt.TableName, OPTIONS.VITRUAL_MODE);
 
+                    if (OPTIONS.SAFE_MODE)
+                    {
+                        if (Convert.ToDecimal(row["BoughtRate"]) > stopLoss.StopRate)
+                            stopLoss.StopRate = Convert.ToDecimal(row["BoughtRate"]) * 0.068M;
+                    }
                     //Trace.WriteLine(string.Format("{0}_{1} ... {2} ... {3} ... {4}", stopLoss.CandlePeriod, stopLoss.MarketDelta, stopLoss.Quantity, stopLoss.StopRate, stopLoss.virtualSL));
 
                     StopLossController.RegisterStoploss(stopLoss, string.Format("{0}_{1}", stopLoss.CandlePeriod, stopLoss.MarketDelta));

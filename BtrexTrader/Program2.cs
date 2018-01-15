@@ -6,10 +6,8 @@ using System.IO;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using BtrexTrader.Control;
 using BtrexTrader.Interface;
 using BtrexTrader.Data;
-using Trady.Core;
 
 namespace BtrexTrader
 {
