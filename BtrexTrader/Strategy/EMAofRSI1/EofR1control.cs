@@ -40,9 +40,8 @@ namespace BtrexTrader.Strategy.EMAofRSI1
             //EXLUDE MARKETS THAT WERE RELEASED LESS THAN A MONTH AGO,
             //(CANT PRELOAD ADEQUATE CANDLE DATA FOR CALCS -> SequenceContainsNoElements err)
             public static IReadOnlyList<string> ExcludeTheseDeltas = new List<string>()
-            {            
-                "1ST", "NAV", "XVG", "VIB", "SAFEX", "BCY", "QRL", "CFI", "EDG", "MYST", "GUP", "CVC", "STORJ", "TIX",
-                "ARDR", "DGD", "MTL", "SWIFT", "TRIG", "UKG", "XWC"
+            {
+                "SWIFT", "GEO"
             };
 
             //ENTER MARKETS HERE FOR USE IN SubSpecificDeltas() METHOD:
@@ -361,7 +360,7 @@ namespace BtrexTrader.Strategy.EMAofRSI1
                     if (OPTIONS.SAFE_MODE)
                     {
                         if (Convert.ToDecimal(row["BoughtRate"]) > stopLoss.StopRate)
-                            stopLoss.StopRate = Convert.ToDecimal(row["BoughtRate"]) * 0.068M;
+                            stopLoss.StopRate = Convert.ToDecimal(row["BoughtRate"]) * 0.68M;
                     }
                     //Trace.WriteLine(string.Format("{0}_{1} ... {2} ... {3} ... {4}", stopLoss.CandlePeriod, stopLoss.MarketDelta, stopLoss.Quantity, stopLoss.StopRate, stopLoss.virtualSL));
 
